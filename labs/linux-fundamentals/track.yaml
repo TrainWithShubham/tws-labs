@@ -8,6 +8,7 @@ labs:
   - pipes-and-search
   - shell-scripting-basics
   - linux-in-action
+  - awk-and-sed
 video:
   title: Linux For DevOps In One Shot
   url: https://www.youtube.com/watch?v=e01GGTKmtpc
