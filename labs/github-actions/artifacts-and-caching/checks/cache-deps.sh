@@ -18,3 +18,10 @@ case "$key" in
   *runner.os*package-lock.json*) ;;
   *) fail "The cache key should include runner.os and hashFiles of package-lock.json.";;
 esac
+
+cache_at=$(echo "$steps" | jq -r 'map((.uses // "") | test("^actions/cache(@.*)?$")) | index(true)')
+for cmd in 'npm run build' 'npm test'; do
+  run_at=$(echo "$steps" | jq -r --arg c "$cmd" 'map((.run // "") | test("(^|[[:space:];&|])" + $c + "([[:space:];&|]|$)")) | index(true)')
+  [ "$run_at" != "null" ] || fail "Add a run step for '$cmd' in the build job."
+  [ "$run_at" -gt "$cache_at" ] || fail "Run '$cmd' after the cache step, so the restored modules are used."
+done
