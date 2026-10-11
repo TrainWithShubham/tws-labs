@@ -22,6 +22,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **A passing Check now says so.** You get a short green confirmation, and failing checks keep the amber hint.
 
 ### Added
+- **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
 - **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
 - **Docker** (3 labs): containers are just processes, writing a Dockerfile that builds fast, and layers, secrets and compose.
   There is no Docker daemon in the sandbox; the labs grade the files you write and real evidence from the sandbox itself.
