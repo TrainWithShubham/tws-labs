@@ -146,7 +146,9 @@ test('the lab page carries its line, a breadcrumb, the progress route with the r
     assert.match(html, /<span class="jrocket" aria-hidden="true"><svg class="rk /);
     const data = JSON.parse(html.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
     assert.deepEqual(data.next, { href: '/lab/linux-fundamentals/files', title: 'Creating and managing files' });
-    const last = JSON.parse((await get(app, '/lab/github-actions/oidc-to-aws')).body.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
+    const actions = loadCatalog(LABS).tracks.find((t) => t.id === 'github-actions').labs;
+    const lastId = actions[actions.length - 1].id; // derived, so adding a lab to the track needs no test edit
+    const last = JSON.parse((await get(app, '/lab/github-actions/' + lastId)).body.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
     assert.equal(last.next, null, 'nothing follows the last lab');
     assert.match((await get(app, '/lab/aws/elastic-beanstalk-cluster-mode')).body, /class="lab-shell line-cloud"/);
   } finally { app.stop(); }
