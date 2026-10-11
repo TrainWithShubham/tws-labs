@@ -3,7 +3,7 @@
 [ -f proj/.gitignore ] || fail "Create a .gitignore file inside proj."
 file_has proj/.gitignore '\*\.log' || fail ".gitignore should contain a pattern for *.log files."
 file_has proj/.gitignore '\.env' || fail ".gitignore should contain a pattern for .env."
-file_has proj/.gitignore 'tmp' || fail ".gitignore should contain a pattern for the tmp/ directory."
+file_has proj/.gitignore '^/?tmp/?\*?$' || fail ".gitignore should contain a pattern for the tmp/ directory."
 in_repo proj check-ignore -q debug.log || fail "debug.log should be ignored by Git."
 in_repo proj check-ignore -q .env || fail ".env should be ignored by Git."
 in_repo proj check-ignore -q tmp/cache.txt || fail "tmp/cache.txt should be ignored by Git."

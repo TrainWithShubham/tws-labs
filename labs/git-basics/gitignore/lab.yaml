@@ -15,7 +15,7 @@ steps:
 
       A `.gitignore` file tells Git which **untracked** files and directories to ignore so they do not clutter `git status` or get staged by `git add`.
 
-      **Important:** `.gitignore` only applies to untracked files. If a file was already committed to Git, adding it to `.gitignore` does not stop Git from tracking it. (You will learn how to untrack such files later in this lab!)
+      **Important:** `.gitignore` only applies to untracked files. If a file was already committed to Git, adding it to `.gitignore` does not stop Git from tracking it. (The last task shows how to untrack such a file.)
 
       A repository called `proj` is waiting in your home directory.
   - id: create-rules
@@ -28,12 +28,14 @@ steps:
       - The environment file `.env`
       - The `tmp/` directory and its contents
     hint: "Move into proj and add *.log, .env, and tmp/ to .gitignore."
+    success: Correct. Git now skips logs, .env and tmp/.
   - id: verify-ignored
     type: task
     title: Verify ignored files
     body: |
       Inspect Git's status to confirm that `debug.log`, `.env`, and `tmp/cache.txt` are ignored. Run `git status` to see that they no longer appear under untracked files, or test them with `git check-ignore -v <file>`.
     hint: "Run git status or git check-ignore to verify what Git sees."
+    success: Correct. Ignored files no longer show up in git status.
   - id: stage-safely
     type: task
     title: Stage project files safely
@@ -41,6 +43,7 @@ steps:
       Stage the project files and your new `.gitignore` using `git add .`.
       Because of your `.gitignore` rules, Git stages `app.js` and `.gitignore`, while keeping `debug.log`, `.env`, and `tmp/cache.txt` unstaged.
     hint: "Run git add . inside proj to stage the project files."
+    success: Correct. git add . staged only the files that belong in the repo.
   - id: untrack-file
     type: task
     title: Untrack an already-tracked file
@@ -49,6 +52,7 @@ steps:
 
       To stop tracking it without deleting it from your disk, add `config.local` to `.gitignore` and remove it from the Git index with `git rm --cached config.local`.
     hint: "Add config.local to .gitignore, then run: git rm --cached config.local"
+    success: Correct. config.local is untracked but still on disk.
   - id: wrap-up
     type: lesson
     title: Clean history
