@@ -19,7 +19,7 @@ steps:
     type: task
     title: Extract client IPs with awk
     body: |
-      Look at `web-server/access.log` — every line starts with the visitor's IP address.
+      Look at `web-server/access.log` every line starts with the visitor's IP address.
 
       Use `awk` to grab just that first column (`$1`) from `web-server/access.log`, and save the list to `client-ips.txt`. Keep all entries in order.
     hint: "Print column 1 with '{print $1}' and redirect (>) into client-ips.txt."
@@ -28,12 +28,12 @@ steps:
     type: task
     title: Filter error logs with awk
     body: |
-      Some visitors got HTTP 500 errors. In this log, column 9 (`$9`) is the status code, and column 7 (`$7`) is the URL path.
+      Some visitors received HTTP 500 errors. In `web-server/access.log`, column 9 (`$9`) contains the HTTP status code, and column 7 (`$7`) contains the URL path.
 
-      `awk` can filter lines before printing them:
-      `awk '$9 == 500 {print $1, $7}' logfile`
+      In `awk`, place your condition right before the action to filter lines:
+      `awk 'condition {print $1, $2}' filename`
 
-      Filter `web-server/access.log` for lines where `$9` equals 500. Save the client IP (`$1`) and URL path (`$7`) to `server-errors.txt`.
+      Filter `web-server/access.log` to find requests with status code `500`. Save each matching client IP (`$1`) and URL path (`$7`) to `server-errors.txt`.
     hint: "Put the condition $9 == 500 before {print $1, $7}, and redirect with > to server-errors.txt."
     success: Filtered 500 errors into server-errors.txt.
   - id: replace-config
