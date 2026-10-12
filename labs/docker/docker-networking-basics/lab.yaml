@@ -1,0 +1,128 @@
+title: Docker Networking Basics
+level: beginner
+minutes: 15
+summary: Learn how Docker networks connect containers and allow them to communicate by name.
+resources:
+  - title: Docker networking overview
+    url: https://docs.docker.com/engine/network/
+    desc: Learn about Docker network drivers and container connectivity.
+steps:
+  - id: intro
+    type: lesson
+    title: Understand Docker networking
+    body: |
+      Containers often need to communicate with other containers. Docker networks provide the connections that make this possible.
+
+      Docker has a default `bridge` network. For application containers, a **user-defined bridge network** is usually more useful because containers on it can discover each other by name.
+
+      This learning sandbox does not provide a Docker daemon, so Docker commands cannot be executed here. The tasks below explain the commands to run on your own machine with Docker installed.
+
+  - id: list-networks
+    type: task
+    title: List Docker networks
+    body: |
+      Run this command on your Docker host:
+
+      `docker network ls`
+
+      It lists the networks Docker knows about, including the default `bridge`, `host`, and `none` networks.
+    hint: "Use the `docker network ls` command on a machine with Docker installed."
+    success: You know how to list Docker networks.
+
+  - id: inspect-bridge
+    type: task
+    title: Inspect the default bridge
+    body: |
+      Run:
+
+      `docker network inspect bridge`
+
+      This displays details about the default bridge network, including its configuration and connected containers.
+    hint: "Use `docker network inspect bridge` on your Docker host."
+    success: You know how to inspect a Docker network.
+
+  - id: create-network
+    type: task
+    title: Create a user-defined network
+    body: |
+      Create a network named `app-network`:
+
+      `docker network create app-network`
+
+      Docker creates a user-defined bridge network by default. Containers attached to this network can discover one another by container name.
+    hint: "Run `docker network create app-network` on your Docker host."
+    success: You know how to create a user-defined Docker network.
+
+  - id: start-app1
+    type: task
+    title: Start the first container
+    body: |
+      Start an Alpine container named `app1` on your new network:
+
+      `docker run -d --name app1 --network app-network alpine sleep 300`
+
+      The `-d` option runs the container in the background. The `--network` option connects it to `app-network`.
+    hint: "Use `docker run -d --name app1 --network app-network alpine sleep 300` on your Docker host."
+    success: You understand how to start a container on a specific network.
+
+  - id: start-app2
+    type: task
+    title: Start the second container
+    body: |
+      Start another Alpine container on the same network:
+
+      `docker run -d --name app2 --network app-network alpine sleep 300`
+
+      Both containers now share `app-network`.
+    hint: "Use the same command as before, changing the container name to `app2`."
+    success: You understand how to connect multiple containers to one network.
+
+  - id: test-connectivity
+    type: task
+    title: Test communication by name
+    body: |
+      Try to reach `app2` from `app1`:
+
+      `docker exec app1 ping -c 3 app2`
+
+      On a user-defined bridge network, Docker provides name-based discovery. The ping command may fail if the container image does not have `ping` installed.
+    hint: "Run `docker exec app1 ping -c 3 app2` on your Docker host."
+    success: You understand how containers can discover one another by name.
+
+  - id: inspect-network
+    type: task
+    title: Verify network membership
+    body: |
+      Inspect the network again:
+
+      `docker network inspect app-network`
+
+      Look at the `Containers` section to see which containers are connected.
+    hint: "Use `docker network inspect app-network` on your Docker host."
+    success: You know how to inspect network membership.
+
+  - id: cleanup
+    type: task
+    title: Clean up your resources
+    body: |
+      After completing the exercise, remove the containers you created:
+
+      `docker rm -f app1 app2`
+
+      Then remove the network:
+
+      `docker network rm app-network`
+
+      Only run these commands if you created these resources for this exercise.
+    hint: "Remove the containers first, then remove `app-network`."
+    success: You understand how to clean up your lab resources.
+
+  - id: recap
+    type: lesson
+    title: Review Docker networking
+    body: |
+      In this lab, you learned how to list and inspect networks, create a user-defined bridge network, connect containers, test communication by container name, and clean up.
+
+      Remember: these Docker commands must be run on a Docker host. This sandbox does not execute them because it has no Docker daemon.
+
+      Next lab: write the recipe for an image, a Dockerfile.

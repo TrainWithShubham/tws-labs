@@ -5,6 +5,7 @@ labs:
   - containers-are-processes
   - dockerfile-craft
   - layers-and-compose
+  - docker-networking-basics
 video:
   title: Docker In One Shot
   url: https://youtu.be/9bSbNNH4Nqw
