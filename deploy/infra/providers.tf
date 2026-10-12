@@ -10,6 +10,12 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.0"
     }
+
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
+
   }
 
   # Remote state: required the moment a second actor (the CI/CD pipeline,

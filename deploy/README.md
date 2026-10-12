@@ -12,7 +12,7 @@ Repo: [`TrainWithShubham/tws-labs`](https://github.com/TrainWithShubham/tws-labs
 ## What's here
 
 - `infra/` — Terraform for the durable, well-supported foundational infrastructure: IAM roles, ECR repo,
-  AWS Budget alert, the GitHub Actions OIDC deploy role, and the remote state backend.
+  AWS Budget alert and shutdown notification, the GitHub Actions OIDC deploy role, and the remote state backend.
 - `01-create-roles.sh` … `04-teardown.sh` — the AWS CLI scripts that create/update/tear down the
   Beanstalk application and environment (`02` builds the image from the repo root and pushes it to ECR).
 - `smoke-test.py` — end-to-end script run against the *live* URL as the final CI/CD gate; it walks the
@@ -51,7 +51,7 @@ rename, to avoid tearing down and recreating already-verified live infrastructur
 change.
 
 **Gotcha confirmed the hard way:** the GitHub OIDC trust policy on the deploy IAM role
-(`infra/iam.tf`) is a `StringLike` condition scoped to `repo:<owner>*/<repo-name>*:ref:...` — it
+(`infra/iam.tf`) is a `StringLike` condition scoped to `repo:<owner>/<repo-name>:ref:...` — it
 embeds the *repo name*, not just an immutable ID. Renaming the GitHub repo without re-applying
 Terraform (with the new `github_repo` var) breaks `configure-aws-credentials` in CI on the very
 next run, because the trust policy still matches the old name. The deploy workflow already passes
@@ -69,8 +69,8 @@ Visitors get a real shell, so the container is hardened (`src/server.js`, `src/s
   answers (`labs/**/solutions/`) are root-only; a visitor can't `kill 1`, signal the server, or read its
   `/proc/<pid>/environ`. When a session ends, every process of its user is killed, including daemons that escaped the session.
 - Per-shell `ulimit`s (now per user, so one visitor's fork bomb can't starve the others): 256 processes,
-  256MB address space per process, 20MiB per file. **Residual risk:** nothing bounds *total* ephemeral disk in the
-  EKS pod; a determined visitor can fill a replica's storage (compose uses a 128MB tmpfs for homes).
+  256MB address space per process, 20MiB per file. **Residual risk:** nothing bounds *total* ephemeral
+  disk in the EKS pod; a determined visitor can fill a replica's storage (compose uses a 128MB tmpfs for homes).
 - `tini` is PID 1 so orphaned processes get reaped instead of piling up as zombies.
 - Shell environment is whitelisted; WebSocket frames capped at 64KB; one terminal per token; sessions are
   minted by a same-origin `POST /session`, never by loading a page.
@@ -95,11 +95,20 @@ MIN_REPLICA=1 MAX_REPLICA=8 ./03-deploy.sh
 - Watch seat pressure per replica at `/stats` (`sessions`, `maxSessions`).
 - Sessions are in-memory per replica; ALB stickiness (30 min) keeps a visitor on theirs. A replica
   replacement drops its sessions — visitors just start a new lab.
-- **Budget:** the default `$5/month` alert predates Cluster Mode's real cost (EKS control plane alone ≈
-  $0.10/hr ≈ $73/month while the environment exists). It also alerts on *forecast* and 100%-actual, and the
-  limit is a variable (`-var budget_limit_usd=...`). Set it to what you actually intend to spend.
+- **Budget:** the default monthly AWS Budget alert threshold is `$150` (`budget_limit_usd`). This replaces
+  the old `$5/month` default, which was too low for a live Cluster Mode environment (the EKS control plane alone
+  is approximately `$0.10/hour`, or `$73/month`, while the environment exists). It also alerts at 80% actual
+  spend, 100% forecast spend, and 100% actual spend. Set the limit to reflect your intended spend with
+  `-var="budget_limit_usd=150"` or another value.
+
+**Important:** an AWS Budget is an alerting mechanism, **not a hard spending cap**. Notifications can be delayed,
+and actual costs can exceed the threshold. The 100% actual-spend notification is configured to invoke a Lambda
+function through SNS. The function requests termination of the `beanstalk-grows-env` Elastic Beanstalk environment
+when it receives a matching alarm. This is a cost-control safeguard, not a guarantee that all billable resources
+are removed. Check for remaining resources and charges separately.
 
 ## Invite codes
+
 Every lab on the hosted app refuses to start a session without an invite code, so a stray link cannot burn cluster
 capacity. The pages themselves (home, roadmap, lab shells) stay public; the local app never asks.
 
@@ -110,14 +119,18 @@ capacity. The pages themselves (home, roadmap, lab shells) stay public; the loca
 - **No secret set = every hosted lab is closed to everyone** (fail closed), and the deploy prints a warning.
 - Learners enter the code once; the browser remembers it (`localStorage`).
 - Caveats: the value is visible to anyone who can `describe-configuration-settings` on the environment, and changing it
-  rolls the pods, which ends live sessions - rotate between events. Removing the secret does not clear an already-set
+  rolls the pods, which ends live sessions — rotate between events. Removing the secret does not clear an already-set
   `env-variables` option; set `LAB_ACCESS_TOKENS` to a new value instead.
 
 ## Cost guardrail
 
-An AWS Budget is codified in `infra/budget.tf` (limit = `budget_limit_usd`, default $5 — too low for a
-live Cluster Mode environment, see "Traffic spikes"). It alerts at 80% actual, 100% forecast and 100%
-actual. See bootstrap below for bringing the hand-created budget under Terraform management.
+An AWS Budget is codified in `infra/budget.tf` (limit = `budget_limit_usd`, default `$150` — an alert threshold,
+not a spending cap). It alerts at 80% actual spend, 100% forecast spend, and 100% actual spend. The 100% actual-spend
+notification is subscribed to an SNS topic that invokes a Lambda function to request termination of
+`beanstalk-grows-env`. Termination may not remove every billable resource, so check for remaining resources and
+charges separately.
+
+See bootstrap below for bringing the hand-created budget under Terraform management.
 
 ## Bootstrap (one-time, by hand)
 
@@ -168,13 +181,12 @@ from that on its own since it can't authenticate to AWS until the trust policy a
 ```bash
 ./01-create-roles.sh    # one-time: cluster/node/observability IAM roles
 ./02-build-and-push.sh  # build the image from the repo root, push to ECR
-./03-deploy.sh           # create or update the Cluster Mode environment
-./04-teardown.sh         # terminate + verify nothing billable remains
+./03-deploy.sh          # create or update the Cluster Mode environment
+./04-teardown.sh        # terminate + verify nothing billable remains
 ```
 
 ## What's tuned for cost
 
 - `cpu=500m`, `memory=512Mi` per replica.
-- `max-replica=8` with CPU-utilization autoscaling (50% threshold) — cheap at idle, scales for
-  the "make it grow" lab step.
+- `max-replica=8` with CPU-utilization autoscaling (50% threshold) — cheap at idle, scales for the "make it grow" lab step.
 - No CodeBuild step — the image is pre-built and pushed directly, not built from source.

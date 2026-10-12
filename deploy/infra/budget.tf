@@ -1,5 +1,5 @@
-# Codifies the same $5/month cost guardrail created by hand earlier in this
-# project (see demos/tws-labs/cluster-mode/README.md's cost guardrail section). Bring the
+# Codifies the monthly AWS Budget alert and SNS notifications.
+# The default threshold is $150; budget alerts do not cap spending.
 # existing budget under management with `terraform import` rather than
 # creating a duplicate (see README.md's bootstrap section).
 
@@ -35,5 +35,6 @@ resource "aws_budgets_budget" "climb_demo" {
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
     subscriber_email_addresses = [var.budget_notification_email]
+    subscriber_sns_topic_arns  = [aws_sns_topic.budget_shutdown.arn]
   }
 }
