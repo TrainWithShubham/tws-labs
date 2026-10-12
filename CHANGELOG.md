@@ -8,9 +8,16 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+### Added
+- **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
+- **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
+
 ### Changed
 - The learner shell now has full `vim` (syntax highlighting; `vi` opens it) and working `man` with the standard manual pages (`man ls`, `man 5 hosts`, `man 7 signal`).
   The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
+
+### Fixed
+- The HTTP tests no longer hardcode how many topics are live or have a "Practice" link, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #30).
 
 ### Upgrade notes
 - The runtime image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform or settings changes.
@@ -22,8 +29,6 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **A passing Check now says so.** You get a short green confirmation, and failing checks keep the amber hint.
 
 ### Added
-- **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
-- **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
 - **Docker** (3 labs): containers are just processes, writing a Dockerfile that builds fast, and layers, secrets and compose.
   There is no Docker daemon in the sandbox; the labs grade the files you write and real evidence from the sandbox itself.
 - **Networking** (3 labs): IP addresses and CIDR, ports and sockets, and name to page (DNS, the Host header, TLS). Each session gets its own port,
