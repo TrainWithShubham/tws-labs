@@ -10,6 +10,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Deploys queue instead of colliding: a second merge while the environment is still updating would fail with "must be Ready".
 concurrency:
