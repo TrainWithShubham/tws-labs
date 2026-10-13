@@ -19,7 +19,7 @@ steps:
     type: task
     title: Extract client IPs with awk
     body: |
-      Look at `web-server/access.log` every line starts with the visitor's IP address.
+      Look at `web-server/access.log`: every line starts with the visitor's IP address.
 
       Use `awk` to grab just that first column (`$1`) from `web-server/access.log`, and save the list to `client-ips.txt`. Keep all entries in order.
     hint: "Print column 1 with '{print $1}' and redirect (>) into client-ips.txt."
