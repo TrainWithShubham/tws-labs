@@ -7,7 +7,7 @@ api=$(yaml_get "$f" 'd.apiVersion')
 [ "$api" = "v1" ] || fail "The apiVersion should be v1."
 
 name=$(yaml_get "$f" 'd.metadata && d.metadata.name')
-case "$name" in *web*) ;; *) fail "Name the Pod web-pod in metadata.name.";; esac
+[ "$name" = "web-pod" ] || fail "Name the Pod web-pod in metadata.name."
 
 label=$(yaml_get "$f" 'd.metadata && d.metadata.labels && d.metadata.labels.app')
 [ "$label" = "web" ] || fail "Set metadata.labels.app to web."

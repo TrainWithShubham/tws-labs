@@ -119,6 +119,7 @@ Labs written by people outside the core team. Thank you.
 | Linux in Action (Linux Fundamentals) | [@Heyyprakhar1](https://github.com/Heyyprakhar1) | [#14](https://github.com/TrainWithShubham/tws-labs/pull/14) |
 | Artifacts and caching (CI/CD with GitHub Actions) | [@cloudwithpreetham](https://github.com/cloudwithpreetham) | [#26](https://github.com/TrainWithShubham/tws-labs/pull/26) |
 | Ignoring files with .gitignore (Git and GitHub) | [@srdangat](https://github.com/srdangat) | [#27](https://github.com/TrainWithShubham/tws-labs/pull/27) |
+| Pod and Deployment anatomy (Kubernetes) | [@cloudwithpreetham](https://github.com/cloudwithpreetham) | [#35](https://github.com/TrainWithShubham/tws-labs/pull/35) |
 
 ## Contributing and security
 

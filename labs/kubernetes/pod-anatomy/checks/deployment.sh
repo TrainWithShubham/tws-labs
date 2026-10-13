@@ -6,6 +6,9 @@ kind=$(yaml_get "$f" 'd.kind')
 api=$(yaml_get "$f" 'd.apiVersion')
 [ "$api" = "apps/v1" ] || fail "The apiVersion should be apps/v1."
 
+name=$(yaml_get "$f" 'd.metadata && d.metadata.name')
+[ "$name" = "web-deployment" ] || fail "Name the Deployment web-deployment in metadata.name."
+
 replicas=$(yaml_get "$f" 'd.spec && d.spec.replicas')
 [ "$replicas" = "3" ] || fail "Set spec.replicas to 3."
 
