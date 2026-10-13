@@ -21,6 +21,8 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ### Fixed
 - The HTTP tests no longer hardcode how many topics are live or have a "Practice" link, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #30).
 
+- The lab page stops polling `/session/remaining` once the session ends (terminal closed, time ran out or End lab). Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #36).
+
 ### Upgrade notes
 - The runtime image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform or settings changes.
 

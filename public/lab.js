@@ -58,7 +58,7 @@
     fetch('/session', { method: 'POST', headers: headers, body: JSON.stringify({ track: DATA.track, lab: DATA.lab }) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
       .then(function (r) {
-        if (r.status === 200) { token = r.body.token; connect(); pollTimer(); setInterval(pollTimer, 5000); return; }
+        if (r.status === 200) { token = r.body.token; connect(); pollTimer(); stopTimer(); timerInterval = setInterval(pollTimer, 5000); return; }
         if (r.status === 401) { var sent = !!savedInvite(); saveInvite(''); return askInvite(sent); }
         busy(r.body.message || 'No seat is free right now.');
       })
@@ -76,7 +76,7 @@
     ws = new WebSocket(proto + '//' + location.host + '/ws?token=' + token);
     ws.onopen = function () { setStatus('live', 'live'); sendSize(); term.focus(); render(); };
     ws.onmessage = function (ev) { term.write(ev.data); };
-    ws.onclose = function (ev) { setStatus('ended', 'ended'); term.write('\r\n[session ended: ' + (ev.reason || ev.code) + ']\r\n'); };
+    ws.onclose = function (ev) { stopTimer(); setStatus('ended', 'ended'); term.write('\r\n[session ended: ' + (ev.reason || ev.code) + ']\r\n'); };
     ws.onerror = function () { setStatus('ended', 'error'); };
   }
 
@@ -167,7 +167,7 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   // --- chrome ------------------------------------------------------------------
-  function endLab() { try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
+  function endLab() { stopTimer(); try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
   $('end-btn').onclick = endLab;
   $('fs-btn').onclick = function () {
     var el = document.querySelector('.terminal-pane');
@@ -175,12 +175,15 @@
   };
   window.addEventListener('beforeunload', function () { try { if (ws) ws.close(1000, 'page closed'); } catch (e) { /* closed */ } });
 
+  var timerInterval = null;
+  function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
   function pollTimer() {
     if (!token) return;
     fetch('/session/remaining?token=' + token).then(function (r) { return r.json(); }).then(function (d) {
       var t = d.remainingSec, el = $('lab-timer');
       $('lab-timer-text').textContent = t <= 0 ? '00:00' : String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
       el.classList.toggle('is-low', t > 0 && t < 120);
+      if (t <= 0) stopTimer();
     }).catch(function () { /* transient */ });
   }
   function pollStats() {
