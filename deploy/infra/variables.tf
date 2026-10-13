@@ -35,5 +35,5 @@ variable "ecr_repository_name" {
 variable "budget_limit_usd" {
   description = "Monthly AWS Budget limit in USD. The default $5 predates Cluster Mode's real cost: the EKS control plane alone is ~$0.10/hr (~$73/month) while the environment exists, so raise this to match what you actually intend to spend - especially for a public event."
   type        = string
-  default     = "5"
+  default     = "50"
 }

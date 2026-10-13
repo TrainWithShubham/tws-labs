@@ -243,7 +243,7 @@
         {
           "id": "kubernetes",
           "title": "Kubernetes",
-          "status": "next",
+          "status": "live",
           "relevance": 99,
           "also": [
             "devops"
@@ -256,7 +256,8 @@
           "video": {
             "title": "Kubernetes In One Shot",
             "url": "https://youtu.be/W04brGNgxN4"
-          }
+          },
+          "track": "kubernetes"
         },
         {
           "id": "terraform",

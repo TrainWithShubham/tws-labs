@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { start, get, post, mint, check, WebSocket, LABS } = require('./helpers');
 const { assertBrandedPage } = require('../assert-branded');
 const { loadCatalog } = require('../../src/loader');
+const { loadRoadmap } = require('../../src/roadmap');
 
 const EB = ['aws', 'elastic-beanstalk-cluster-mode'];
 
@@ -108,8 +109,12 @@ test('roadmap: every topic grouped by line, collapsed rows, filters, capstones, 
     // everything is on this page, including the "later" topics the home page leaves out
     for (const t of ['Linux', 'Shell scripting', 'Docker', 'Ansible', 'Jenkins', 'Prometheus and Grafana', 'Kubernetes', 'GitOps with ArgoCD', 'Building AI agents', 'AIOps', 'Local LLMs in containers']) assert.ok(html.includes(`<b>${t}</b>`), t);
     const statuses = (s) => (html.match(new RegExp(`<details class="topic" data-status="${s}"`, 'g')) || []).length;
-    assert.deepEqual([statuses('live'), statuses('next') > 0, statuses('later') > 0], [7, true, true]);
-    assert.equal((html.match(/<a class="open"/g) || []).length, 7, 'only live topics can be opened');
+    // derived from the roadmap data, so a topic going live (its first lab) needs no test edit
+    const topics = loadRoadmap(loadCatalog(LABS)).domains.flatMap((d) => d.topics);
+    const live = topics.filter((t) => t.status === 'live').length;
+    assert.ok(live > 0, 'the roadmap has live topics');
+    assert.deepEqual([statuses('live'), statuses('next') > 0, statuses('later') > 0], [live, true, true]);
+    assert.equal((html.match(/<a class="open"/g) || []).length, live, 'only live topics can be opened');
     assert.match(html, /<button type="button" data-f="all" aria-pressed="true">All<\/button>/);
     assert.match(html, /class="caps"/);
     assert.match(html, /Adapted from the DevOps Roadmap 2026/);
@@ -126,7 +131,9 @@ test('videos: grouped by line, safe links, "Practice" only where a lab is online
     const v = (await get(app, '/videos')).body;
     for (const id of ['e01GGTKmtpc', '9Xl1ZTk3BQw', 'vA5TTz6BXhY', '9bSbNNH4Nqw', 'W04brGNgxN4']) assert.ok(v.includes(id), id);
     assert.match(v, /rel="noopener noreferrer"/);
-    assert.equal((v.match(/Practice &rarr;/g) || []).length, 5, 'Linux, Shell scripting, Git, Docker and Networking have a video and labs');
+    const practice = loadRoadmap(loadCatalog(LABS)).domains.flatMap((d) => d.topics).filter((t) => t.video && t.labs.length).length;
+    assert.ok(practice > 0, 'some topic has both a video and labs');
+    assert.equal((v.match(/Practice &rarr;/g) || []).length, practice, 'Practice appears for exactly the topics that have a video and labs (derived from the roadmap)');
     assert.match(v, /<span class="tag">next<\/span>/);
     const track = (await get(app, '/t/linux-fundamentals')).body;
     assert.match(track, /<p class="crumb"><a href="\/">Labs<\/a><i>\/<\/i><a href="\/roadmap#devops">DevOps<\/a><i>\/<\/i><span>Linux Fundamentals<\/span><\/p>/);

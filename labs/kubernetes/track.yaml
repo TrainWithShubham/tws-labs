@@ -1,0 +1,9 @@
+order: 3
+title: Kubernetes
+description: Master Kubernetes manifest craft - Pod specs, container resources, health probes and Deployments.
+labs:
+  - pod-anatomy
+video:
+  title: Kubernetes In One Shot
+  url: https://youtu.be/W04brGNgxN4
+  note: Watch the full walkthrough, then practice each idea in the labs here.
