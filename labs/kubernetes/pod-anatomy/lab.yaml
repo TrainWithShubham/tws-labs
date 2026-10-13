@@ -1,0 +1,123 @@
+title: Pod and deployment anatomy
+level: beginner
+minutes: 15
+summary: Write Kubernetes Pod specs, configure resource limits and probes, and scale with Deployments.
+links:
+  - title: Kubernetes Pods
+    url: https://kubernetes.io/docs/concepts/workloads/pods/
+resources:
+  - title: Pod lifecycle and probes
+    url: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    desc: How the kubelet uses liveness and readiness probes to maintain container health.
+  - title: Managing resources for containers
+    url: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    desc: Declaring CPU and memory requests and limits in Kubernetes.
+  - title: Deployments
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+    desc: Declarative updates for Pods and ReplicaSets.
+steps:
+  - id: pod-concept
+    type: lesson
+    title: The smallest deployable unit
+    body: |
+      In Kubernetes, containers do not run directly on bare nodes. They run inside **Pods**.
+
+      A Pod wraps one or more containers that share the same network namespace (IP address and ports)
+      and storage volumes.
+
+      Every Kubernetes manifest starts with four top-level fields:
+      - `apiVersion`: the API group and version (such as `v1` for core objects).
+      - `kind`: the object type (such as `Pod`, `Service`, or `Deployment`).
+      - `metadata`: identification data like `name` and `labels`.
+      - `spec`: the desired state of the resource.
+
+      You will write Kubernetes manifests in `app/`.
+  - id: create-pod
+    type: task
+    title: Define a basic Pod
+    body: |
+      Create `app/pod.yaml` containing a Pod named `web-pod` with label `app: web`.
+      Configure a single container named `nginx` using image `nginx:1.27`.
+    hint: "Use apiVersion: v1, kind: Pod, metadata with name: web-pod and labels: app: web, and spec: containers with name: nginx and image: nginx:1.27."
+    success: Correct. You created a valid core Kubernetes Pod manifest.
+  - id: resources-concept
+    type: lesson
+    title: Resource requests and limits
+    body: |
+      Without resource constraints, a single container can consume all available memory or CPU
+      on a node, causing other workloads to crash.
+
+      Kubernetes lets you specify:
+      - **requests**: the minimum amount of CPU and memory the scheduler guarantees to reserve for the Pod.
+      - **limits**: the maximum amount the container is allowed to consume before being throttled (CPU)
+        or terminated with an Out-Of-Memory (OOMKilled) error (Memory).
+
+      Values use standard Kubernetes units, such as `64Mi` for megabytes and `50m` for millicores (1000m = 1 CPU core).
+  - id: ports-and-resources
+    type: task
+    title: Declare ports and resource limits
+    body: |
+      In `app/pod.yaml`, update the `nginx` container to declare a `containerPort: 80` under `ports`.
+      Then add a `resources` block with `requests` (cpu: `50m`, memory: `64Mi`) and `limits` (cpu: `100m`, memory: `128Mi`).
+    hint: "Under the nginx container, add ports with - containerPort: 80, and resources with requests and limits for cpu and memory."
+    success: Correct. Declaring resource boundaries prevents noisy-neighbor issues on shared nodes.
+  - id: probes-concept
+    type: lesson
+    title: Health checks with liveness probes
+    body: |
+      A container process might stay running while being completely deadlocked or unable to serve traffic.
+
+      The kubelet monitors container health using **probes**:
+      - `livenessProbe`: checks if the application is running. If it fails, Kubernetes restarts the container.
+      - `readinessProbe`: checks if the application is ready to accept incoming network traffic.
+
+      HTTP probes send GET requests to a path and port. `initialDelaySeconds` gives the app time to start up before checks begin:
+
+      ```yaml
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 5
+      ```
+  - id: liveness-probe
+    type: task
+    title: Configure an HTTP liveness probe
+    body: |
+      Add an HTTP `livenessProbe` to the `nginx` container in `app/pod.yaml`.
+      Check path `/` on port `80`, and give it an `initialDelaySeconds` of `5`.
+    hint: "Under the container spec, add livenessProbe with httpGet: path: / and port: 80, and initialDelaySeconds: 5."
+    success: Correct. The kubelet will now restart the container if the health check fails.
+  - id: deployment-concept
+    type: lesson
+    title: Pods vs Deployments
+    body: |
+      Standalone Pods are not self-healing across node failures: if the worker node dies, the Pod dies with it.
+
+      In production, you rarely create bare Pods. Instead, you create a **Deployment**.
+      A Deployment runs a controller that:
+      1. Maintains the desired number of Pod replicas.
+      2. Performs zero-downtime rolling updates.
+      3. Automatically recreates Pods when nodes fail.
+
+      A Deployment matches its Pods using label selectors:
+      `spec.selector.matchLabels` must match `spec.template.metadata.labels`.
+  - id: deployment
+    type: task
+    title: Wrap the Pod into a Deployment
+    body: |
+      Create `app/deployment.yaml` with `apiVersion: apps/v1` and `kind: Deployment`.
+      Name it `web-deployment`, set `replicas: 3`, and use label selector `app: web`.
+      In the Pod template, use label `app: web` and run container `nginx` with image `nginx:1.27`.
+    hint: "Create app/deployment.yaml with apiVersion: apps/v1, kind: Deployment, spec.replicas: 3, selector.matchLabels: app: web, and template with matching labels and container."
+    success: Correct. The Deployment controller manages replicas and rolling updates for your Pods.
+  - id: wrap-up
+    type: lesson
+    title: Kubernetes manifest foundations
+    body: |
+      You have mastered the foundational building blocks of Kubernetes:
+
+      - **Pods** represent your running workload containers.
+      - **Resource requests and limits** ensure predictable scheduling and prevent node exhaustion.
+      - **Probes** provide self-healing by restarting unhealthy containers.
+      - **Deployments** provide declarative replication, rolling updates, and fault tolerance.

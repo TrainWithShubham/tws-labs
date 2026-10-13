@@ -1,0 +1,1 @@
+printf 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-deployment\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n        - name: nginx\n          image: nginx:1.27\n' > app/deployment.yaml
