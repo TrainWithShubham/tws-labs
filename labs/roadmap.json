@@ -228,7 +228,7 @@
         {
           "id": "aws-fundamentals",
           "title": "AWS fundamentals",
-          "status": "next",
+          "status": "live",
           "relevance": 98,
           "subtopics": [
             "Cloud computing basics",
@@ -237,7 +237,10 @@
           "video": {
             "title": "AWS Zero To Hero",
             "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerQK70g5dFWZ0hFKv6PeEPW0"
-          }
+          },
+          "labs": [
+            "aws/finops-audit"
+          ]
         },
         {
           "id": "kubernetes",
