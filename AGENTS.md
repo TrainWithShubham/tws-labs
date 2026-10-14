@@ -40,6 +40,7 @@ docs/       authoring.md knowledge-base.md                                     D
   solution. Re-verify provider support before assuming that changed. **State is remote** (S3 + DynamoDB lock) — never suggest local state.
 - **`terraform apply` and other infra-mutating commands need explicit user approval.** If blocked, finish everything else and
   hand back the exact command. Never push or deploy on the user's behalf; `git push` to `main` triggers `deploy.yml`.
+- **Keep the image light.** CI fails when the production image outgrows `image-size-budget.json` (`scripts/check-image-size.js`). Prefer a few-KB shell/Node stub over a new binary; raising the budget needs a reason in the PR and an **Upgrade note**.
 - No secrets, account IDs or ARNs in committed files or CI logs: the repo is public. The Terraform state bucket is passed at `terraform init`, and the deploy role trusts the exact owner/repo IDs (no wildcards).
 - `npm test` must not get worse. Natively on macOS/Windows the pty tests skip (no `/proc`, `ps -s`, pty); the full suite — including
   the isolation tests that need root + `LAB_UID` — runs in the image: `docker run --rm -v "$PWD/test:/app/test:ro" <image> sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'`.

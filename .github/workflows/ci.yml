@@ -28,6 +28,8 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       # The production image, built for the platform Beanstalk Cluster Mode nodes run.
       - run: docker buildx build --platform linux/amd64 --load -t tws-labs:ci .
+      # The image stays light: fail when it grows past the budget in image-size-budget.json.
+      - run: node scripts/check-image-size.js tws-labs:ci
       # Every task of every lab must fail before its solution and pass after it, and follow the house style.
       - run: docker run --rm tws-labs:ci node scripts/validate-labs.js --strict
       # Same tests as above, but as root with LAB_UID set, which turns on the isolation tests.
