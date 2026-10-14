@@ -9,6 +9,7 @@ labs:
   - shell-scripting-basics
   - linux-in-action
   - awk-and-sed
+  - process-management-basics
 video:
   title: Linux For DevOps In One Shot
   url: https://www.youtube.com/watch?v=e01GGTKmtpc
