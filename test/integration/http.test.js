@@ -139,7 +139,7 @@ test('videos: grouped by line, safe links, "Practice" only where a lab is online
     assert.match(track, /<p class="crumb"><a href="\/">Labs<\/a><i>\/<\/i><a href="\/roadmap#devops">DevOps<\/a><i>\/<\/i><span>Linux Fundamentals<\/span><\/p>/);
     assert.match(track, /Watch first: Linux For DevOps In One Shot/);
     assert.equal((track.match(/<li data-status="live">/g) || []).length, loadCatalog(LABS).tracks.find((t) => t.id === 'linux-fundamentals').labs.length, 'every Linux lab is a station on the route (derived from the catalog, so adding a lab needs no test edit)');
-    assert.match(track, /class="wrap track line-devops"/);
+    assert.match(track, /class="wrap track line-devops" data-track="linux-fundamentals"/);
   } finally { app.stop(); }
 });
 
