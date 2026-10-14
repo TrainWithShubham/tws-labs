@@ -16,6 +16,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Kubernetes: exposing Pods with Services**, a lab on ClusterIP Services, label selectors and `port`/`targetPort`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #42).
 
 ### Changed
+- **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.
 - The learner shell now has full `vim` (syntax highlighting; `vi` opens it) and working `man` with the standard manual pages (`man ls`, `man 5 hosts`, `man 7 signal`).
   The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
 

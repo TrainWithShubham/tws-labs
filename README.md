@@ -43,8 +43,8 @@ so anyone can contribute one. The syllabus is adapted from the TrainWithShubham 
 <!-- routes:start -->
 | Route | Online today (labs) | Next |
 |---|---|---|
-| **DevOps** | Linux (6) · Shell scripting (1) · Git and GitHub (4) · Docker (3) · CI/CD with GitHub Actions (4) · Networking (3) | — · +6 later |
-| **Cloud** | Elastic Beanstalk Cluster Mode (1) · Kubernetes (2) | AWS fundamentals · Terraform on AWS · +3 later |
+| **DevOps** | Linux (6) · Shell scripting (1) · Git and GitHub (4) · Docker (3) · Kubernetes (2) · CI/CD with GitHub Actions (4) · Networking (3) | — · +6 later |
+| **Cloud** | Elastic Beanstalk Cluster Mode (1) | AWS fundamentals · Terraform on AWS · +3 later |
 | **AI** | — | Python for DevOps · Building AI agents · Agentic AI for DevOps · +3 later |
 <!-- routes:end -->
 

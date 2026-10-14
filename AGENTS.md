@@ -59,7 +59,7 @@ docs/       authoring.md knowledge-base.md                                     D
   (plus an ion-cyan for AI) used only as thin rules and small rings. No glows, offset shadows, heavy weights or filled chips. Motion budget: the rocket's slow
   glide and a short fade-in; always honour `prefers-reduced-motion`. Space theme lives in details (orbits, porthole rings, the rocket), never in effects.
 - **The roadmap is data:** `labs/roadmap.json` drives the home map, Roadmap, Videos, breadcrumbs and each page's line colour. The catalog is the truth: a `live`
-  topic needs labs, every lab must be on the roadmap (`src/roadmap.js` reports mismatches; tests fail on them). Keep the home map to about six topics per line.
+  topic needs labs, every lab must be on the roadmap (`src/roadmap.js` reports mismatches; tests fail on them). Keep the home map to about seven topics per line.
 
 ## Adding a lab (the systematic path)
 

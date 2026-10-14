@@ -47,7 +47,7 @@ Videos page and every breadcrumb are built from it. Each topic belongs to a line
 
 The catalog decides what is true, and the server reports any mismatch on the home page and in `npm test`: a `live` topic needs labs; a topic
 with labs must be `live`; **every lab must belong to a topic** (so no lab is invisible); unknown tracks or labs are errors.
-Keep the home map calm: about six topics per line at most (live + next); put the rest under `later`.
+Keep the home map calm: about seven topics per line at most (live + next); put the rest under `later`.
 
 `labs/site.yaml` holds `channel: {name, url}` and optional extra `videos:` (https only).
 

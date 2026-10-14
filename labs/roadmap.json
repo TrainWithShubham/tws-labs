@@ -89,6 +89,25 @@
           "track": "docker"
         },
         {
+          "id": "kubernetes",
+          "title": "Kubernetes",
+          "status": "live",
+          "relevance": 99,
+          "also": [
+            "cloud"
+          ],
+          "subtopics": [
+            "Architecture, minikube, EKS",
+            "Pods, deployments, services, secrets",
+            "Volumes, ingress, probes, TLS"
+          ],
+          "video": {
+            "title": "Kubernetes In One Shot",
+            "url": "https://youtu.be/W04brGNgxN4"
+          },
+          "track": "kubernetes"
+        },
+        {
           "id": "github-actions",
           "title": "CI/CD with GitHub Actions",
           "status": "live",
@@ -239,25 +258,6 @@
             "title": "AWS Zero To Hero",
             "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerQK70g5dFWZ0hFKv6PeEPW0"
           }
-        },
-        {
-          "id": "kubernetes",
-          "title": "Kubernetes",
-          "status": "live",
-          "relevance": 99,
-          "also": [
-            "devops"
-          ],
-          "subtopics": [
-            "Architecture, minikube, EKS",
-            "Pods, deployments, services, secrets",
-            "Volumes, ingress, probes, TLS"
-          ],
-          "video": {
-            "title": "Kubernetes In One Shot",
-            "url": "https://youtu.be/W04brGNgxN4"
-          },
-          "track": "kubernetes"
         },
         {
           "id": "terraform",

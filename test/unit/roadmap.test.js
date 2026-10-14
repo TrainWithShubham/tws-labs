@@ -77,7 +77,7 @@ test('the shipped roadmap is valid against the shipped labs, and every line has 
   const r = loadRoadmap(catalog);
   assert.deepEqual(r.problems, []);
   assert.deepEqual(r.domains.map((d) => d.id), ['devops', 'cloud', 'ai']);
-  for (const d of r.domains) assert.ok(onMap(d).length >= 3 && onMap(d).length <= 6, `${d.id} keeps the home map calm (3-6 stations)`);
+  for (const d of r.domains) assert.ok(onMap(d).length >= 3 && onMap(d).length <= 7, `${d.id} keeps the home map calm (3-7 stations)`);
   const live = r.domains.flatMap((d) => d.topics).filter((t) => t.status === 'live');
   assert.equal(live.reduce((n, t) => n + t.labs.length, 0), catalog.tracks.reduce((n, t) => n + t.labs.length, 0), 'every lab is on the map exactly once');
 });
