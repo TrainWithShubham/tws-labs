@@ -1,0 +1,90 @@
+title: Exposing Pods with Kubernetes Services
+level: beginner
+minutes: 12
+summary: Define a ClusterIP Service, connect it with Pod selectors, and map container ports.
+links:
+  - title: Kubernetes Services
+    url: https://kubernetes.io/docs/concepts/services-networking/service/
+resources:
+  - title: Connecting Applications with Services
+    url: https://kubernetes.io/docs/tutorials/services/connect-applications-service/
+    desc: How Kubernetes Services provide stable networking across dynamic Pods.
+  - title: Service Specification Reference
+    url: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+    desc: Complete API documentation for Service ports, selectors, and types.
+steps:
+  - id: service-concept
+    type: lesson
+    title: Why Kubernetes Services exist
+    body: |
+      You won't need a running Kubernetes cluster for this lab. You'll write Kubernetes YAML manifests, and automated checks will validate their structure and configuration.
+
+      In Kubernetes, Pods are ephemeral. Deployments constantly recreate or reschedule Pods, giving each new Pod a different internal IP address.
+
+      If clients had to track dynamic Pod IPs, network calls would constantly break. A **Service** solves this by providing:
+      - A stable internal IP address and DNS name.
+      - Automatic load balancing across matching Pods.
+      - Continuous routing as Pods appear and disappear.
+
+      `ClusterIP` is the default Service type for internal cluster traffic. You will define your Service in `app/service.yaml`.
+  - id: create-service
+    type: task
+    title: Define a basic ClusterIP Service
+    body: |
+      Create `app/service.yaml` containing a Service named `nginx-service`.
+
+      Use `apiVersion: v1` and `kind: Service`. Under `spec`, set `type: ClusterIP`.
+    hint: "Create app/service.yaml with apiVersion: v1, kind: Service, metadata.name: nginx-service, and spec.type: ClusterIP."
+    success: Correct. You created a valid core Kubernetes Service manifest.
+  - id: selector-concept
+    type: lesson
+    title: How Services find matching Pods
+    body: |
+      How does a Service know which Pods should receive its traffic?
+
+      Services use **label selectors**.
+
+      In your workspace, `app/deployment.yaml` defines an Nginx deployment where the Pod template has the label `app: nginx`.
+
+      When you configure `spec.selector.app: nginx` in the Service, the Kubernetes control plane continuously matches all Pods with that label and routes incoming requests to them.
+  - id: service-selector
+    type: task
+    title: Connect the Service to Nginx Pods
+    body: |
+      Inspect `app/deployment.yaml` to confirm the Pod template label (`app: nginx`).
+
+      Then update `app/service.yaml` to add a `selector` block under `spec` with `app: nginx`.
+    hint: "Under spec in app/service.yaml, add selector with app: nginx to match the Deployment Pods."
+    success: Correct. The Service selector now matches the Nginx Deployment Pods.
+  - id: ports-concept
+    type: lesson
+    title: Service ports and container ports
+    body: |
+      A Service forwards incoming traffic to the container running inside the Pod.
+
+      Under `spec.ports`, you define:
+      - `port`: The port that the Service itself exposes inside the cluster. Other services connect to this port.
+      - `targetPort`: The port the application container listens on inside the Pod (in `app/deployment.yaml`, `containerPort: 80`).
+      - `protocol`: Transport protocol (`TCP` by default).
+
+      When `port` and `targetPort` are both `80`, requests sent to the Service on port 80 are routed directly to container port 80.
+  - id: service-ports
+    type: task
+    title: Configure Service port mapping
+    body: |
+      In `app/service.yaml`, add a `ports` list under `spec`.
+
+      Configure a port entry with `protocol: TCP`, `port: 80`, and `targetPort: 80`.
+    hint: "Under spec, add ports with - protocol: TCP, port: 80, and targetPort: 80."
+    success: Correct. Service traffic on port 80 will now route to container port 80.
+  - id: wrap-up
+    type: lesson
+    title: Kubernetes Services recap
+    body: |
+      You have connected a Kubernetes Service to a replicated Deployment:
+
+      - **Deployments** manage the lifecycle and scaling of Pods.
+      - **Services** provide stable discovery and load balancing over dynamic Pod IPs.
+      - **ClusterIP** restricts access to internal cluster traffic by default.
+      - **Selectors** match the labels on running Pods to form the backend endpoint list.
+      - **Port mapping** forwards requests from the Service port to the container targetPort.
