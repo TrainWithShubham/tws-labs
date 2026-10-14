@@ -31,11 +31,14 @@ function orbitArt(domains) {
   let orbits = '', stations = '', labels = '', names = '';
   domains.slice(0, 3).forEach((d, i) => {
     const [rx, ry] = SIZES[i];
-    const topics = d.topics.filter((t) => t.status !== 'later').slice(0, 6);
+    const topics = d.topics.filter((t) => t.status !== 'later').slice(0, 7);
     const phase = [0.35, 2.35, 4.0][i];
     orbits += `<ellipse rx="${rx}" ry="${ry}" class="orbit ${lineClass(d.id)}"/>`;
     topics.forEach((t, k) => {
-      const p = local(rx, ry, phase + (k / Math.max(topics.length, 1)) * Math.PI * 2);
+      let a = phase + (k / Math.max(topics.length, 1)) * Math.PI * 2;
+      const gap = ((a + Math.PI / 2 + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;   // angle from the orbit's name at the top
+      if (Math.abs(gap) < 0.4) a += (gap < 0 ? -1 : 1) * (0.4 - Math.abs(gap));  // keep stations clear of that caption
+      const p = local(rx, ry, a);
       const st = t.status === 'live' ? 'live' : t.status === 'building' ? 'building' : 'next';
       stations += `<g class="st ${lineClass(d.id)}" data-status="${st}" transform="translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})">${st === 'live' ? '<circle r="12" class="halo"/>' : ''}<circle r="7" class="ring"/>${st === 'live' ? '<circle r="2.8" class="core"/>' : ''}</g>`;
       if (t.status === 'live') {                      // label sits just outside the orbit, away from the hub, so labels never collide

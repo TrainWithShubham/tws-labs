@@ -59,6 +59,8 @@ test('home: a calm map - live topics link to labs, next topics are plain, later 
     for (const hidden of ['Ansible', 'Jenkins', 'OpenTelemetry', 'Helm', 'AIOps']) assert.ok(!html.includes(hidden), `${hidden} stays on the roadmap page`);
     for (const col of html.split('<div class="col ').slice(1)) assert.ok((col.match(/<li data-status=/g) || []).length <= 7, 'each route keeps to seven stations');
     assert.match(html, /6 more on the roadmap/);
+    const devopsLine = loadRoadmap(loadCatalog(LABS)).domains.find((d) => d.id === 'devops').topics.filter((t) => t.status !== 'later').length;
+    assert.equal((html.match(/class="st line-devops"/g) || []).length, devopsLine, 'the hero orbit draws every DevOps station on the map');
     assert.match(html, /&#8644; DevOps/, "an interchange is hinted");
     assert.match(html, /href="\/lab\/linux-fundamentals\/navigating"|href="\/t\/linux-fundamentals"/, 'the main call to action launches the first lab');
     for (const os of ['windows', 'macos', 'linux']) assert.match(html, new RegExp(`role="tab" id="tab-${os}"`));
