@@ -20,8 +20,8 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ### Fixed
 - The HTTP tests no longer hardcode how many topics are live or have a "Practice" link, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #30).
-
 - The lab page stops polling `/session/remaining` once the session ends (terminal closed, time ran out or End lab). Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #36).
+- Track pages now carry `data-track` on their wrapper, which the progress script needs to draw each track's completion. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #38, #39).
 
 - Station link resolution in the roadmap loader simplifies redundant ternary logic when routing to a track page (#40).
 

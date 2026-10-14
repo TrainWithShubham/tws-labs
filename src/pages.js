@@ -227,7 +227,7 @@ function trackBody(track, place) {
   parts.push([track.title, '']);
   const video = track.video
     ? `<a class="vlink" href="${esc(track.video.url)}" target="_blank" rel="noopener noreferrer">${YT_ICON}<span>Watch first: ${esc(track.video.title)}</span></a>` : '';
-  return `<div class="wrap track ${line}">${crumb(parts)}
+  return `<div class="wrap track ${line}" data-track="${track.id}">${crumb(parts)}
     <h1 class="page-title">${esc(track.title)}</h1><p class="lede">${esc(track.description)}</p>
     <div class="track-meta"><span class="meta" data-track-progress="${track.id}" data-labs="${track.labs.map((l) => l.id).join(',')}"></span>${video}</div>
     <ol class="route labs">${items}</ol></div>`;
