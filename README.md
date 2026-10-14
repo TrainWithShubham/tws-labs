@@ -8,14 +8,14 @@
 [![CI](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/TrainWithShubham/tws-labs?style=flat-square&color=7b52c3)](https://github.com/TrainWithShubham/tws-labs/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Labs](https://img.shields.io/badge/labs-23-7b52c3?style=flat-square)](#whats-online)
-[![Graded tasks](https://img.shields.io/badge/graded%20tasks-121-f4b860?style=flat-square)](#how-it-works)
+[![Labs](https://img.shields.io/badge/labs-24-7b52c3?style=flat-square)](#whats-online)
+[![Graded tasks](https://img.shields.io/badge/graded%20tasks-124-f4b860?style=flat-square)](#how-it-works)
 [![Runs on](https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey?style=flat-square)](#run-it-locally)
 [![Stars](https://img.shields.io/github/stars/TrainWithShubham/tws-labs?style=flat-square)](https://github.com/TrainWithShubham/tws-labs/stargazers)
 <!-- badges:end -->
 
 <!-- pitch:start -->
-**23 labs · 121 graded tasks · every task proven solvable by a script.**
+**24 labs · 124 graded tasks · every task proven solvable by a script.**
 <!-- pitch:end -->
 
 <img src="docs/media/lab-demo.gif" alt="A learner presses Check on a Docker lab: a wrong answer gets an amber hint, the right one turns green" width="900">
@@ -44,7 +44,7 @@ so anyone can contribute one. The syllabus is adapted from the TrainWithShubham 
 | Route | Online today (labs) | Next |
 |---|---|---|
 | **DevOps** | Linux (6) · Shell scripting (1) · Git and GitHub (4) · Docker (3) · CI/CD with GitHub Actions (4) · Networking (3) | — · +6 later |
-| **Cloud** | Elastic Beanstalk Cluster Mode (1) · Kubernetes (1) | AWS fundamentals · Terraform on AWS · +3 later |
+| **Cloud** | Elastic Beanstalk Cluster Mode (1) · Kubernetes (2) | AWS fundamentals · Terraform on AWS · +3 later |
 | **AI** | — | Python for DevOps · Building AI agents · Agentic AI for DevOps · +3 later |
 <!-- routes:end -->
 
@@ -121,6 +121,7 @@ Labs written by people outside the core team. Thank you.
 | Ignoring files with .gitignore (Git and GitHub) | [@srdangat](https://github.com/srdangat) | [#27](https://github.com/TrainWithShubham/tws-labs/pull/27) |
 | Pod and Deployment anatomy (Kubernetes) | [@cloudwithpreetham](https://github.com/cloudwithpreetham) | [#35](https://github.com/TrainWithShubham/tws-labs/pull/35) |
 | Text processing with awk and sed (Linux Fundamentals) | [@srdangat](https://github.com/srdangat) | [#32](https://github.com/TrainWithShubham/tws-labs/pull/32) |
+| Exposing Pods with Services (Kubernetes) | [@srdangat](https://github.com/srdangat) | [#42](https://github.com/TrainWithShubham/tws-labs/pull/42) |
 
 ## Contributing and security
 

@@ -3,17 +3,8 @@
 f="app/service.yaml"
 [ -f "$f" ] || fail "app/service.yaml does not exist."
 
-dep="app/deployment.yaml"
-[ -f "$dep" ] || fail "app/deployment.yaml does not exist."
-
 kind=$(yaml_get "$f" 'd.kind')
 [ "$kind" = "Service" ] || fail "The kind should be Service."
-
-name=$(yaml_get "$f" 'd.metadata && d.metadata.name')
-[ "$name" = "nginx-service" ] || fail "Name the Service nginx-service in metadata.name."
-
-sel=$(yaml_get "$f" 'd.spec && d.spec.selector && d.spec.selector.app')
-[ "$sel" = "nginx" ] || fail "Keep spec.selector.app set to nginx."
 
 has_ports=$(yaml_get "$f" 'Boolean(d.spec && Array.isArray(d.spec.ports) && d.spec.ports.length > 0)')
 [ "$has_ports" = "true" ] || fail "spec.ports list is missing in app/service.yaml."

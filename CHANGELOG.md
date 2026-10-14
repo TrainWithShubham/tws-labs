@@ -13,6 +13,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
 - **Kubernetes** is now a live topic with its first lab, **Pod and Deployment anatomy**: Pod specs, resource requests and limits, liveness probes and Deployments. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #35).
 - **Linux Fundamentals: text processing with `awk` and `sed`**, a lab on extracting and filtering log columns and rewriting or masking text in a stream. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #32).
+- **Kubernetes: exposing Pods with Services**, a lab on ClusterIP Services, label selectors and `port`/`targetPort`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #42).
 
 ### Changed
 - The learner shell now has full `vim` (syntax highlighting; `vi` opens it) and working `man` with the standard manual pages (`man ls`, `man 5 hosts`, `man 7 signal`).
