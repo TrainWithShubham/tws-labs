@@ -21,7 +21,7 @@ function readJson(file, problems) {
 function hrefFor(labs) {
   if (!labs.length) return '';
   if (labs.length === 1) return `/lab/${labs[0].track}/${labs[0].id}`;
-  return labs.every((l) => l.track === labs[0].track) ? `/t/${labs[0].track}` : `/t/${labs[0].track}`;
+  return `/t/${labs[0].track}`;
 }
 
 function loadRoadmap(catalog, file = DEFAULT_FILE) {
