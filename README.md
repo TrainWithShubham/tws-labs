@@ -18,13 +18,24 @@
 **28 labs · 145 graded tasks · every offline task proven solvable by a script.**
 <!-- pitch:end -->
 
-<img src="docs/media/lab-demo.gif" alt="A learner presses Check on a Docker lab: a wrong answer gets an amber hint, the right one turns green" width="900">
+<img src="docs/media/lab-demo.gif" alt="A learner types a command but forgets Enter and Check says so, then a missed task gets tiered hints, then skipping ahead sets up the files the next task needs, and Check turns green" width="900">
 
 </div>
 
 Not a simulator, not a quiz: each task runs a check script against the real state of a real Linux sandbox. Run it on your own
 machine (**Windows, macOS or Linux**, one command, no account) or use the hosted version, which runs on [AWS Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/Welcome.html). Labs are plain YAML and shell scripts,
 so anyone can contribute one. The syllabus is adapted from the TrainWithShubham DevOps roadmap (`labs/roadmap.json`).
+
+## What's new in 1.2
+
+- **Skip never dead-ends.** Jump past a task and the lab sets up the files the next one needs, and tells you. A command you typed but forgot to run is called out ("press Enter"), hints come in tiers, **Restart lab** gives you fresh files, and when a session ends you are told why.
+- **Kubernetes is a four-lab track** (Pods, Services, ConfigMaps and Secrets, fixing a broken manifest), all graded on the files you write, no cluster needed.
+- **AWS on your own account.** The first lab (AWS CLI first steps) runs the real `aws` CLI against a free-tier footprint you clean up yourself; start it with `AWS=1 ./start_local_labs.sh` ([setup](docs/aws-labs.md)). The hosted site never asks for AWS keys.
+- **New labs from the community:** `.gitignore`, awk and sed, process management, Services, and artifacts and caching. Thank you to everyone in [Community labs](#community-labs).
+- **Trusted checks and a calmer UI:** every offline lab is proven with wrong answers and valid alternatives, played through the real server, and tested in real Chrome. Text meets AA contrast, focus is visible, and the terminal never traps the keyboard.
+- **Teams that self-host** can count usage without storing anything personal ([usage counters](#usage-counters-optional-off-by-default)).
+
+Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Start here
 
@@ -35,7 +46,9 @@ so anyone can contribute one. The syllabus is adapted from the TrainWithShubham 
 | Learn Git properly | [Git basics](labs/git-basics) |
 | Understand containers and write a good Dockerfile | [Docker](labs/docker) |
 | Debug "it can't connect" problems | [Networking](labs/networking) |
+| Learn Kubernetes manifests (no cluster needed) | [Kubernetes](labs/kubernetes) |
 | Build a CI/CD pipeline | [CI/CD with GitHub Actions](labs/github-actions) |
+| Practise the AWS CLI on your own account | [AWS CLI first steps](labs/aws/aws-cli-first-steps) (needs [an AWS account](docs/aws-labs.md)) |
 | See what AWS Elastic Beanstalk Cluster Mode really is | [Cluster Mode lab](labs/aws/elastic-beanstalk-cluster-mode) |
 
 ## What's online
@@ -85,6 +98,11 @@ Prefer plain Compose? `docker compose up --build` does the same thing.
 - *Port in use*: pick another with `LABS_PORT`.
 
 ## What you get
+
+- **A lab page that helps without giving the answer.** Lesson on the left, a live Linux terminal on the right. A miss gets an amber nudge, then up to three tiers of hints; a pass turns green with a short confirmation.
+- **Never stuck.** **Skip** and the step dots work: the lab prepares the files a later task needs. **Restart lab** starts over with fresh files. Your progress (tasks and labs) stays in your browser.
+- **Honest checks.** Each task is graded on real state, and CI proves it three ways: the check fails before the solution and passes after, it rejects wrong-but-plausible answers and accepts valid alternatives, and the whole lab is played through the real server.
+- **Accessible.** AA contrast, a visible focus ring, a skip link, and `Shift+Tab` leaves the terminal.
 
 The home page is a quiet map of three routes; the roadmap lists every topic and its status.
 
@@ -165,15 +183,17 @@ built from `labs/roadmap.json`: change a topic's `status` or add a topic there, 
 | `src/` | The server: sessions, sandbox, loader, profiles, header/pages |
 | `public/` | Browser code and the stylesheets |
 | `start_local_labs.sh` | One-command local start for macOS, Linux and Windows (Git Bash / WSL) |
-| `scripts/` | `validate-labs.js` (the contribution gate), `new-lab.js`, `check-hygiene.js` |
-| `test/` | Unit and integration tests (the integration tests spawn real shells; they need Linux, i.e. the image) |
+| `scripts/` | `validate-labs.js` (the contribution gate: fail-before/pass-after, `cases/`, skip-ahead), `lint-labs.js`, `new-lab.js`, `check-hygiene.js`, `record-demo.js` (re-records the README GIF), AWS helpers |
+| `test/` | `unit/` and `integration/` (the integration tests spawn real shells; they need Linux, i.e. the image) and `e2e/` (real-Chrome browser tests) |
 | `deploy/` | Hosted deployment on AWS Elastic Beanstalk Cluster Mode: Terraform, deploy scripts, smoke test |
-| `docs/` | Authoring guide, Elastic Beanstalk research notes |
+| `docs/` | Authoring guide, the AWS-labs guide, Elastic Beanstalk research notes |
 
 ## Tests
 
 ```bash
 npm ci && npm run test:unit          # fast, anywhere
+npm run lab:check -- <track>/<lab>   # prove one lab: fail-before/pass-after, cases, skip-ahead
+./start_local_labs.sh && npm run e2e  # real-Chrome browser tests against the running app
 docker compose run --rm -v "$PWD/test:/app/test:ro" labs sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'
 ```
 

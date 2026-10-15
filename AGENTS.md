@@ -16,12 +16,13 @@ It is also a content engine: the Sept 2026 Elastic Beanstalk re-release ("Beanst
 ## Layout
 
 ```
-src/        server.js (createApp factory: wires the parts) router.js routes/{system,site,session}.js terminal.js (WebSocket + pty) guards.js http.js usage.js config.js (the two profiles)
+src/        server.js (createApp factory: wires the parts) router.js routes/{system,site,session}.js terminal.js (WebSocket + pty) guards.js http.js usage.js lab-env.js cases.js config.js
             lib.js sandbox.js loader.js roadmap.js lint.js ui.js pages.js stats.js banner.js
-public/     lab.js progress.js and the stylesheets (served as /app.css)        labs/  all lab content + roadmap.json + site.yaml + lib.sh
-scripts/    validate-labs.js new-lab.js check-hygiene.js import-roadmap.js                       test/  unit/ integration/
-deploy/     hosted deployment: infra/ (Terraform) 01-04 *.sh smoke-test.py README.md CHECKLIST.md
-docs/       authoring.md knowledge-base.md                                     Dockerfile, docker-compose.yml at the root
+public/     lab.js progress.js (browser-side helpers, tested) and the stylesheets (served as /app.css)        labs/  all lab content + roadmap.json + site.yaml + lib.sh
+scripts/    validate-labs.js lint-labs.js new-lab.js check-hygiene.js check-image-size.js readme-stats.js record-demo.js aws-lab-creds.sh aws-lab-sweep.sh
+test/       unit/ integration/ (Linux; only lab-flow.test.js may drive ptys) e2e/ (real Chrome, `npm run e2e`) support/ (fake aws, test-only)
+deploy/     hosted deployment: infra/ (Terraform) 01-04 *.sh smoke-test.py learner-role.yaml README.md CHECKLIST.md
+docs/       authoring.md aws-labs.md knowledge-base.md project-state.md media/     Dockerfile, Dockerfile.aws, docker-compose.yml, docker-compose.aws.yml at the root
 ```
 
 ## Non-negotiable conventions
@@ -46,6 +47,13 @@ docs/       authoring.md knowledge-base.md                                     D
 - `npm test` must not get worse. Natively on macOS/Windows the pty tests skip (no `/proc`, `ps -s`, pty); the full suite — including
   the isolation tests that need root + `LAB_UID` — runs in the image: `docker run --rm -v "$PWD/test:/app/test:ro" <image> sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'`.
   Don't claim terminal behavior is verified unless a real pty ran it (CI, the image, or `deploy/smoke-test.py` against a live server).
+
+## How labs are proven (keep all of these true for every offline lab)
+
+- `node scripts/validate-labs.js --strict`: each check fails before its solution and passes after; every `cases/<task>/` near miss fails and every `ok-` alternative passes; every task is solvable after skipping ahead (`setup/<task>.sh`, or a `# no-skip:` marker).
+- CI plays every offline lab through the real WebSocket server path (`test/integration/lab-flow.test.js`) and drives real Chrome (`npm run e2e`: the learner journey, hints, Restart, Skip, axe accessibility, hosted profile and session ends).
+- Account labs (`requires: aws`) never run offline: the hosted site shows them read-only and refuses their sessions; locally only their `AWS_*` variables reach the shell (`src/lab-env.js`). They are tested with a fake `aws` (`test/support/`) and proven once on a real account; do not claim more than was run.
+- **Releases:** move `[Unreleased]` in `CHANGELOG.md` to the new version and date, bump `version` in `package.json` and `package-lock.json`, run `npm run readme:stats`, re-record the README GIF if the lab page changed (`scripts/record-demo.js`), then tag `vX.Y.Z` and create the GitHub release from the changelog section, only when asked.
 
 ## Engine invariants (security — don't weaken without a test that says why)
 

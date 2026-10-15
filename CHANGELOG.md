@@ -8,49 +8,62 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-15
+
+### Highlights
+- **Skip never dead-ends, and every miss tells you what to do next.** Skipping ahead sets up the files the next task needs; a command you typed but did not run is called out; hints come in tiers; a button restarts the lab with fresh files; and when a session ends you are told why.
+- **Kubernetes is a track of four labs**, and **AWS gets its first lab on your own account**: real `aws` commands against a free-tier footprint you clean up yourself, with a least-privilege role and a budget alarm.
+- **Four labs from the community** (awk and sed, process management, Kubernetes Services, `.gitignore`), plus artifacts and caching: see the credits below.
+- **Every check is now proven both ways.** About 370 near-miss and valid-alternative cases across the 27 offline labs, a play-through of every lab over the real server path, and browser tests in real Chrome. That found, and fixed, eight checks that were too lax or too strict.
+- **Accessible and calmer**: AA contrast, visible keyboard focus, a skip link, no keyboard trap in the terminal.
+- **For teams that self-host**: opt-in usage counters and a token-protected `/admin/stats` (with the hardest tasks), per-audience invite codes with a rotation runbook.
+
 ### Added
-- **Skip never dead-ends.** If you skip or jump to a task that needs files from an earlier one, the lab sets up what it needs (and moves your shell to the right folder), and tells you. Labs ship this as `setup/<task>.sh`; `validate-labs` now proves every task is solvable after skipping ahead. All 27 offline labs pass: 38 tasks got a setup, and one (Elastic Beanstalk cleanup) says it needs the step before.
-- **Near-miss cases for labs**: authors can add `cases/<task>/` scripts (wrong answers the check must reject, `ok-` alternatives it must accept) and `validate-labs` proves them. Every offline lab now has them: about 370 cases across 27 labs.
-- **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
-- **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
-- **Kubernetes** is now a live topic with its first lab, **Pod and Deployment anatomy**: Pod specs, resource requests and limits, liveness probes and Deployments. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #35).
-- **Linux Fundamentals: text processing with `awk` and `sed`**, a lab on extracting and filtering log columns and rewriting or masking text in a stream. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #32).
-- **Kubernetes: exposing Pods with Services**, a lab on ClusterIP Services, label selectors and `port`/`targetPort`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #42).
-- **Usage counters** (opt-in): sessions per lab, distinct visitors per day, and task pass/fail per lab, with no IP address or invite code stored. Read them at `/admin/stats` with an `ADMIN_TOKEN`, or from the `usage` log lines. Off by default for self-hosters (`USAGE_STATS=1`); on for the hosted deployment.
-- **Task progress** is remembered in your browser: a track page shows "3 of 5 tasks" for a lab you started, and the lab's step dots show which tasks you passed on an earlier visit. The terminal still starts fresh each time, so earlier tasks are marked, not restored. Nothing leaves your browser.
-- A runbook for giving each audience its own invite code and rotating one (`deploy/README.md`).
-- **Linux Fundamentals: process management** (`ps`, `top`, background jobs, `kill` and `kill -9`). Contributed by Muhammad Ishaq ([@techwithiishaq](https://github.com/techwithiishaq), #45).
-- `npm run lab:lint` now gives advice on labs: tasks without a success message, checks that only read the typed history, hints that repeat the answer or are too short, and labs over 15 minutes. It never fails a build; `--notes` lists them all.
-- **Hints in tiers.** A task's `hint` in `lab.yaml` can be a list of up to three, gentle to specific. After a failed Check a "Need a hint?" button reveals them one at a time. A single hint works as before.
-- **Restart lab** button: starts a fresh session with fresh starting files and a clean command history, after a second click to confirm. Your "done before" marks stay.
-- `/admin/stats` lists the **hardest tasks**: the lowest pass rates over at least 5 graded attempts, so vague tasks and unfair checks stand out.
-- **Kubernetes: two new labs.** *ConfigMaps and Secrets* (settings as env vars and files, base64 Secrets, `secretKeyRef`) and *Fix the broken manifest* (a removed API version, a selector that matches nothing, an unpinned image, a wrong `targetPort`).
-- **Labs can say `requires: aws`** (for lab authors): such a lab uses the learner's own AWS account, so it opens as a read-only walkthrough on the hosted site (which never asks for AWS keys) and runs only on a learner's own machine, where their AWS variables are passed to the shell and checks for these labs only. The offline validator skips them. First account labs follow.
-- **AWS overlay for labs that use your own AWS account**: `AWS=1 ./start_local_labs.sh` builds an image with the AWS CLI v2 (trimmed to the services the labs use, about +190 MB, only with `AWS=1`) and passes your `AWS_*` variables to those labs only. Includes `deploy/learner-role.yaml` (a least-privilege role and a $5 budget alarm, for your own account) and `scripts/aws-lab-creds.sh` (one-hour credentials, so no long-lived keys). Guide: `docs/aws-labs.md`.
-- **AWS: AWS CLI first steps**, the first lab that runs on your own AWS account (identity, an S3 bucket, tags, versioning, `--query`, cleanup). Needs the AWS overlay (`AWS=1 ./start_local_labs.sh`, see `docs/aws-labs.md`); also adds `scripts/aws-lab-sweep.sh` to delete leftovers (dry run by default).
+- **Labs**
+  - **Kubernetes** (now a live topic on the DevOps line, with a cross-link to Cloud): *Pod and Deployment anatomy* (Contributed by Preetham Pereira, [@cloudwithpreetham](https://github.com/cloudwithpreetham), #35), *Exposing Pods with Services* (Sanket Dangat, [@srdangat](https://github.com/srdangat), #42), *ConfigMaps and Secrets* and *Fix the broken manifest*.
+  - **AWS CLI first steps**: the first lab on your own AWS account (identity, an S3 bucket, tags, versioning, `--query`, cleanup). Needs the AWS overlay (`AWS=1 ./start_local_labs.sh`, see `docs/aws-labs.md`).
+  - **Git and GitHub: ignoring files with `.gitignore`** (Sanket Dangat, #27) and **GitHub Actions: artifacts and caching** (Preetham Pereira, #26).
+  - **Linux Fundamentals: text processing with `awk` and `sed`** (Sanket Dangat, #32) and **process management** (`ps`, `top`, background jobs, `kill` and `kill -9`; Muhammad Ishaq, [@techwithiishaq](https://github.com/techwithiishaq), #45).
+- **A better lab page**
+  - **Skip never dead-ends.** If you skip or jump to a task that needs files from an earlier one, the lab sets up what it needs (and moves your shell to the right folder), and tells you.
+  - **Hints in tiers**: a "Need a hint?" button reveals up to three, gentle to specific, after a failed Check.
+  - **Restart lab**: a fresh session with fresh starting files and a clean command history, after a second click to confirm. Your "done before" marks stay.
+  - **Task progress** is remembered in your browser: a track page shows "3 of 5 tasks" for a lab you started, and the step dots show which tasks you passed on an earlier visit. Nothing leaves your browser.
+- **Self-hosting and teams**
+  - **Usage counters** (opt-in, `USAGE_STATS=1`): sessions per lab, distinct visitors per day, task pass/fail and sessions per invite code, with no IP address or invite code stored. Read them at `/admin/stats` with an `ADMIN_TOKEN`, or from the `usage` log lines. The page also lists the **hardest tasks**.
+  - **AWS overlay** for labs that use your own AWS account: `AWS=1 ./start_local_labs.sh` builds an image with the AWS CLI v2 (trimmed to the services the labs use, about +170 MB, only with `AWS=1`) and passes your `AWS_*` variables to those labs only. Includes `deploy/learner-role.yaml` (a least-privilege role and a $5 budget alarm, for your own account), `scripts/aws-lab-creds.sh` (one-hour credentials, so no long-lived keys) and `scripts/aws-lab-sweep.sh` (delete leftovers; a dry run by default). Guide: `docs/aws-labs.md`.
+  - A runbook for giving each audience its own invite code and rotating one (`deploy/README.md`).
+- **For lab authors**
+  - **Near-miss cases**: `cases/<task>/` scripts (wrong answers the check must reject, `ok-` alternatives it must accept), proven by `validate-labs`.
+  - **Setup for skipping ahead**: `setup/<task>.sh` (with `# cwd:` and `# no-skip:` lines); `validate-labs` proves every task is solvable after skipping ahead.
+  - `lab.yaml` can say `requires: aws`, and `hint` can be a list of tiers.
+  - `npm run lab:lint` gives advice: tasks without a success message, checks that only read the typed history, hints that repeat the answer or are too short, labs over 15 minutes, tasks without a near-miss case. It never fails a build; `--notes` lists them.
+  - **Real-browser tests** (`npm run e2e`, Chrome via puppeteer-core as a dev dependency): a learner's whole journey, hints, Restart, Skip, accessibility with axe-core, and the hosted profile (invite code, seat cap, idle and time-limit ends, two tabs, a server restart). CI runs them and keeps the screenshots.
+  - CI plays **every offline lab through the real WebSocket server path**, fails when the image outgrows its size budget (`image-size-budget.json`, 520 MB) and builds the AWS overlay.
+  - The `server.js` request handler is split into a router, route modules, guards and the terminal (no behaviour change).
 
 ### Changed
-- **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.
-- The learner shell now has full `vim` (syntax highlighting; `vi` opens it) and working `man` with the standard manual pages (`man ls`, `man 5 hosts`, `man 7 signal`).
-  The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
+- **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line and its orbit draws all seven.
+- The learner shell has full `vim` (syntax highlighting; `vi` opens it) and working `man` with the standard manual pages. The image grows by about 80 MB uncompressed.
+- The README pitch now says "every **offline** task proven solvable by a script": account labs are proven on a real account, not in CI.
+- A failed Check's button reads "Check again" instead of an error-like label.
 
 ### Fixed
-- **When a session ends you are told why, in plain words** (idle, time limit, you typed `exit`, the connection dropped or the server restarted), with "Press Restart lab to start again", instead of `[session ended: 4000]`. The countdown no longer keeps a stale value after the session ends, and the waiting-for-a-seat messages wrap at word boundaries instead of splitting a word at the terminal edge.
+- **A command you typed but did not run** is noticed: a failed Check says "You have a command typed but not run yet. Press Enter", and the keyboard goes back to the terminal so Enter works at once.
+- **When a session ends you are told why**, in plain words (idle, time limit, you typed `exit`, the connection dropped or the server restarted), with "Press Restart lab to start again", instead of `[session ended: 4000]`. The countdown no longer keeps a stale value, and waiting-for-a-seat messages wrap at word boundaries.
+- **Italics** (`*word*`, `_word_`) in lab text render as emphasis instead of showing the asterisks; step buttons no longer wrap into two lines.
+- **Accessibility**: faint text meets the WCAG AA contrast ratio on the dark theme; keyboard focus shows a thin ring everywhere, with a skip link and a `main` landmark; `Shift+Tab` leaves the terminal (Tab still goes to the shell); the logo no longer reads twice to screen readers.
+- **Checks that were too lax or too strict**, found by the new cases: Navigating (`cat readme.txt` from the wrong folder passed), Files (extra lines passed "exactly"), Shell scripting (a single-quoted `$NAME` passed), Services (omitting `type` was rejected), Process management (`pkill` and `kill -KILL` were rejected), Dockerfile craft (copying only the app file was rejected), GitHub Actions (an empty `name:` passed; an `exclude` by one key was rejected), Ports and sockets (typing the expected error by hand passed).
+- The lab page stops polling `/session/remaining` once the session ends. Reported by Preetham Pereira (#36).
+- Track pages carry `data-track` on their wrapper, which the progress script needs (#38, #39), and the roadmap loader's station link no longer has two identical branches (#40, #41). Both reported and fixed by Preetham Pereira.
+- The HTTP tests no longer hardcode how many topics are live, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira (#30).
 - `LAB_IDLE_SEC` and `LAB_HARD_CAP_SEC` (testing knobs, seconds) next to the minute settings.
-- **Accessibility**: faint text (labels, notes, tags) now meets the WCAG AA contrast ratio on the dark theme; keyboard focus shows a thin ring everywhere, with a skip link to the content and a `main` landmark; `Shift+Tab` leaves the terminal, so a keyboard user is never trapped in it (Tab still goes to the shell); the logo no longer reads twice to screen readers. A browser test (axe-core) now keeps every page type free of serious violations.
-- **Checks that were too lax or too strict, found by the new near-miss cases:** Navigating (`cat readme.txt` from the wrong folder passed), Files (extra lines passed "exactly"), Shell scripting (a single-quoted `$NAME` passed), Services (omitting `type` was rejected despite the message saying it is allowed), Process management (`pkill` and `kill -KILL` were rejected), Dockerfile craft (copying only the app file was rejected), GitHub Actions (an empty `name:` passed; an `exclude` by one key was rejected), Ports and sockets (typing the expected error by hand passed).
-- **A command you typed but did not run** is now noticed: a failed Check says "You have a command typed but not run yet. Press Enter", and the keyboard goes back to the terminal so Enter works at once.
-- **Italics** (`*word*`, `_word_`) in lab text render as emphasis instead of showing the asterisks.
-- **Step buttons no longer wrap** into two lines ("Another / hint"); the Check button reads "Check again" after a miss instead of an error-like label.
-- The HTTP tests no longer hardcode how many topics are live or have a "Practice" link, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #30).
-- The lab page stops polling `/session/remaining` once the session ends (terminal closed, time ran out or End lab). Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #36).
-- Track pages now carry `data-track` on their wrapper, which the progress script needs to draw each track's completion. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #38, #39).
-- The roadmap loader's station link no longer has two identical branches. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #40, #41).
 
 ### Upgrade notes
-- New, optional: `docker-compose.aws.yml` and `Dockerfile.aws` (the AWS overlay). The default image, the hosted deployment and Terraform are unchanged.
-- Optional repo secrets `ADMIN_TOKEN` (turns on `/admin/stats`) and `USAGE_SALT` (consistent visitor counts across replicas). `deploy.yml` passes both to `03-deploy.sh`; neither is required. The hosted app now sets `USAGE_STATS=1`.
-- The runtime image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform or settings changes.
+- **Local:** rebuild the image once (`./start_local_labs.sh` does it for you). No settings changed. To try the AWS lab: set up the role (`docs/aws-labs.md`) and start with `AWS=1`.
+- **Hosted:** the image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform changes. The hosted app now sets `USAGE_STATS=1`; its `usage` lines appear in the application log group. Optional repo secrets: `ADMIN_TOKEN` (turns on `/admin/stats`) and `USAGE_SALT` (consistent visitor counts across replicas); neither is required.
+- **New, optional files:** `docker-compose.aws.yml` and `Dockerfile.aws` (the AWS overlay). The default image is unchanged in purpose and stays under the 520 MB CI budget.
+- **Authors:** `npm ci` now also installs `puppeteer-core` and `axe-core` (dev only, not in the image) for `npm run e2e`.
 
 ## [1.1.0] - 2026-10-06
 

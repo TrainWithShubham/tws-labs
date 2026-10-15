@@ -1,8 +1,8 @@
 {
   "name": "tws-labs",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Hands-on Linux, Git and AWS labs in a real terminal - run locally in Docker or hosted",
+  "description": "Hands-on DevOps, Cloud and AI labs in a real terminal, graded on real state - run locally in Docker or hosted",
   "license": "MIT",
   "homepage": "https://github.com/TrainWithShubham/tws-labs#readme",
   "repository": {
