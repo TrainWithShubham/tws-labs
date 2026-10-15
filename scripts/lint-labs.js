@@ -5,7 +5,7 @@
 //     print a nudge when they fail, and do not change the learner's files
 //   - a task whose check is the same as another lab's check (a repeated task) is flagged
 //   - cases/ files are validated (names, one command per line, tasks that exist)
-//   - advice ("note", never fails a build, even with --strict): no success message, no near-miss case, a check that only reads the typed
+//   - advice ("note", never fails a build, even with --strict): no success message, no near-miss case (not for account labs, which use test/unit tests against a fake aws), a check that only reads the typed
 //     history, a hint that is too short or repeats the command from the task, labs over 15 minutes
 // `npm run lab:check` runs this and then the real proof (each check fails before its solution and passes after).
 const fs = require('fs');
@@ -94,7 +94,7 @@ function lintLabs({ labsDir, only } = {}) {
         const solution = fs.readFileSync(step.solutionFile, 'utf8');
         scripts.push({ file: step.checkFile, what: `checks/${step.id}.sh` }, { file: step.solutionFile, what: `solutions/${step.id}.sh` });
         adviseTask(step).forEach((m) => add(id, 'info', m));
-        if (!taskCases.cases.some((c) => c.task === step.id)) add(id, 'info', `task "${step.id}" has no cases/${step.id}/ near miss: add a wrong-but-plausible answer the check must reject (and an ok- alternative it must accept)`);
+        if (!lab.requires && !taskCases.cases.some((c) => c.task === step.id)) add(id, 'info', `task "${step.id}" has no cases/${step.id}/ near miss: add a wrong-but-plausible answer the check must reject (and an ok- alternative it must accept)`);
         if (onlyReadsHistory(check)) add(id, 'info', `checks/${step.id}.sh only reads the command history: it grades what was typed, not what happened. Check the resulting state (a file, a process, a repo) where you can`);
         if (!/(^|\n)\s*(\.|source)\s+"?\$LAB_LIB"?/.test(check)) add(id, 'error', `checks/${step.id}.sh must start with  . "$LAB_LIB"  (it provides fail, ran, file_has ...)`);
         if (!/\bfail\b|exit\s+1/.test(check)) add(id, 'error', `checks/${step.id}.sh never fails: use  fail "what is still missing"`);

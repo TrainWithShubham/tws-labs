@@ -1,0 +1,1 @@
+printf '%s\n' '      - uses: aws-actions/configure-aws-credentials@v4' '        with:' '          role-to-assume: arn:aws:iam::123456789012:role/ci-release' '          aws-region: eu-west-1' >> shop/.github/workflows/deploy.yml

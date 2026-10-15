@@ -9,6 +9,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **Near-miss cases for labs**: authors can add `cases/<task>/` scripts (wrong answers the check must reject, `ok-` alternatives it must accept) and `validate-labs` proves them. Every offline lab now has them: about 370 cases across 27 labs.
 - **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
 - **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).
 - **Kubernetes** is now a live topic with its first lab, **Pod and Deployment anatomy**: Pod specs, resource requests and limits, liveness probes and Deployments. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #35).
@@ -33,6 +34,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
   The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
 
 ### Fixed
+- **Checks that were too lax or too strict, found by the new near-miss cases:** Navigating (`cat readme.txt` from the wrong folder passed), Files (extra lines passed "exactly"), Shell scripting (a single-quoted `$NAME` passed), Services (omitting `type` was rejected despite the message saying it is allowed), Process management (`pkill` and `kill -KILL` were rejected), Dockerfile craft (copying only the app file was rejected), GitHub Actions (an empty `name:` passed; an `exclude` by one key was rejected), Ports and sockets (typing the expected error by hand passed).
 - **A command you typed but did not run** is now noticed: a failed Check says "You have a command typed but not run yet. Press Enter", and the keyboard goes back to the terminal so Enter works at once.
 - **Italics** (`*word*`, `_word_`) in lab text render as emphasis instead of showing the asterisks.
 - **Step buttons no longer wrap** into two lines ("Another / hint"); the Check button reads "Check again" after a miss instead of an error-like label.

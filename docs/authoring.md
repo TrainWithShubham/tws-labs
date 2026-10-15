@@ -186,6 +186,18 @@ A lab that says `requires: aws` runs against the learner's **own AWS account**, 
 it types into the real terminal, clicks Check, and asserts what a learner sees (green confirmation, hint tiers, Restart, the "typed but not run" nudge, buttons that do not wrap at 1440/1024/390 px, no console errors).
 CI runs it in its own job and keeps the screenshots as an artifact. Add a flow there whenever you change what a learner sees.
 
+## Near misses and alternatives: `cases/`
+
+A check can be wrong in two directions: too lax (it passes an answer that is not really right) or too strict (it rejects a valid way of doing it). `cases/` proves both:
+
+```
+labs/<track>/<lab>/cases/<task-id>/wrong-typo.sh        leaves a wrong-but-plausible state: the check must FAIL
+labs/<track>/<lab>/cases/<task-id>/ok-other-flag.sh     a valid alternative to the solution: the check must PASS
+```
+
+Write them like solutions (one command per line, no heredocs; use `printf '%s\n' 'line' ... > file` for files). The validator replays the lab up to that task in a fresh sandbox (setup and every earlier solution), runs the case, then grades it. A case that proves a check is lax or strict fails `validate-labs` with a message saying which.
+Aim for two or three per task: the mistake a learner is most likely to make, and the other correct ways to do it (a different flag, a path spelled differently, `pkill` for `kill`). Names use `a-z`, `0-9` and `-`. `npm run lab:lint -- <lab>` notes tasks that have none.
+
 ## Validation rules (`node scripts/validate-labs.js`)
 
 For each task, in order, in a fresh sandbox: check **fails** → solution runs → check **passes**.
