@@ -1,0 +1,94 @@
+title: ConfigMaps and Secrets
+level: beginner
+minutes: 12
+summary: Keep settings and passwords out of the image with a ConfigMap and a Secret wired into a Deployment.
+links:
+  - title: ConfigMaps
+    url: https://kubernetes.io/docs/concepts/configuration/configmap/
+resources:
+  - title: ConfigMaps
+    url: https://kubernetes.io/docs/concepts/configuration/configmap/
+    desc: Non-secret settings as key-value pairs, used as env vars or files.
+  - title: Secrets
+    url: https://kubernetes.io/docs/concepts/configuration/secret/
+    desc: Sensitive values, how they are stored, and how to use them safely.
+steps:
+  - id: intro
+    type: lesson
+    title: Settings do not belong in the image
+    body: |
+      An image should run the same everywhere. What changes between environments (a log level, a database password) lives outside it.
+
+      - A **ConfigMap** holds non-secret settings as key-value pairs.
+      - A **Secret** holds sensitive values. Its values are **base64-encoded**, which is encoding and not encryption: anyone who can read the Secret can decode it.
+
+      You will write both objects in `app/` and wire them into the Deployment already waiting in `app/deployment.yaml`. A Pod can read them as environment variables or as files.
+  - id: configmap
+    type: task
+    title: Write a ConfigMap
+    body: |
+      Create `app/configmap.yaml`: a `ConfigMap` named `app-config` (`apiVersion: v1`) with two entries under `data`:
+      `LOG_LEVEL` set to `debug` and `GREETING` set to `hello`.
+    hint:
+      - "A ConfigMap keeps its entries under a field called data."
+      - "data is a map: each setting is a key with a text value."
+    success: The settings now live in their own object.
+  - id: env-from
+    type: task
+    title: Load every setting as environment variables
+    body: |
+      Edit the container in `app/deployment.yaml` so that **all** keys of `app-config` become environment variables, using `envFrom` with a `configMapRef`.
+    hint:
+      - "envFrom sits next to image, inside the container, and takes a list."
+      - "Each item of envFrom points at one object: a configMapRef with a name."
+    success: The container now starts with LOG_LEVEL and GREETING set.
+  - id: encode
+    type: lesson
+    title: Secrets are encoded, not hidden
+    body: |
+      A Secret's `data` values must be base64. You can make one in your terminal:
+
+      ```
+      echo -n 'hunter2' | base64
+      ```
+
+      `-n` matters: without it the newline becomes part of the value. Decode with `base64 -d` and you get the text back, which is why Secrets need access control, not just a base64 coat of paint.
+  - id: secret
+    type: task
+    title: Write a Secret
+    body: |
+      Create `app/secret.yaml`: a `Secret` named `db-credentials`, `type: Opaque`, with one entry under `data`: `DB_PASSWORD` holding the **base64 encoding** of `s3cr3t`.
+      Work the encoded value out in your terminal.
+    hint:
+      - "Encode with the base64 command, and remember echo -n."
+      - "The encoded value goes in as text under data, in quotes if you like."
+    success: The password is stored as a Secret, encoded as Kubernetes expects.
+  - id: secret-env
+    type: task
+    title: Hand one secret to the container
+    body: |
+      In `app/deployment.yaml`, add an environment variable `DB_PASSWORD` to the container that takes its value from the Secret: `valueFrom` a `secretKeyRef` with `name: db-credentials` and `key: DB_PASSWORD`.
+      Keep the `envFrom` you added.
+    hint:
+      - "A single variable goes under env, not envFrom."
+      - "Instead of a value, the variable has valueFrom, and inside it the reference to a key of a Secret."
+    success: The password reaches the app without ever being written in the Deployment.
+  - id: config-volume
+    type: task
+    title: Mount the ConfigMap as files
+    body: |
+      Settings can also appear as files. In `app/deployment.yaml`, add a volume named `config` backed by the ConfigMap `app-config`, and mount it in the container at `/etc/app`.
+      Keep everything else you added.
+    hint:
+      - "Two places are involved: the Pod lists volumes, and the container lists where to mount them."
+      - "The mount refers to the volume by its name; the volume refers to the ConfigMap by its name."
+    success: Each key of the ConfigMap now shows up as a file under /etc/app.
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      - **ConfigMap** for settings, **Secret** for credentials, both separate from the image.
+      - Use them as environment variables (`envFrom`, `env` + `valueFrom`) or as files (`volumes` + `volumeMounts`).
+      - A Secret is only base64: limit who can read it, and prefer a secrets manager for anything serious.
+
+      Next: the *Fix the broken manifest* lab, where the YAML is wrong and you find out why.

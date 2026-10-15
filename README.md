@@ -8,14 +8,14 @@
 [![CI](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/TrainWithShubham/tws-labs?style=flat-square&color=7b52c3)](https://github.com/TrainWithShubham/tws-labs/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Labs](https://img.shields.io/badge/labs-25-7b52c3?style=flat-square)](#whats-online)
-[![Graded tasks](https://img.shields.io/badge/graded%20tasks-130-f4b860?style=flat-square)](#how-it-works)
+[![Labs](https://img.shields.io/badge/labs-27-7b52c3?style=flat-square)](#whats-online)
+[![Graded tasks](https://img.shields.io/badge/graded%20tasks-139-f4b860?style=flat-square)](#how-it-works)
 [![Runs on](https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey?style=flat-square)](#run-it-locally)
 [![Stars](https://img.shields.io/github/stars/TrainWithShubham/tws-labs?style=flat-square)](https://github.com/TrainWithShubham/tws-labs/stargazers)
 <!-- badges:end -->
 
 <!-- pitch:start -->
-**25 labs · 130 graded tasks · every task proven solvable by a script.**
+**27 labs · 139 graded tasks · every task proven solvable by a script.**
 <!-- pitch:end -->
 
 <img src="docs/media/lab-demo.gif" alt="A learner presses Check on a Docker lab: a wrong answer gets an amber hint, the right one turns green" width="900">
@@ -43,7 +43,7 @@ so anyone can contribute one. The syllabus is adapted from the TrainWithShubham 
 <!-- routes:start -->
 | Route | Online today (labs) | Next |
 |---|---|---|
-| **DevOps** | Linux (7) · Shell scripting (1) · Git and GitHub (4) · Docker (3) · Kubernetes (2) · CI/CD with GitHub Actions (4) · Networking (3) | — · +6 later |
+| **DevOps** | Linux (7) · Shell scripting (1) · Git and GitHub (4) · Docker (3) · Kubernetes (4) · CI/CD with GitHub Actions (4) · Networking (3) | — · +6 later |
 | **Cloud** | Elastic Beanstalk Cluster Mode (1) | AWS fundamentals · Terraform on AWS · +3 later |
 | **AI** | — | Python for DevOps · Building AI agents · Agentic AI for DevOps · +3 later |
 <!-- routes:end -->

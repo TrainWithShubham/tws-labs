@@ -1,9 +1,11 @@
 order: 3
 title: Kubernetes
-description: Master Kubernetes manifest craft - Pod specs, container resources, health probes and Deployments.
+description: Master Kubernetes manifest craft - Pods, Deployments, Services, ConfigMaps and Secrets, and fixing manifests that do not work.
 labs:
   - pod-anatomy
   - services
+  - configs-and-secrets
+  - fix-the-manifest
 video:
   title: Kubernetes In One Shot
   url: https://youtu.be/W04brGNgxN4

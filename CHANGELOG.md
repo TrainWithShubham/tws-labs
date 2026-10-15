@@ -22,6 +22,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Hints in tiers.** A task's `hint` in `lab.yaml` can be a list of up to three, gentle to specific. After a failed Check a "Need a hint?" button reveals them one at a time. A single hint works as before.
 - **Restart lab** button: starts a fresh session with fresh starting files and a clean command history, after a second click to confirm. Your "done before" marks stay.
 - `/admin/stats` lists the **hardest tasks**: the lowest pass rates over at least 5 graded attempts, so vague tasks and unfair checks stand out.
+- **Kubernetes: two new labs.** *ConfigMaps and Secrets* (settings as env vars and files, base64 Secrets, `secretKeyRef`) and *Fix the broken manifest* (a removed API version, a selector that matches nothing, an unpinned image, a wrong `targetPort`).
 
 ### Changed
 - **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.

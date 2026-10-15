@@ -37,7 +37,7 @@ function adviseTask(step) {
   if (!step.success) out.push(`task "${step.id}" has no success: message (a short confirmation shown when the check passes)`);
   const hint = String(step.hint || '').trim();
   if (hint && hint.length < ADVICE.minHint) out.push(`step "${step.id}": the hint is only ${hint.length} chars: a hint should nudge the learner towards the idea`);
-  const commands = [...String(step.body || '').matchAll(/`([^`\n]+)`/g)].map((m) => m[1].trim()).filter((c) => c.length >= ADVICE.minCommand);
+  const commands = [...String(step.body || '').matchAll(/`([^`\n]+)`/g)].map((m) => m[1].trim()).filter((c) => c.length >= ADVICE.minCommand && c.includes(' '));   // a command, not a single term like `ConfigMap`
   if (hint && commands.some((c) => hint.includes(c))) out.push(`step "${step.id}": the hint repeats the command from the task: point at the idea (a flag, a man page) instead of the answer`);
   return out;
 }
