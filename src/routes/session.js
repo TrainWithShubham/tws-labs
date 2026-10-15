@@ -46,6 +46,24 @@ module.exports = function sessionRoutes(router, d) {
   
   });
 
+  // Skipped ahead? Run the task's setup/<task>.sh in the learner's own sandbox so the files it needs exist, and (if it names a folder)
+  // move their shell there. Nothing from the script reaches the browser, and it is safe to run again.
+  router.post('/lab/setup', (req, res) => {
+    if (!guardOk(req, cfg, { needOrigin: true })) return json(res, 403, { ok: false });
+    return readJson(req, res, async ({ token, stepId }) => {
+      const session = store.get(token);
+      if (!session) return json(res, 403, { ok: false });
+      const lab = findLab(session.meta.track, session.meta.lab);
+      const step = lab && lab.steps.find((s) => s.id === stepId && s.type === 'task' && s.setupFile);
+      if (!step) return json(res, 404, { ok: false });
+      if (!session.shellPid) return json(res, 200, { ok: false, message: 'Terminal is still connecting.' });
+      const out = await sandbox.runScript(step.setupFile, { home: session.home, uid: session.uid, env: labEnv(lab, cfg) });
+      if (out.code !== 0) return json(res, 200, { ok: false, message: 'Could not prepare the files for this task.' });
+      if (step.setupCwd && d.terminal) d.terminal.type(token, `\u0015cd '${step.setupCwd}'\r`);   // Ctrl-U clears a half-typed line first
+      json(res, 200, { ok: true });
+    });
+  });
+
   router.post('/lab/check', (req, res) => {
     if (!guardOk(req, cfg, { needOrigin: true })) return json(res, 403, { pass: false });
     return readJson(req, res, async ({ token, stepId }) => {

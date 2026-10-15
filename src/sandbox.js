@@ -58,6 +58,21 @@ function createSandbox({ labsDir }) {
     return { code: r.status === null ? 1 : r.status, out: (r.stdout || '') + (r.stderr || '') };
   }
 
+  // A task's setup/<task>.sh, run in the learner's live sandbox (async: it must not block other learners). Same user, home and
+  // environment as the lab's setup.sh; killed after 15 s.
+  function runScript(scriptPath, { home, uid, env = {} }) {
+    return new Promise((resolve) => {
+      const [file, args] = asUser(uid, home, 'bash', [scriptPath]);
+      const child = spawn(file, args, { cwd: home, env: scriptEnv(home, env), stdio: ['ignore', 'pipe', 'pipe'] });
+      let out = '';
+      const take = (c) => { if (out.length < 4000) out += c; };
+      child.stdout.on('data', take); child.stderr.on('data', take);
+      const timer = setTimeout(() => child.kill('SIGKILL'), 15000);
+      child.on('error', (e) => { clearTimeout(timer); resolve({ code: 1, out: String(e.message) }); });
+      child.on('close', (code) => { clearTimeout(timer); resolve({ code: code === null ? 1 : code, out }); });
+    });
+  }
+
   // Check contract: `bash checks/<step>.sh`, cwd = learner home, exit 0 = pass.
   // The first stdout line (if any) is shown to the learner as the failure message.
   function runCheck(scriptPath, { home, uid, shellPid, historyFile, env = {} }) {
@@ -79,7 +94,7 @@ function createSandbox({ labsDir }) {
     });
   }
 
-  return { asUser, scriptEnv, removeTree, prepareHome, prepareHistory, runSetup, runCheck };
+  return { asUser, scriptEnv, removeTree, prepareHome, prepareHistory, runSetup, runScript, runCheck };
 }
 
 module.exports = { createSandbox };

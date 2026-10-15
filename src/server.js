@@ -88,7 +88,7 @@ function createApp(opts = {}) {
     if (!router.handle(req, res, url)) send(res, 404, 'text/html', page('labs', 'Not found', pages.notFoundBody()));
   });
 
-  attachTerminal(server, deps);
+  deps.terminal = attachTerminal(server, deps);
 
   server.on('close', () => stats.stop());
   return { server, cfg, store, getCatalog };

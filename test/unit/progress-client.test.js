@@ -162,3 +162,26 @@ test('terminal messages are wrapped at word boundaries to the terminal width, ne
   for (const line of w('All lab seats on this server are taken right now. A seat usually frees up within a few minutes. Retrying in a few seconds…', 40)) assert.ok(line.length <= 40, line);
   assert.deepEqual(w('x', 0), ['x'], 'a nonsense width falls back to no wrapping');
 });
+
+test('skipping ahead: a task that ships setup is prepared once, only when an earlier task is not done yet', () => {
+  const { window } = load();
+  const steps = [{ id: 'intro', type: 'lesson' }, { id: 'a', type: 'task', setup: false }, { id: 'b', type: 'task', setup: true }, { id: 'c', type: 'task', setup: true }];
+  const need = (done, i, prepared) => window.twsNeedsPrep(steps, done, i, prepared || {});
+  assert.equal(need({}, 2), true, 'b has setup and task a is not done');
+  assert.equal(need({ a: true }, 2), false, 'nothing was skipped');
+  assert.equal(need({}, 1), false, 'a ships no setup');
+  assert.equal(need({}, 0), false, 'a lesson never needs it');
+  assert.equal(need({}, 3), true);
+  assert.equal(need({ a: true, b: true }, 3), false);
+  assert.equal(need({}, 2, { b: true }), false, 'already prepared in this session');
+  assert.equal(need({ intro: true }, 2), true, 'lessons do not count as skipped tasks');
+});
+
+test('skipping to a task that builds on an earlier one: the learner is told once, plainly', () => {
+  const { window } = load();
+  const steps = [{ id: 'a', type: 'task' }, { id: 'b', type: 'task', skipNote: 'it needs the file from the step before' }];
+  assert.equal(window.twsSkipNote(steps, {}, 1, {}), 'This task builds on an earlier one: it needs the file from the step before.');
+  assert.equal(window.twsSkipNote(steps, { a: true }, 1, {}), '', 'nothing was skipped');
+  assert.equal(window.twsSkipNote(steps, {}, 0, {}), '');
+  assert.equal(window.twsSkipNote(steps, {}, 1, { b: true }), '', 'only once');
+});

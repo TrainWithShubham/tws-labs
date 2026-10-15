@@ -59,3 +59,37 @@ test('a malformed case file fails validation instead of being skipped', { skip: 
   assert.equal(r.status, 1);
   assert.match(r.out, /cases\/make\/heredoc\.sh: one command per line/);
 });
+
+// --- skipping ahead: a task must be solvable without the tasks before it, using its setup/<task>.sh if it ships one ---
+function chained(extra = {}) {
+  const root = lab({});
+  const d = path.join(root, 't', 'one');
+  fs.writeFileSync(path.join(d, 'lab.yaml'), 'title: One\nlevel: beginner\nminutes: 10\nsummary: s\nsteps:\n  - {id: intro, type: lesson, title: Intro, body: hi}\n  - {id: make, type: task, title: Make, body: "Create hello.txt containing hello.", hint: "A nudge that is long enough", success: Done}\n  - {id: shout, type: task, title: Shout, body: "Make HELLO in upper case in loud.txt.", hint: "Another nudge long enough", success: Done}\n');
+  fs.writeFileSync(path.join(d, 'checks', 'shout.sh'), '. "$LAB_LIB"\n[ "$(cat loud.txt 2>/dev/null)" = "HELLO" ] || fail "loud.txt should say HELLO."\n');
+  fs.writeFileSync(path.join(d, 'solutions', 'shout.sh'), "tr a-z A-Z < hello.txt > loud.txt\n");   // needs hello.txt from the task before
+  for (const [name, text] of Object.entries(extra)) { fs.mkdirSync(path.join(d, 'setup'), { recursive: true }); fs.writeFileSync(path.join(d, 'setup', `${name}.sh`), text); }
+  return root;
+}
+
+test('a task that needs the one before it fails validation until it ships a setup', { skip: SKIP }, () => {
+  const r = validate(chained());
+  assert.equal(r.status, 1);
+  assert.match(r.out, /skip-ahead shout: a learner who skips to this task is stuck/);
+  assert.match(r.out, /Add setup\/shout\.sh/);
+});
+
+test('with setup/<task>.sh the skipped-to task is solvable, and the setup is safe to run on top of earlier work', { skip: SKIP }, () => {
+  const r = validate(chained({ shout: '#!/bin/bash\n[ -s hello.txt ] || echo hello > hello.txt\n' }));
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /ok\s+skip-ahead shout \(with setup\)/);
+});
+
+test('"# no-skip: reason" says a task genuinely builds on the one before, and is exempt', { skip: SKIP }, () => {
+  const r = validate(chained({ shout: '# no-skip: it uppercases the file you made in the step before\n' }));
+  assert.equal(r.status, 0, r.out);
+});
+
+test('a setup that fails, or that names a folder it does not create, fails validation with the reason', { skip: SKIP }, () => {
+  assert.match(validate(chained({ shout: '#!/bin/bash\nexit 3\n' })).out, /skip-ahead shout: setup\/shout\.sh failed/);
+  assert.match(validate(chained({ shout: '#!/bin/bash\n# cwd: nowhere\necho hello > hello.txt\n' })).out, /says "# cwd: nowhere" but that folder does not exist/);
+});

@@ -10,6 +10,7 @@ const MAX_WS_MESSAGE_BYTES = 64 * 1024;
 // The terminal: one WebSocket per session token, each driving a real shell in a pty as that session's own user.
 function attachTerminal(server, d) {
   const { cfg, store, sandbox, findLab, homeOf, historyOf, idOf, bootstrap } = d;
+  const shells = new Map();   // session token -> its pty, so the server can type into it (e.g. to move a skipped-ahead learner into the right folder)
   const wss = new WebSocket.Server({
     server, path: '/ws', maxPayload: MAX_WS_MESSAGE_BYTES,
     verifyClient: ({ req }) => guardOk(req, cfg, { needOrigin: true }),
@@ -49,6 +50,7 @@ function attachTerminal(server, d) {
       return ws.close(1011, 'could not start the lab sandbox');
     }
     store.markConnected(token, { shellPid: shell.pid, home });
+    shells.set(token, shell);
 
     const hardTimer = setTimeout(() => ws.close(4000, 'session time limit reached'), cfg.hardCapMs);
     let idleTimer = setTimeout(() => ws.close(4000, 'idle timeout'), cfg.idleMs);
@@ -80,6 +82,7 @@ function attachTerminal(server, d) {
     ws.on('close', () => {
       clearTimeout(hardTimer);
       clearTimeout(idleTimer);
+      shells.delete(token);
       killProcessSession('/proc', shell.pid);
       if (uid !== undefined) killProcessesOfUid('/proc', uid);    // also daemons that escaped via setsid
       try { shell.kill(); } catch { /* already exited */ }
@@ -88,7 +91,7 @@ function attachTerminal(server, d) {
       sandbox.removeTree(historyOf(token));
     });
   });
-  return wss;
+  return { wss, type: (token, text) => { const sh = shells.get(token); if (sh) { try { sh.write(text); return true; } catch { /* gone */ } } return false; } };
 }
 
 module.exports = { attachTerminal };

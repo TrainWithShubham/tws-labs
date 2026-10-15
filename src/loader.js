@@ -58,8 +58,31 @@ function loadLab(labsDir, trackId, labId, problems) {
       step.solutionFile = path.join(dir, 'solutions', `${s.id}.sh`);
       if (!fs.existsSync(step.checkFile)) return bad(`task "${s.id}": missing checks/${s.id}.sh`);
       if (!fs.existsSync(step.solutionFile)) return bad(`task "${s.id}": missing solutions/${s.id}.sh`);
+      // Optional starting state for a learner who skipped ahead: setup/<task>.sh. A leading "# cwd: folder" line says where their shell
+      // should be for this task (a plain folder under home), because a script cannot change the directory of a shell that is already open.
+      step.setupFile = '';
+      step.setupCwd = '';
+      step.skipNote = '';
+      const setupFile = path.join(dir, 'setup', `${s.id}.sh`);
+      const noSkip = fs.existsSync(setupFile) && fs.readFileSync(setupFile, 'utf8').split('\n').slice(0, 5).map((l) => /^#\s*no-skip:\s*(.+?)\s*$/.exec(l)).find(Boolean);
+      if (noSkip) step.skipNote = noSkip[1];   // a marker, not a script: this task really builds on an earlier one
+      else if (fs.existsSync(setupFile)) {
+        step.setupFile = setupFile;
+        const m = fs.readFileSync(setupFile, 'utf8').split('\n').slice(0, 5).map((l) => /^#\s*cwd:\s*(.*?)\s*$/.exec(l)).find(Boolean);
+        if (m) {
+          if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(m[1]) || m[1].split('/').some((x) => x === '..' || x === '.')) return bad(`setup/${s.id}.sh: cwd must be a plain relative folder under home, like myrepo or src/app`);
+          step.setupCwd = m[1];
+        }
+      }
     }
     steps.push(step);
+  }
+  const taskIds = new Set(steps.filter((x) => x.type === 'task').map((x) => x.id));
+  const setupDir = path.join(dir, 'setup');
+  if (fs.existsSync(setupDir)) {
+    for (const f of fs.readdirSync(setupDir).filter((n) => n.endsWith('.sh'))) {
+      if (!taskIds.has(f.slice(0, -3))) return bad(`setup/${f}: no task called "${f.slice(0, -3)}" in lab.yaml`);
+    }
   }
   const links = [];
   for (const l of Array.isArray(raw.links) ? raw.links : []) {

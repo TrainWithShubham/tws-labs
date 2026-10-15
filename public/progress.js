@@ -67,6 +67,20 @@
     var m = /^\S*@\S*[:\s]\S*[$#]\s(.*)$/.exec(String(line || '').replace(/\s+$/, ''));
     return m ? m[1].trim() : '';
   };
+  // Skipping ahead: a task that ships setup is prepared (once per session) when an earlier task is not done yet.
+  window.twsNeedsPrep = function (steps, done, i, prepared) {
+    var s = steps[i];
+    if (!s || s.type !== 'task' || !s.setup || (prepared && prepared[s.id])) return false;
+    for (var k = 0; k < i; k++) if (steps[k].type === 'task' && !done[steps[k].id]) return true;
+    return false;
+  };
+  // Skipped to a task that genuinely builds on an earlier one (it has no setup, only a note): say so, once.
+  window.twsSkipNote = function (steps, done, i, noted) {
+    var s = steps[i];
+    if (!s || s.type !== 'task' || !s.skipNote || (noted && noted[s.id])) return '';
+    for (var k = 0; k < i; k++) if (steps[k].type === 'task' && !done[steps[k].id]) return 'This task builds on an earlier one: ' + s.skipNote + '.';
+    return '';
+  };
   // Wrap a message at word boundaries for a terminal `cols` wide (a terminal would otherwise cut it in the middle of a word).
   window.twsWrap = function (text, cols) {
     var width = cols > 0 ? cols : 100000, words = String(text).split(/\s+/).filter(Boolean), lines = [], cur = '';

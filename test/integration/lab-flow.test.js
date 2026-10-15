@@ -303,3 +303,21 @@ for (const track of loadCatalog(path.join(__dirname, '..', '..', 'labs')).tracks
     });
   }
 }
+
+t('skipping ahead: the task\'s setup is run in the learner\'s own sandbox, moves their shell to the right folder, and is safe to repeat', async () => {
+  const { skipLabsDir } = require('./aws-labs-fixture');
+  const app = await start({ profile: 'local', labsDir: skipLabsDir() });
+  const lab = await openLab(app, 's', 'skip');
+  try {
+    const post = (stepId) => require('./helpers').post(app, '/lab/setup', { token: lab.token, stepId });
+    assert.equal(await pass(app, lab.token, 'use'), false, 'before: proj/data.txt is not there');
+    const r = await post('use');
+    assert.deepEqual([r.status, r.json.ok], [200, true]);
+    await lab.waitFor(/~\/proj/, 8000);                                  // the shell was moved into proj
+    const ls = await lab.run('ls -d ~/proj && pwd');
+    assert.match(ls, /\/proj\r?\n.*\/proj/s, 'proj exists and the shell is inside it');
+    assert.equal((await post('use')).json.ok, true, 'running it twice is fine');
+    await lab.run('echo x > data.txt');                                  // the learner now solves the task from where setup put them
+    assert.equal(await pass(app, lab.token, 'use'), true);
+  } finally { lab.ws.close(); app.stop(); }
+});

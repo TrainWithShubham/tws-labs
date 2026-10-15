@@ -140,3 +140,31 @@ test('lab text shows emphasis as emphasis, never as literal asterisks', async ()
     noProblems(page);
   });
 });
+
+test('Skip never dead-ends: skipping ahead sets up the files the next task needs, and says so', async () => {
+  await withPage({}, async (page) => {
+    // Linux files: skip "mkdir" and go straight to "touch workspace/hello.txt"
+    await B.openLab(page, 'linux-fundamentals', 'files');
+    await B.clickAction(page);                                      // lesson -> mkdir task
+    await page.click('#skip-btn');                                  // skip mkdir -> touch task
+    assert.match(await B.stepCounter(page), /Step 3 of/);
+    await B.waitFor(async () => /skipped ahead/.test(await B.hintText(page)), 'the skipped-ahead note');
+    await B.typeLine(page, 'touch workspace/hello.txt');
+    await B.clickAction(page);
+    assert.equal(await page.$eval('#step-hint', (e) => e.classList.contains('is-ok')), true, 'the task is solvable even though mkdir was skipped');
+    noProblems(page);
+  });
+  await withPage({}, async (page) => {
+    // Git first commit: skip init and enter; the shell is moved into the repo for the README task
+    await B.openLab(page, 'git-basics', 'first-commit');
+    await B.clickAction(page);                                      // lesson -> init
+    await page.click('#skip-btn'); await page.click('#skip-btn');   // init, enter -> readme
+    await B.waitFor(async () => /moved into myrepo/.test(await B.hintText(page)), 'the note that the shell moved');
+    await B.waitFor(async () => /myrepo/.test(await B.terminalText(page)), 'the prompt inside myrepo');
+    await B.typeLine(page, 'echo "# My project" > README.md');
+    await B.clickAction(page);
+    assert.equal(await page.$eval('#step-hint', (e) => e.classList.contains('is-ok')), true);
+    await B.shot(page, 'skip-ahead-git');
+    noProblems(page);
+  });
+});

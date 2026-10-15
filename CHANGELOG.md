@@ -9,6 +9,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **Skip never dead-ends.** If you skip or jump to a task that needs files from an earlier one, the lab sets up what it needs (and moves your shell to the right folder), and tells you. Labs ship this as `setup/<task>.sh`; `validate-labs` now proves every task is solvable after skipping ahead. All 27 offline labs pass: 38 tasks got a setup, and one (Elastic Beanstalk cleanup) says it needs the step before.
 - **Near-miss cases for labs**: authors can add `cases/<task>/` scripts (wrong answers the check must reject, `ok-` alternatives it must accept) and `validate-labs` proves them. Every offline lab now has them: about 370 cases across 27 labs.
 - **Git and GitHub: ignoring files with `.gitignore`**, a lab on ignore rules, `git check-ignore` and untracking a committed file with `git rm --cached`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #27).
 - **GitHub Actions: artifacts and caching**, a lab on `actions/cache`, artifacts between jobs and `if: always()`. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #26).

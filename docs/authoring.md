@@ -187,6 +187,15 @@ it types into the real terminal, clicks Check, and asserts what a learner sees (
 The hosted-profile and session-end flows (invite code, seat cap, idle and time-limit ends, two tabs, a server restart) need the two small servers in `test/e2e/docker-compose.hosted.yml`; set `BASE_HOSTED=http://localhost:8081`, `BASE_HOSTED_CAP=http://localhost:8082` and `E2E_HOSTED_CONTAINER=tws-e2e-hosted` (they are skipped otherwise).
 CI runs it in its own job and keeps the screenshots as an artifact. Add a flow there whenever you change what a learner sees.
 
+## Skipping ahead: `setup/<task>.sh`
+
+Learners can press **Skip** or jump to any step. A task that needs files from an earlier task would leave them stuck, so every task must be solvable without the ones before it. `labs/<track>/<lab>/setup/<task-id>.sh` creates what that task needs:
+
+- It runs **as the learner, in their home, in their own sandbox**, when they reach the task while an earlier task is still undone (once per session, silently; they are told "you skipped ahead, so the files this task needs were set up for you").
+- It must be **safe to run again and never overwrite their work**: only fill in what is missing (`[ -f x ] || ...`, `mkdir -p`). It cannot `cd` the learner's shell, so a `# cwd: folder` line in the first lines names a folder under home that their shell is moved into (`# cwd: myrepo`). Plain folder names only.
+- A task that genuinely builds on the one before and cannot be seeded (for example "you must have started it yourself") can say so with a marker file whose first lines are `# no-skip: why`; it runs nothing and the learner is shown the reason if they skip to it.
+- `validate-labs` proves it for **every** task: a fresh sandbox with only the lab's own `setup.sh` plus the task's setup, then the task's solution; the check must fail first and pass after. A task that does not work this way fails validation with what to add.
+
 ## Near misses and alternatives: `cases/`
 
 A check can be wrong in two directions: too lax (it passes an answer that is not really right) or too strict (it rejects a valid way of doing it). `cases/` proves both:

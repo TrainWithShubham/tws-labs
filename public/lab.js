@@ -129,6 +129,23 @@
     $('skip-btn').style.visibility = last ? 'hidden' : 'visible';
     renderDots();
     renderHintButton();
+    prepareIfSkipped(s);
+  }
+  // Jumped past an earlier task? Ask the server to set up the files this one needs (the lab can ship setup/<task>.sh for that).
+  var noted = {};
+  function prepareIfSkipped(s) {
+    var i = STEPS.indexOf(s);
+    var note = window.twsSkipNote(STEPS, done, i, noted);
+    if (note) { noted[s.id] = true; setHint(note, false); }
+    if (!token || !window.twsNeedsPrep(STEPS, done, i, prepared)) return;
+    prepared[s.id] = true;
+    fetch('/lab/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token, stepId: s.id }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { prepared[s.id] = false; return; }
+        if (STEPS[current] === s) setHint('You skipped ahead, so the files this task needs were set up for you' + (s.setupCwd ? ' and your shell moved into ' + s.setupCwd : '') + '.', false);
+      })
+      .catch(function () { prepared[s.id] = false; });
   }
   function next() { if (current < STEPS.length - 1) { current++; render(); } }
   $('back-btn').onclick = function () { if (current > 0) { current--; render(); } };
@@ -137,6 +154,7 @@
   // One live region for feedback: amber nudge when a check fails, green confirmation when it passes.
   function setHint(text, ok) { var h = $('step-hint'); h.textContent = text; h.classList.toggle('is-ok', !!ok); }
   var hints = window.twsHints();
+  var prepared = {};   // tasks whose starting files were already prepared in this session
   function hintsOf(s) { return s.hints && s.hints.length ? s.hints : (s.hint ? [s.hint] : []); }
   function renderHintButton() {
     var s = STEPS[current], b = $('hint-btn'), r = s.type === 'task' && !done[s.id] && hints.ready(s.id, hintsOf(s));
@@ -218,7 +236,7 @@
   };
   function restartLab() {
     stopTimer(); token = null; tries = 0;
-    done = {}; current = 0; hints = window.twsHints();
+    done = {}; current = 0; hints = window.twsHints(); prepared = {}; noted = {};
     var old = ws, started = false;
     function go() { if (!started) { started = true; startSession(); } }
     ws = null;

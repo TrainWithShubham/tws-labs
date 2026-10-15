@@ -109,3 +109,32 @@ test('a lab can say it needs the learner\'s own AWS account; any other value is 
   assert.match(load('requires: gcp\n').problems.join('\n'), /requires must be "aws"/);
   assert.match(load('requires: [aws]\n').problems.join('\n'), /requires must be "aws"/);
 });
+
+test('a task can ship setup/<task>.sh, the starting state for skipping ahead; an optional "# cwd: folder" line says where the shell should be', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const none = loadCatalog(fixture(base)).tracks[0].labs[0].steps[1];
+  assert.deepEqual([none.setupFile, none.setupCwd], ['', '']);
+  const plain = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': 'mkdir -p x\n' })).tracks[0].labs[0].steps[1];
+  assert.match(plain.setupFile, /setup\/b\.sh$/);
+  assert.equal(plain.setupCwd, '');
+  const cwd = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': '#!/bin/bash\n# cwd: myrepo\nmkdir -p myrepo\n' }));
+  assert.deepEqual(cwd.problems, []);
+  assert.equal(cwd.tracks[0].labs[0].steps[1].setupCwd, 'myrepo');
+});
+
+test('setup files for a task that does not exist, or for a lesson, and unsafe cwd lines are reported', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const p = (extra) => loadCatalog(fixture({ ...base, ...extra })).problems.join('\n');
+  assert.match(p({ 't/one/setup/ghost.sh': 'true\n' }), /setup\/ghost\.sh: no task called "ghost"/);
+  assert.match(p({ 't/one/setup/a.sh': 'true\n' }), /setup\/a\.sh: no task called "a"/, 'a lesson has no setup');
+  for (const bad of ['/etc', '../up', 'a b', 'a/../b', '~/x']) assert.match(p({ 't/one/setup/b.sh': `# cwd: ${bad}\ntrue\n` }), /setup\/b\.sh: cwd must be a plain relative folder/, bad);
+});
+
+test('a task can say it genuinely builds on an earlier one: "# no-skip: reason" in setup/<task>.sh runs nothing and is shown to a learner who skips to it', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const step = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': '# no-skip: it reads the file you create in the step before\n' })).tracks[0].labs[0].steps[1];
+  assert.equal(step.setupFile, '', 'nothing to run');
+  assert.equal(step.skipNote, 'it reads the file you create in the step before');
+  const normal = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': 'true\n' })).tracks[0].labs[0].steps[1];
+  assert.equal(normal.skipNote, '');
+});

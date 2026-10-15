@@ -269,7 +269,7 @@ function labBody(lab, trackTitle, cfg, place, next) {
     local: cfg.isLocal, gated: !cfg.isLocal, banner: ASCII_BANNER,
     links: lab.links, resources: lab.resources, next,
     steps: lab.steps.map((s) => ({
-      id: s.id, type: s.type, title: s.title, hint: s.hint, hints: s.hints, success: s.success,
+      id: s.id, type: s.type, title: s.title, hint: s.hint, hints: s.hints, success: s.success, setup: !!s.setupFile, setupCwd: s.setupCwd || '', skipNote: s.skipNote || '',
       bodyHtml: (cfg.isLocal && s.localBodyHtml) || s.bodyHtml,
     })),
   };
