@@ -113,6 +113,18 @@ capacity. The pages themselves (home, roadmap, lab shells) stay public; the loca
   rolls the pods, which ends live sessions - rotate between events. Removing the secret does not clear an already-set
   `env-variables` option; set `LAB_ACCESS_TOKENS` to a new value instead.
 
+### One code per audience, and rotating a code
+Give each audience (a video, a cohort, a partner) its own code so you can revoke one without touching the others, and so the
+usage counters below can tell them apart (they report sessions per code hash).
+
+1. Add a code: set the whole secret again with the new code appended, comma-separated:
+   `printf '%s' "old1,old2,$(openssl rand -base64 18 | tr '+/' '-_' | tr -d '=\n')" | gh secret set LAB_ACCESS_TOKENS`
+   (URL-safe characters avoid copy-paste trouble). Remove a code by leaving it out.
+2. Apply it: run the Deploy workflow (`gh workflow run deploy.yml --ref main`). The pods roll, which ends live sessions,
+   so do it between events. Old codes stop working at once (they get 401); the new one works after the rollout.
+3. Verify: `POST /session` with the old code answers 401 and with the new one 200 (the Deploy smoke test also checks a wrong code).
+4. Which code is which in the usage numbers: `printf %s "<the code>" | shasum -a 256 | cut -c1-8`.
+
 ## Usage counters
 The hosted app counts sessions per lab, distinct visitors per day and task pass/fail (`USAGE_STATS=1`, set by `03-deploy.sh`).
 It keeps **no IP address and no invite code**: a visitor is a short keyed hash that changes every UTC day, and an invite code
