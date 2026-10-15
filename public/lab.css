@@ -31,7 +31,8 @@
 .step-hint.is-ok { color: var(--ok); border-left: 1px solid var(--ok); padding-left: 10px; animation: fadein .25s ease-out; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .step-footer { display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 10px; } .spacer { flex: 1; }
-#end-btn { align-self: flex-start; margin-top: 4px; padding: 6px 14px; font-size: 13px; }
+#end-btn, #restart-btn { padding: 6px 14px; font-size: 13px; }
+.lab-actions { display: flex; gap: 10px; align-items: center; align-self: flex-start; margin-top: 4px; }
 .done-mark { font: 400 1.9rem/1.1 var(--serif); letter-spacing: -.02em; }
 .done-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 18px; }
 .resource-list { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }

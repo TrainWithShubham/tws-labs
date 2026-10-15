@@ -273,7 +273,7 @@ function labBody(lab, trackTitle, cfg, place, next) {
           <button class="btn primary" id="action-btn"></button>
         </div>
       </div>
-      <button class="btn danger" id="end-btn">End lab</button>
+      <div class="lab-actions"><button class="btn" id="restart-btn" title="Start over with fresh files">Restart lab</button><button class="btn danger" id="end-btn">End lab</button></div>
     </div>
     <div class="terminal-pane">
       <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> Terminal

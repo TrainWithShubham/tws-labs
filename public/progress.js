@@ -50,6 +50,17 @@
       },
     };
   };
+  // A click that must be repeated within `ms` to count, so a destructive button cannot be hit by accident.
+  window.twsTwoStep = function (ms, clock) {
+    var armedAt = 0;
+    clock = clock || Date.now;
+    return function () {
+      var n = clock();
+      if (armedAt && n - armedAt <= ms) { armedAt = 0; return true; }
+      armedAt = n;
+      return false;
+    };
+  };
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

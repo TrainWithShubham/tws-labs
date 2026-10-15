@@ -106,3 +106,17 @@ test('hints: a single hint reads without "1 of 1"; no hints means no button; ste
   assert.notEqual(h.ready('b', ['x', 'y']), false, 'step b is untouched by step a');
   assert.equal(h.shown('b', ['x', 'y']), '');
 });
+
+test('two-step confirm: the first click arms, a second within the window confirms, and it then disarms', () => {
+  const { window } = load();
+  let now = 1000;
+  const confirm = window.twsTwoStep(4000, () => now);
+  assert.equal(confirm(), false, 'first click only arms');
+  now += 1500;
+  assert.equal(confirm(), true, 'second click inside the window confirms');
+  assert.equal(confirm(), false, 'and it is armed again from scratch');
+  now += 4001;
+  assert.equal(confirm(), false, 'too slow: this click re-arms instead of confirming');
+  now += 100;
+  assert.equal(confirm(), true);
+});

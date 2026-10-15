@@ -183,6 +183,31 @@
   // --- chrome ------------------------------------------------------------------
   function endLab() { stopTimer(); try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
   $('end-btn').onclick = endLab;
+  // Restart = a fresh session: closing the socket removes this sandbox, and a new session gets fresh files and a clean command history.
+  var armRestart = window.twsTwoStep(4000), restartLabel = $('restart-btn').textContent, restartTimer = null;
+  $('restart-btn').onclick = function () {
+    var btn = $('restart-btn');
+    clearTimeout(restartTimer);
+    if (!armRestart()) {
+      btn.textContent = 'Click again to restart';
+      restartTimer = setTimeout(function () { btn.textContent = restartLabel; }, 4000);
+      return;
+    }
+    btn.textContent = restartLabel;
+    restartLab();
+  };
+  function restartLab() {
+    stopTimer(); token = null; tries = 0;
+    done = {}; current = 0; hints = window.twsHints();
+    var old = ws, started = false;
+    function go() { if (!started) { started = true; startSession(); } }
+    ws = null;
+    if (old) { old.onerror = null; old.onclose = go; try { old.close(1000, 'restarted by learner'); } catch (e) { go(); } setTimeout(go, 1500); } else go();
+    term.reset();
+    term.write(DATA.banner + '\r\n\r\n  \x1b[38;2;245;185;66mFresh start. Happy Learning\x1b[0m\r\n\r\n');
+    setStatus('', 'starting');
+    render();
+  }
   $('fs-btn').onclick = function () {
     var el = document.querySelector('.terminal-pane');
     if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen();

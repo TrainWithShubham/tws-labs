@@ -175,6 +175,7 @@ test('a track page carries each lab\'s task total so the browser can show "n of 
     const labPage = (await get(app, '/lab/linux-fundamentals/files')).body;
     assert.ok(labPage.includes('/progress.js'), 'the lab page loads progress.js');
     assert.ok(labPage.includes('id="hint-btn"'), 'the lab page has the hint button');
+    assert.ok(labPage.includes('id="restart-btn"'), 'the lab page has the restart button');
     assert.match(labPage, /"hints":\[/, 'each step carries its hint tiers');
   } finally { app.stop(); }
 });

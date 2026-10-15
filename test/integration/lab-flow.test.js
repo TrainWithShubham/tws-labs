@@ -240,3 +240,20 @@ t('usage counters see real check results per task: a failed Check and then a pas
     assert.deepEqual(l.checks, { pass: 1, fail: 1 });
   } finally { lab.ws.close(); app.stop(); }
 });
+
+t('restarting a lab (close the terminal, start a new session) gives fresh files and a clean command history', async () => {
+  const app = await start();
+  const first = await openLab(app, 'linux-fundamentals', 'files');
+  let second;
+  try {
+    await first.run('mkdir workspace');
+    assert.equal(await pass(app, first.token, 'mkdir'), true);
+    first.ws.close(1000, 'restarted by learner');
+    for (let i = 0; i < 50 && app.store.size() > 0; i++) await sleep(40);   // the server frees the seat and the sandbox on close
+    assert.equal(app.store.size(), 0, 'the old session is gone');
+    second = await openLab(app, 'linux-fundamentals', 'files');
+    assert.equal(await pass(app, second.token, 'mkdir'), false, 'the new sandbox has no workspace folder');
+    await second.run('mkdir workspace');
+    assert.equal(await pass(app, second.token, 'mkdir'), true);
+  } finally { first.ws.close(); if (second) second.ws.close(); app.stop(); }
+});
