@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { start, check, openLab, sleep, ISOLATED, WebSocket } = require('./helpers');
 const { awsLabsDir } = require('./aws-labs-fixture');
+const { loadCatalog } = require('../../src/loader');
 
 function canSpawnPty() {
   if (process.platform !== 'linux') return 'needs Linux';
@@ -281,3 +282,24 @@ t('local, in a real shell: AWS variables reach an account lab and its checks, ot
     app.stop();
   }
 });
+
+// The playthrough: every offline lab, every task, through the path a learner uses (a real WebSocket shell, the line tracker that feeds
+// `ran` checks, and POST /lab/check), not the validator's own shell. Account labs need a real AWS account and have their own tests.
+const solutionLines = (file) => fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+for (const track of loadCatalog(path.join(__dirname, '..', '..', 'labs')).tracks) {
+  for (const lab of track.labs) {
+    if (lab.requires) continue;
+    test(`playthrough ${track.id}/${lab.id}: each task fails before its solution and passes after it, as a learner would run it`, { skip: SKIP, timeout: 180000 }, async () => {
+      const app = await start();
+      const session = await openLab(app, track.id, lab.id);
+      try {
+        for (const step of lab.steps.filter((x) => x.type === 'task')) {
+          assert.equal(await pass(app, session.token, step.id), false, `${step.id} must fail before its solution`);
+          for (const line of solutionLines(step.solutionFile)) await session.run(line);
+          const after = await check(app, session.token, step.id);
+          assert.equal(after.json.pass, true, `${step.id} must pass after its solution (the learner would see: "${after.json.message || ''}")`);
+        }
+      } finally { session.ws.close(); app.stop(); }
+    });
+  }
+}
