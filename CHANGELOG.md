@@ -15,6 +15,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Linux Fundamentals: text processing with `awk` and `sed`**, a lab on extracting and filtering log columns and rewriting or masking text in a stream. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #32).
 - **Kubernetes: exposing Pods with Services**, a lab on ClusterIP Services, label selectors and `port`/`targetPort`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #42).
 - **Usage counters** (opt-in): sessions per lab, distinct visitors per day, and task pass/fail per lab, with no IP address or invite code stored. Read them at `/admin/stats` with an `ADMIN_TOKEN`, or from the `usage` log lines. Off by default for self-hosters (`USAGE_STATS=1`); on for the hosted deployment.
+- **Task progress** is remembered in your browser: a track page shows "3 of 5 tasks" for a lab you started, and the lab's step dots show which tasks you passed on an earlier visit. The terminal still starts fresh each time, so earlier tasks are marked, not restored. Nothing leaves your browser.
 
 ### Changed
 - **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.

@@ -5,6 +5,29 @@
   window.twsMarkDone = function (id) {
     try { var d = read(); if (d.indexOf(id) < 0) d.push(id); localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* storage blocked */ }
   };
+  // Passed tasks per lab, for "3 of 5 tasks" and the "done before" marks. A fresh terminal starts clean each visit,
+  // so this records what you have achieved, never state to restore.
+  var TKEY = 'tws-local:tasks';
+  function readTasks() {
+    try { var t = JSON.parse(localStorage.getItem(TKEY)); return t && typeof t === 'object' && !Array.isArray(t) ? t : {}; } catch (e) { return {}; }
+  }
+  window.twsTasksDone = function (lab) { var l = readTasks()[lab]; return Array.isArray(l) ? l.slice() : []; };
+  window.twsMarkTask = function (lab, id) {
+    try {
+      var t = readTasks(), l = Array.isArray(t[lab]) ? t[lab] : [];
+      if (l.indexOf(id) < 0) l.push(id);
+      t[lab] = l;
+      localStorage.setItem(TKEY, JSON.stringify(t));
+    } catch (e) { /* storage blocked */ }
+  };
+  window.twsTaskSummary = function (lab, total) {
+    var n = window.twsTasksDone(lab).length;
+    return n > 0 && n < total ? n + ' of ' + total + ' tasks' : '';
+  };
+  document.querySelectorAll('[data-lab-tasks]').forEach(function (el) {
+    var s = window.twsTaskSummary(el.getAttribute('data-lab-tasks'), parseInt(el.getAttribute('data-total'), 10) || 0);
+    if (s) el.textContent = ' \u00b7 ' + s;
+  });
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

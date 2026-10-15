@@ -82,14 +82,16 @@
 
   // --- steps -------------------------------------------------------------------
   // Progress is a thin route: one tick per step, the rocket parked at the current one.
+  var before = window.twsTasksDone(DATA.track + '/' + DATA.lab);   // passed on an earlier visit; this terminal still starts fresh
   function renderDots() {
     var ticks = $('jticks'), n = STEPS.length;
     ticks.innerHTML = '';
     STEPS.forEach(function (st, i) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'jt' + (i === current ? ' is-active' : '') + (done[st.id] ? ' is-done' : '');
-      b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + st.title + (done[st.id] ? ' (done)' : ''));
+      var was = !done[st.id] && before.indexOf(st.id) >= 0;
+      b.className = 'jt' + (i === current ? ' is-active' : '') + (done[st.id] ? ' is-done' : '') + (was ? ' was-done' : '');
+      b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + st.title + (done[st.id] ? ' (done)' : was ? ' (done on an earlier visit)' : ''));
       if (i === current) b.setAttribute('aria-current', 'step');
       b.onclick = function () { current = i; render(); };
       ticks.appendChild(b);
@@ -101,7 +103,7 @@
   function render() {
     var s = STEPS[current];
     var last = current === STEPS.length - 1;
-    $('step-counter').textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson');
+    $('step-counter').textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson') + (!done[s.id] && before.indexOf(s.id) >= 0 ? ' · done before' : '');
     $('step-title').textContent = s.title;
     $('step-body').innerHTML = s.bodyHtml;          // server-rendered from escaped markdown
     setHint('', false);
@@ -134,7 +136,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         btn.disabled = false;
-        if (d.pass) { done[s.id] = true; render(); setHint(s.success || 'Correct. Step complete.', true); return; }
+        if (d.pass) { done[s.id] = true; window.twsMarkTask(DATA.track + '/' + DATA.lab, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
         btn.textContent = 'Not yet — try again';
         setHint(d.message || s.hint || '', false);
       })

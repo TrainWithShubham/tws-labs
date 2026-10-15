@@ -163,6 +163,20 @@ test('the lab page carries its line, a breadcrumb, the progress route with the r
   } finally { app.stop(); }
 });
 
+test('a track page carries each lab\'s task total so the browser can show "n of m tasks" (and the lab page loads the progress script)', async () => {
+  const app = await start();
+  try {
+    const track = loadCatalog(LABS).tracks.find((t) => t.id === 'linux-fundamentals');
+    const html = (await get(app, '/t/linux-fundamentals')).body;
+    for (const lab of track.labs) {
+      const total = lab.steps.filter((s) => s.type === 'task').length;
+      assert.ok(html.includes(`data-lab-tasks="linux-fundamentals/${lab.id}" data-total="${total}"`), `${lab.id} total`);
+    }
+    const labPage = (await get(app, '/lab/linux-fundamentals/files')).body;
+    assert.ok(labPage.includes('/progress.js'), 'the lab page loads progress.js');
+  } finally { app.stop(); }
+});
+
 test('the lab page is a seatless shell: loading it never consumes a seat, and carries no token or answers', async () => {
   const app = await start({ maxSessions: 1 });
   try {
