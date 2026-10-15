@@ -24,6 +24,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - `/admin/stats` lists the **hardest tasks**: the lowest pass rates over at least 5 graded attempts, so vague tasks and unfair checks stand out.
 - **Kubernetes: two new labs.** *ConfigMaps and Secrets* (settings as env vars and files, base64 Secrets, `secretKeyRef`) and *Fix the broken manifest* (a removed API version, a selector that matches nothing, an unpinned image, a wrong `targetPort`).
 - **Labs can say `requires: aws`** (for lab authors): such a lab uses the learner's own AWS account, so it opens as a read-only walkthrough on the hosted site (which never asks for AWS keys) and runs only on a learner's own machine, where their AWS variables are passed to the shell and checks for these labs only. The offline validator skips them. First account labs follow.
+- **AWS overlay for labs that use your own AWS account**: `AWS=1 ./start_local_labs.sh` builds an image with the AWS CLI v2 (trimmed to the services the labs use, about +190 MB, only with `AWS=1`) and passes your `AWS_*` variables to those labs only. Includes `deploy/learner-role.yaml` (a least-privilege role and a $5 budget alarm, for your own account) and `scripts/aws-lab-creds.sh` (one-hour credentials, so no long-lived keys). Guide: `docs/aws-labs.md`.
 
 ### Changed
 - **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.
@@ -37,6 +38,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - The roadmap loader's station link no longer has two identical branches. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #40, #41).
 
 ### Upgrade notes
+- New, optional: `docker-compose.aws.yml` and `Dockerfile.aws` (the AWS overlay). The default image, the hosted deployment and Terraform are unchanged.
 - Optional repo secrets `ADMIN_TOKEN` (turns on `/admin/stats`) and `USAGE_SALT` (consistent visitor counts across replicas). `deploy.yml` passes both to `03-deploy.sh`; neither is required. The hosted app now sets `USAGE_STATS=1`.
 - The runtime image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform or settings changes.
 

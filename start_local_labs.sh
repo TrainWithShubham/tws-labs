@@ -3,6 +3,7 @@
 # Works on macOS, Linux, and Windows (Git Bash or WSL). The only thing you need is Docker.
 #   LABS_PORT=9090 ./start_local_labs.sh     use another port
 #   NO_BROWSER=1   ./start_local_labs.sh     don't open the browser
+#   AWS=1 ./start_local_labs.sh              run the labs that use YOUR AWS account (needs AWS_* in your shell; see docs/aws-labs.md)
 #   ./start_local_labs.sh stop               stop and clean up
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -32,10 +33,18 @@ if ! docker info >/dev/null 2>&1; then
   fail "Docker is installed but not running. Start Docker Desktop (or the docker service) and run this again."
 fi
 
+# AWS=1 adds the AWS overlay (the CLI image, and your AWS_* variables passed into the labs that need them).
+FILES=()
+if [ -n "${AWS:-}" ]; then
+  [ -n "${AWS_ACCESS_KEY_ID:-}" ] || fail "AWS=1 needs your AWS credentials in this shell (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_SESSION_TOKEN if temporary).
+Short-lived ones are safest: see docs/aws-labs.md (scripts/aws-lab-creds.sh prints them)."
+  FILES=(-f docker-compose.yml -f docker-compose.aws.yml)
+fi
+
 if docker compose version >/dev/null 2>&1; then
-  compose() { docker compose "$@"; }
+  compose() { docker compose ${FILES[@]+"${FILES[@]}"} "$@"; }
 elif command -v docker-compose >/dev/null 2>&1; then
-  compose() { docker-compose "$@"; }
+  compose() { docker-compose ${FILES[@]+"${FILES[@]}"} "$@"; }
 else
   fail "Docker Compose is missing. Update Docker Desktop, or install the compose plugin: https://docs.docker.com/compose/install/"
 fi
@@ -62,6 +71,8 @@ if up || (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then
 fi
 
 say "Building and starting TWS Labs (the first run takes a few minutes)..."
+# The AWS image is built on top of the normal one, so build that first.
+if [ -n "${AWS:-}" ]; then docker compose -f docker-compose.yml build labs; fi
 compose up --build -d
 
 stop() { echo; say "Stopping TWS Labs..."; compose down >/dev/null 2>&1 || true; exit 0; }

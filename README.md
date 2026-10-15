@@ -110,6 +110,10 @@ The home page is a quiet map of three routes; the roadmap lists every topic and 
   See `deploy/README.md`.
 - **Progress** (which labs you finished) lives in your browser's localStorage. No accounts.
 
+### Labs that use your own AWS account
+A few Cloud labs run the real AWS CLI against **your** account (tiny, free-tier resources, a graded cleanup, and a role template with a $5 budget alarm).
+They run only on your machine with `AWS=1 ./start_local_labs.sh`; the hosted site shows them read-only and never asks for keys. Setup: [docs/aws-labs.md](docs/aws-labs.md).
+
 ### Usage counters (optional, off by default)
 Self-hosting teams can count how the labs are used: `USAGE_STATS=1` records sessions per lab, distinct visitors per day and which
 tasks learners fail. It never stores an IP address or an invite code. Add `ADMIN_TOKEN=<secret>` to read it at

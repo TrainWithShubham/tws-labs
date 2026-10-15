@@ -1,0 +1,19 @@
+# The AWS overlay: the normal TWS Labs image plus the AWS CLI v2, for labs that use YOUR OWN AWS account.
+# It is separate on purpose, so the default image stays small for everyone else.
+#   AWS=1 ./start_local_labs.sh        (builds the base image, then this one)
+ARG BASE_IMAGE=tws-labs:dev
+FROM ${BASE_IMAGE}
+# The CLI ships a model for every AWS service (113 MB). The labs use a handful, so the rest are removed: that keeps this
+# overlay to roughly +120 MB. Add a service to AWS_SERVICES if a new lab needs it; anything else answers "invalid choice".
+ARG AWS_SERVICES="s3 s3api s3control ec2 iam sts budgets ce cloudwatch logs resourcegroupstaggingapi"
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
+ && ARCH="$(uname -m)" \
+ && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip \
+ && unzip -q /tmp/awscliv2.zip -d /tmp \
+ && /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli \
+ && D="$(readlink -f /usr/local/aws-cli/v2/current)/dist/awscli" \
+ && for svc in "$D"/botocore/data/*/; do n="$(basename "$svc")"; case " $AWS_SERVICES " in *" $n "*) ;; *) rm -rf "$svc";; esac; done \
+ && find "$D/examples" -mindepth 1 -type d -exec rm -rf {} + \
+ && rm -rf /tmp/aws /tmp/awscliv2.zip "$(readlink -f /usr/local/aws-cli/v2/current)/dist/aws_completer" \
+ && apt-get purge -y unzip && apt-get autoremove -y && rm -rf /var/lib/apt/lists/* \
+ && aws --version

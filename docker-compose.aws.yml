@@ -1,0 +1,18 @@
+# The AWS overlay, used by:  AWS=1 ./start_local_labs.sh
+# It adds the AWS CLI image (Dockerfile.aws) and hands YOUR AWS_* variables to the labs that say `requires: aws`
+# (and only those: see src/lab-env.js). Nothing here is read by the hosted site.
+services:
+  labs:
+    build:
+      context: .
+      dockerfile: Dockerfile.aws
+      args:
+        BASE_IMAGE: tws-labs:dev
+    image: tws-labs:aws
+    mem_limit: 768m            # the AWS CLI needs more headroom than a plain shell
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-}

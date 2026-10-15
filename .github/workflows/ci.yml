@@ -35,6 +35,10 @@ jobs:
       # Same tests as above, but as root with LAB_UID set, which turns on the isolation tests.
       - run: docker run --rm -v "$PWD/test:/app/test:ro" tws-labs:ci sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'
 
+      # The optional AWS overlay (AWS=1) must keep building on top of the production image.
+      - run: docker build -f Dockerfile.aws --build-arg BASE_IMAGE=tws-labs:ci -t tws-labs:aws-ci .
+      - run: docker run --rm tws-labs:aws-ci aws --version && docker images --format 'overlay image {{.Size}}' tws-labs:aws-ci
+
   compose:
     name: Local run - docker compose + smoke test (hardened container profile)
     runs-on: ubuntu-latest
