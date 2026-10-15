@@ -33,6 +33,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "axe-core": "^4.14.0",
     "puppeteer-core": "^25.14.0"
   }
 }

@@ -27,6 +27,8 @@
   term.write(DATA.banner + '\r\n\r\n  \x1b[38;2;245;185;66mHappy Learning\x1b[0m\r\n\r\n');
   window.addEventListener('resize', function () { fit.fit(); sendSize(); });
   term.onData(function (d) { if (ws && ws.readyState === 1) ws.send(d); });
+  // Tab belongs to the shell (completion), so Shift+Tab is how a keyboard user leaves the terminal: let the browser have it.
+  term.attachCustomKeyEventHandler(function (e) { return !(e.key === 'Tab' && e.shiftKey); });
   function sendSize() { if (ws && ws.readyState === 1) ws.send('\u0000resize:' + term.cols + ',' + term.rows); }
 
   // --- session: the page shell takes no seat; we ask for one -------------------

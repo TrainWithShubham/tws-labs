@@ -34,6 +34,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
   The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
 
 ### Fixed
+- **Accessibility**: faint text (labels, notes, tags) now meets the WCAG AA contrast ratio on the dark theme; keyboard focus shows a thin ring everywhere, with a skip link to the content and a `main` landmark; `Shift+Tab` leaves the terminal, so a keyboard user is never trapped in it (Tab still goes to the shell); the logo no longer reads twice to screen readers. A browser test (axe-core) now keeps every page type free of serious violations.
 - **Checks that were too lax or too strict, found by the new near-miss cases:** Navigating (`cat readme.txt` from the wrong folder passed), Files (extra lines passed "exactly"), Shell scripting (a single-quoted `$NAME` passed), Services (omitting `type` was rejected despite the message saying it is allowed), Process management (`pkill` and `kill -KILL` were rejected), Dockerfile craft (copying only the app file was rejected), GitHub Actions (an empty `name:` passed; an `exclude` by one key was rejected), Ports and sockets (typing the expected error by hand passed).
 - **A command you typed but did not run** is now noticed: a failed Check says "You have a command typed but not run yet. Press Enter", and the keyboard goes back to the terminal so Enter works at once.
 - **Italics** (`*word*`, `_word_`) in lab text render as emphasis instead of showing the asterisks.

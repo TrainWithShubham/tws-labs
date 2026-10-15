@@ -99,7 +99,7 @@ function homeBody(catalog, roadmap, cfg) {
     : `Hosted playground &middot; a private user per session &middot; ${mins(cfg.idleMs)}-minute idle timeout`;
 
   const body = `
-<main class="home">
+<div class="home">
   <section class="hero">
     <div class="hero-copy">
       <span class="eyebrow">TWS Labs</span>
@@ -140,7 +140,7 @@ function homeBody(catalog, roadmap, cfg) {
     <a class="btn-primary" href="${startHref}">Launch the first lab <span aria-hidden="true">&rarr;</span></a>
     <p class="fine">${note}<br/><a href="/roadmap">Roadmap</a> &middot; <a href="/videos">Videos</a> &middot; <a href="https://github.com/TrainWithShubham/tws-labs">Source</a></p>
   </section>
-</main>`;
+</div>`;
   return {
     body,
     head: '<script>document.documentElement.classList.add("js")</script><link rel="stylesheet" href="/home.css" />',
@@ -299,7 +299,7 @@ function labBody(lab, trackTitle, cfg, place, next) {
       <div class="lab-actions"><button class="btn" id="restart-btn" title="Start over with fresh files">Restart lab</button><button class="btn danger" id="end-btn">End lab</button></div>
     </div>
     <div class="terminal-pane">
-      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> Terminal
+      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> <span title="Tab goes to the shell; press Shift+Tab to leave the terminal">Terminal</span>
         <span class="terminal-links">${links}<button class="fullscreen-btn" id="fs-btn" title="Fullscreen" aria-label="Fullscreen">&#x26F6;</button></span></div>
       <form class="invite" id="invite" hidden autocomplete="off">
         <label for="invite-code">Invite code</label>

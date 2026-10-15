@@ -116,3 +116,10 @@ details > summary::before { content: '+'; display: inline-block; width: 1.1em; c
   .tabs { order: 3; flex-basis: 100%; margin: 0 -12px; } .tab.is-active::after { bottom: 0; }
   .wrap { padding: 36px 18px 72px; }
 }
+
+/* Keyboard focus: one thin ring everywhere, shown only for keyboard users (not on mouse click). */
+:focus-visible { outline: 1px solid var(--cloud); outline-offset: 3px; border-radius: 2px; }
+.btn:focus-visible, .btn-primary:focus-visible, .btn-yt:focus-visible { outline-offset: 2px; border-radius: 999px; }
+.skip { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 8px 14px; background: var(--bg); color: var(--text); border: 1px solid var(--rule2); border-radius: 999px; text-decoration: none; font-size: 13px; }
+.skip:focus { top: 10px; }
+main { display: contents; }

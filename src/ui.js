@@ -73,7 +73,7 @@ function createUi(o) {
     const tabs = TABS.map(([id, href, label]) =>
       `<a href="${href}" class="tab${id === ctx.active ? ' is-active' : ''}"${id === ctx.active ? ' aria-current="page"' : ''}>${label}</a>`).join('');
     return `<header class="topbar">
-  <a class="logo" href="/"><img class="logo-mark" src="/logo/tws-labs-logo.png" alt="TWS Labs" />
+  <a class="logo" href="/"><img class="logo-mark" src="/logo/tws-labs-logo.png" alt="" />
     <span class="logo-word">TWS <span class="accent">Labs</span></span></a>
   <nav class="tabs" aria-label="Main">${tabs}</nav>
   <div class="topbar-right"><span class="mono chip-env"${o.chipTitle ? ` title="${esc(o.chipTitle)}"` : ''}>${esc(o.chip)}</span>
@@ -89,8 +89,9 @@ function createUi(o) {
 <meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="color-scheme" content="dark" /><link rel="icon" href="${FAVICON}" />${css}${head}</head>
 <body>
 ${SPRITE}
+<a class="skip" href="#main">Skip to content</a>
 ${topbar(ctx)}
-${body}
+<main id="main" tabindex="-1">${body}</main>
 ${scripts}
 </body></html>`;
   }
