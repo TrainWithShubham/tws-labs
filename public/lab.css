@@ -16,6 +16,7 @@
 .jt { position: relative; width: 14px; height: 14px; padding: 0; border-radius: 50%; border: 1.5px solid var(--faint); background: var(--bg); cursor: pointer; transition: border-color .2s, background .2s; }
 .jt:hover { border-color: var(--text); }
 .jt.is-done { border-color: var(--c); background: var(--c); }
+.jt.was-done { border-color: var(--c); background: color-mix(in srgb, var(--c) 30%, var(--bg)); }
 .jt.is-active { border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent); }
 .jt.is-active::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--c); }
 .jrocket { position: absolute; top: 0; left: var(--p, 0%); width: 26px; height: 26px; margin-left: -13px; color: #7b52c3; font-size: 26px; transform: rotate(45deg); transition: left .6s cubic-bezier(.2, .7, .2, 1); pointer-events: none; }

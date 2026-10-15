@@ -63,6 +63,8 @@ jobs:
       - name: Deploy to Elastic Beanstalk Cluster Mode
         env:
           LAB_ACCESS_TOKENS: ${{ secrets.LAB_ACCESS_TOKENS }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}   # optional: turns on /admin/stats
+          USAGE_SALT: ${{ secrets.USAGE_SALT }}     # optional: keeps visitor counts consistent across replicas
         run: ./03-deploy.sh
 
       - name: Wait for environment to be Ready

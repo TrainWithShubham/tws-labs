@@ -224,7 +224,7 @@ function trackBody(track, place) {
   const line = place ? lineClass(place.domain.id) : 'line-more';
   const items = track.labs.map((l) => `
       <li data-status="live"><a href="/lab/${track.id}/${l.id}" data-labs="${track.id}/${l.id}"><i class="stn-dot"></i>
-        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}</small></a></li>`).join('');
+        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}<span data-lab-tasks="${track.id}/${l.id}" data-total="${l.steps.filter((x) => x.type === 'task').length}"></span></small></a></li>`).join('');
   const parts = [['Labs', '/']];
   if (place) parts.push([place.domain.title, `/roadmap#${place.domain.id}`]);
   parts.push([track.title, '']);

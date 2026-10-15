@@ -15,6 +15,7 @@ const { loadRoadmap } = require('./roadmap');
 const { createUi } = require('./ui');
 const { createSandbox } = require('./sandbox');
 const { createStats } = require('./stats');
+const { createUsage, codeId } = require('./usage');
 const pages = require('./pages');
 
 const XTERM_DIR = path.join(__dirname, '..', 'node_modules', '@xterm');
@@ -90,6 +91,10 @@ function createApp(opts = {}) {
   const ui = createUi({ chip: cfg.chip, chipTitle: `pod ${os.hostname()}`, remoteFonts: cfg.remoteFonts, xtermDir: XTERM_DIR });
   const sandbox = createSandbox({ labsDir: cfg.labsDir });
   const stats = createStats();
+  const usage = createUsage({
+    enabled: cfg.usageStats, secret: cfg.usageSalt, dir: cfg.usageDir, retentionDays: cfg.usageRetentionDays,
+    log: (line) => console.log('usage ' + line),   // stdout, so the platform's log service keeps it
+  });
   const pool = createUidPool(cfg.uidBase, cfg.maxSessions);
 
   fs.mkdirSync(cfg.sandboxDir, { recursive: true });
@@ -132,6 +137,13 @@ function createApp(opts = {}) {
     if (req.method === 'GET' && p === '/stats') {
       // sessions/maxSessions let an operator see seat pressure per replica without shell access.
       return json(res, 200, { ...stats.get(), sessions: store.size(), maxSessions: cfg.maxSessions, profile: cfg.profile });
+    }
+    // Off (404) unless an ADMIN_TOKEN is configured; the token travels in a header, never in the URL.
+    if (req.method === 'GET' && p === '/admin/stats') {
+      if (!cfg.adminToken) return send(res, 404, 'text/html', page('labs', 'Not found', pages.notFoundBody()));
+      const given = digest((req.headers.authorization || '').replace(/^Bearer /i, ''));
+      if (!crypto.timingSafeEqual(given, digest(cfg.adminToken))) return json(res, 401, { error: 'unauthorized' }, { 'WWW-Authenticate': 'Bearer' });
+      return json(res, 200, usage.summary(), { 'Cache-Control': 'no-store' });
     }
     if (ui.serveAsset(req, res, p)) return;
 
@@ -180,7 +192,10 @@ function createApp(opts = {}) {
         }
         const uid = pool.acquire();
         if (uid === null) return json(res, 503, { error: 'busy', message: 'No free sandbox slot right now.' }, { 'Retry-After': '15' });
-        const token = store.mint({ track: String(track), lab: String(lab) }, ip, uid);
+        const invite = req.headers['x-lab-token'];
+        const code = invite && !cfg.isLocal ? codeId(invite) : undefined;   // only its short hash is ever kept
+        const token = store.mint({ track: String(track), lab: String(lab), code }, ip, uid);
+        usage.session({ track: String(track), lab: String(lab), ip, code });
         json(res, 200, { token });
       });
     }
@@ -203,6 +218,7 @@ function createApp(opts = {}) {
         const r = await sandbox.runCheck(step.checkFile, {
           home: session.home, uid: session.uid, shellPid: session.shellPid, historyFile: historyOf(token),
         });
+        usage.check({ track: session.meta.track, lab: session.meta.lab, step: stepId, pass: r.pass, ip: session.ip, code: session.meta.code });
         json(res, 200, { pass: r.pass, message: r.pass ? '' : r.message });
       });
     }

@@ -226,3 +226,17 @@ iso('isolation: learners cannot read the lab answers (solutions/) but the checks
     assert.equal(await pass(app, lab.token, 'mkdir'), true);
   } finally { lab.ws.close(); app.stop(); }
 });
+
+t('usage counters see real check results per task: a failed Check and then a pass are counted separately', async () => {
+  const app = await start({ usageStats: true, adminToken: 'adm' });
+  const lab = await openLab(app, 'linux-fundamentals', 'files');
+  try {
+    assert.equal(await pass(app, lab.token, 'mkdir'), false);
+    await lab.run('mkdir workspace');
+    assert.equal(await pass(app, lab.token, 'mkdir'), true);
+    const { json } = await require('./helpers').get(app, '/admin/stats', { headers: { Authorization: 'Bearer adm' } });
+    const l = Object.values(json.days)[0].labs['linux-fundamentals/files'];
+    assert.deepEqual(l.tasks.mkdir, { pass: 1, fail: 1 });
+    assert.deepEqual(l.checks, { pass: 1, fail: 1 });
+  } finally { lab.ws.close(); app.stop(); }
+});
