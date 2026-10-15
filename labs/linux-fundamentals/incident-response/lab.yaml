@@ -1,0 +1,78 @@
+title: Production incident triage
+level: intermediate
+minutes: 15
+summary: "Diagnose and resolve a production outage: runaway processes, disk alerts, and broken permissions."
+resources:
+  - title: Linux ps manual
+    url: https://man7.org/linux/man-pages/man1/ps.1.html
+    desc: Process status report syntax, options, and filtering.
+  - title: POSIX file permissions
+    url: https://en.wikipedia.org/wiki/File-system_permissions
+    desc: Numeric modes and ownership in Linux filesystems.
+steps:
+  - id: alert
+    type: lesson
+    title: The on-call alert
+    body: |
+      At 02:14 UTC, a high-priority alert fired: the backend API service crashed and refused to restart.
+
+      As the on-call engineer, your job is to triage the server, isolate the cascading issues, and restore the service:
+      1. A rogue background worker is consuming resources.
+      2. A crashed job flooded the disk with error logs.
+      3. Insecure file permissions are blocking startup pre-flight checks.
+
+      Once you resolve each issue, you will execute `./start.sh` to verify recovery.
+
+  - id: kill-worker
+    type: task
+    title: Terminate the runaway worker
+    body: |
+      A background process named `runaway-worker` was spawned during a deployment failure and is still lingering.
+
+      1. Inspect active processes using `ps` or `pgrep`.
+      2. Terminate the `runaway-worker` process cleanly using `pkill` or `kill`.
+    hint: "Find the PID with ps aux | grep runaway-worker, then run kill <PID> (or pkill runaway-worker)."
+    success: Terminated. The rogue process is no longer running.
+
+  - id: clear-disk
+    type: task
+    title: Clear the runaway log file
+    body: |
+      Before crashing, the failed worker filled `var/log/app-error.log` with megabytes of unrotated traces.
+
+      Inspect the file size and truncate `var/log/app-error.log` to 0 bytes so it stops consuming disk space.
+    hint: "Try: truncate -s 0 var/log/app-error.log (or > var/log/app-error.log)."
+    success: Truncated. The disk alert is cleared.
+
+  - id: fix-permissions
+    type: task
+    title: Secure the database configuration
+    body: |
+      The service reads its secrets from `config/database.env`. During emergency debugging, someone changed its permissions to `777` (world-readable and writable).
+
+      The startup script refuses to load world-writable secrets. Change the permissions of `config/database.env` to mode `600` (read and write for owner only).
+    hint: "Run: chmod 600 config/database.env"
+    success: Secured. Only the owner can read or write the secret.
+
+  - id: start-service
+    type: task
+    title: Start and verify the service
+    body: |
+      With the rogue process stopped, disk space recovered, and permissions secured, the application is ready to start.
+
+      Execute the startup script `./start.sh` to run the pre-flight checks and launch the service in the background.
+    hint: "Run: ./start.sh from your home directory."
+    success: All pre-flight checks passed and the service is alive.
+
+  - id: post-mortem
+    type: lesson
+    title: Incident resolved
+    body: |
+      **Great job!** You systematically triaged and resolved a multi-factor production outage:
+
+      - **Process management:** Used `ps` and `kill`/`pkill` to eliminate zombie or runaway jobs.
+      - **Disk management:** Safely truncated bloated log files without breaking open file descriptors.
+      - **Security hygiene:** Restored strict POSIX file permissions (`600`) on sensitive credential files.
+      - **Service restoration:** Ran pre-flight validation and brought the service back online.
+
+      These troubleshooting workflows form the daily core of site reliability and DevOps engineering.

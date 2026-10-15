@@ -8,6 +8,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+### Added
+- **Linux Fundamentals: production incident triage**, a scenario-based troubleshooting lab on resolving runaway processes, disk space emergencies, and securing sensitive configuration files.
+
 ## [1.2.0] - 2026-10-15
 
 ### Highlights
