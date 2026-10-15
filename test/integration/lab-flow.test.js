@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { start, check, openLab, sleep, ISOLATED, WebSocket } = require('./helpers');
+const { awsLabsDir } = require('./aws-labs-fixture');
 
 function canSpawnPty() {
   if (process.platform !== 'linux') return 'needs Linux';
@@ -256,4 +257,27 @@ t('restarting a lab (close the terminal, start a new session) gives fresh files 
     await second.run('mkdir workspace');
     assert.equal(await pass(app, second.token, 'mkdir'), true);
   } finally { first.ws.close(); if (second) second.ws.close(); app.stop(); }
+});
+
+t('local, in a real shell: AWS variables reach an account lab and its checks, other labs and other secrets never', async () => {
+  const saved = { ...process.env };
+  Object.assign(process.env, { AWS_REGION: 'us-east-1', AWS_ACCESS_KEY_ID: 'AKIAEXAMPLE', AWS_SECRET_ACCESS_KEY: 'shh', ADMIN_TOKEN: 'adm-secret' });
+  const app = await start({ profile: 'local', labsDir: awsLabsDir() });
+  try {
+    const acct = await openLab(app, 'cloud', 'acct');
+    try {
+      const out = await acct.run('echo "[$AWS_ACCESS_KEY_ID][$AWS_REGION][$ADMIN_TOKEN]"');
+      assert.match(out, /\[AKIAEXAMPLE\]\[us-east-1\]\[\]/);
+      assert.equal((await check(app, acct.token, 'show')).json.pass, true, 'checks see the variables too');
+    } finally { acct.ws.close(); }
+    const plain = await openLab(app, 'cloud', 'plain');
+    try {
+      const out = await plain.run('echo "[$AWS_ACCESS_KEY_ID][$AWS_REGION]"');
+      assert.match(out, /\[\]\[\]/);
+      assert.equal((await check(app, plain.token, 'show')).json.pass, false, 'a plain lab\'s checks do not see them');
+    } finally { plain.ws.close(); }
+  } finally {
+    for (const k of ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'ADMIN_TOKEN']) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }
+    app.stop();
+  }
 });
