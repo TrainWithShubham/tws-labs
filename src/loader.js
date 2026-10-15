@@ -35,8 +35,17 @@ function loadLab(labsDir, trackId, labId, problems) {
     if (typeof s.title !== 'string' || typeof s.body !== 'string') return bad(`step "${s.id}": title and body are required`);
     if (s.local_body !== undefined && typeof s.local_body !== 'string') return bad(`step "${s.id}": local_body must be text`);
     if (s.success !== undefined && (typeof s.success !== 'string' || s.success.length > 100)) return bad(`step "${s.id}": success must be text of at most 100 characters`);
+    // A hint is one nudge or a list of up to three tiers, gentle to specific; `hint` stays the first one.
+    let hints = [];
+    if (s.hint !== undefined && s.hint !== null && s.hint !== '') {
+      hints = Array.isArray(s.hint) ? s.hint : [s.hint];
+      if (typeof s.hint !== 'string' && !Array.isArray(s.hint)) return bad(`step "${s.id}": hint: must be text or a list of text`);
+      if (hints.length > 3) return bad(`step "${s.id}": hint: at most 3 tiers`);
+      if (hints.some((h) => typeof h !== 'string' || !h.trim())) return bad(`step "${s.id}": hint: every tier must be non-empty text`);
+      if (hints.some((h) => h.length > 300)) return bad(`step "${s.id}": hint: each tier is at most 300 characters`);
+    }
     const step = {
-      id: s.id, type: s.type, title: s.title, body: s.body, bodyHtml: renderMarkdown(s.body), hint: s.hint || '',
+      id: s.id, type: s.type, title: s.title, body: s.body, bodyHtml: renderMarkdown(s.body), hint: hints[0] || '', hints,
       // Optional confirmation shown in green when the task's check passes (default: "Correct. Step complete.").
       success: s.success || '',
       // Optional wording for the laptop profile (e.g. "there is no cluster here"); same checks.

@@ -28,6 +28,28 @@
     var s = window.twsTaskSummary(el.getAttribute('data-lab-tasks'), parseInt(el.getAttribute('data-total'), 10) || 0);
     if (s) el.textContent = ' \u00b7 ' + s;
   });
+  // Hints come one tier at a time, and only after the learner has tried: the button appears after a failed Check.
+  window.twsHints = function () {
+    var fails = {}, asked = {};
+    return {
+      failed: function (id) { fails[id] = (fails[id] || 0) + 1; },
+      ready: function (id, tiers) {
+        if (!tiers.length || !fails[id] || (asked[id] || 0) >= tiers.length) return false;
+        return { label: asked[id] ? 'Another hint' : 'Need a hint?' };
+      },
+      next: function (id, tiers) {
+        var n = asked[id] || 0;
+        if (n >= tiers.length) return null;
+        asked[id] = n + 1;
+        return (tiers.length > 1 ? 'Hint ' + (n + 1) + ' of ' + tiers.length : 'Hint') + ': ' + tiers[n];
+      },
+      shown: function (id, tiers) {
+        var n = asked[id] || 0;
+        if (!n) return '';
+        return (tiers.length > 1 ? 'Hint ' + n + ' of ' + tiers.length : 'Hint') + ': ' + tiers[n - 1];
+      },
+    };
+  };
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

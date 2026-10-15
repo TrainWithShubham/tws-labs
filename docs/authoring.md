@@ -72,6 +72,8 @@ steps:
     title: Create a branch
     body: Create a branch called `feature` and switch to it.
     hint: "Try: git switch -c feature"     # shown when the check fails and prints no message
+    # or up to three tiers, gentle to specific; a "Need a hint?" button reveals them one at a time after a failed Check:
+    # hint: ["Think about how branches are created", "git switch can create one", "Use the -c flag"]
     success: Correct. Branches are cheap.  # optional (<= 100 chars): the green confirmation when the check passes
     local_body: |                          # optional: different wording when run on a learner's own machine
       Same task, but mention the laptop instead of the hosted cluster.

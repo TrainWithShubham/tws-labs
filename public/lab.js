@@ -119,6 +119,7 @@
     $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
     $('skip-btn').style.visibility = last ? 'hidden' : 'visible';
     renderDots();
+    renderHintButton();
   }
   function next() { if (current < STEPS.length - 1) { current++; render(); } }
   $('back-btn').onclick = function () { if (current > 0) { current--; render(); } };
@@ -126,6 +127,13 @@
 
   // One live region for feedback: amber nudge when a check fails, green confirmation when it passes.
   function setHint(text, ok) { var h = $('step-hint'); h.textContent = text; h.classList.toggle('is-ok', !!ok); }
+  var hints = window.twsHints();
+  function hintsOf(s) { return s.hints && s.hints.length ? s.hints : (s.hint ? [s.hint] : []); }
+  function renderHintButton() {
+    var s = STEPS[current], b = $('hint-btn'), r = s.type === 'task' && !done[s.id] && hints.ready(s.id, hintsOf(s));
+    b.hidden = !r;
+    if (r) { b.textContent = r.label; b.onclick = function () { setHint(hints.next(s.id, hintsOf(s)), false); renderHintButton(); }; }
+  }
 
   function check() {
     var s = STEPS[current];
@@ -138,7 +146,11 @@
         btn.disabled = false;
         if (d.pass) { done[s.id] = true; window.twsMarkTask(DATA.track + '/' + DATA.lab, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
         btn.textContent = 'Not yet — try again';
-        setHint(d.message || s.hint || '', false);
+        hints.failed(s.id);
+        var msg = d.message;
+        if (!msg && hintsOf(s).length === 1) { msg = s.hint; hints.next(s.id, hintsOf(s)); }   // a lone hint shows as before
+        setHint(msg || '', false);
+        renderHintButton();
       })
       .catch(function () { btn.disabled = false; btn.textContent = 'Error — retry'; });
   }

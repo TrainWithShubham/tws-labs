@@ -66,3 +66,4 @@
 .invite-row { display: flex; gap: 10px; }
 .invite input { flex: 1; min-width: 0; background: transparent; color: var(--text); border: 1px solid var(--rule2); border-radius: 999px; padding: 9px 16px; font: 14px var(--mono); }
 .invite input:focus { outline: none; border-color: var(--cloud); }
+#hint-btn[hidden] { display: none; }

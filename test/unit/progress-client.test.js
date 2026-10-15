@@ -79,3 +79,30 @@ test('finished labs still work as before', () => {
   window.twsMarkDone('a/b');
   assert.deepEqual(JSON.parse(store['tws-local:done']), ['a/b']);
 });
+
+test('hints: appear only after a failed check, one tier at a time, from gentle to specific', () => {
+  const { window } = load();
+  const h = window.twsHints();
+  const tiers = ['nudge', 'closer', 'almost there'];
+  assert.equal(h.ready('do', tiers), false, 'not before the learner has tried');
+  h.failed('do');
+  assert.deepEqual({ ...h.ready('do', tiers) }, { label: 'Need a hint?' });
+  assert.equal(h.next('do', tiers), 'Hint 1 of 3: nudge');
+  assert.deepEqual({ ...h.ready('do', tiers) }, { label: 'Another hint' });
+  assert.equal(h.next('do', tiers), 'Hint 2 of 3: closer');
+  assert.equal(h.next('do', tiers), 'Hint 3 of 3: almost there');
+  assert.equal(h.ready('do', tiers), false, 'nothing left to reveal');
+  assert.equal(h.next('do', tiers), null);
+  assert.equal(h.shown('do', tiers), 'Hint 3 of 3: almost there', 'the last revealed hint can be shown again');
+});
+
+test('hints: a single hint reads without "1 of 1"; no hints means no button; steps are independent', () => {
+  const { window } = load();
+  const h = window.twsHints();
+  h.failed('a'); h.failed('b');
+  assert.equal(h.ready('a', []), false);
+  assert.equal(h.next('a', ['only']), 'Hint: only');
+  assert.equal(h.ready('a', ['only']), false);
+  assert.notEqual(h.ready('b', ['x', 'y']), false, 'step b is untouched by step a');
+  assert.equal(h.shown('b', ['x', 'y']), '');
+});

@@ -74,3 +74,27 @@ test('an optional success message is kept, and a too-long or non-text one is rej
   const long = loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: nudge, success: "${'x'.repeat(101)}"}`) }));
   assert.match(long.problems.join('\n'), /success must be text/);
 });
+
+test('a hint can be one nudge or a list of up to three, from gentle to specific; the first stays as `hint`', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const load = (hint) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: ${hint}}`) }));
+  const one = load('nudge').tracks[0].labs[0].steps[1];
+  assert.deepEqual([one.hint, one.hints], ['nudge', ['nudge']]);
+  const three = load('["Think about listing", "Look at ls flags", "ls -la shows hidden files"]');
+  assert.deepEqual(three.problems, []);
+  const s = three.tracks[0].labs[0].steps[1];
+  assert.equal(s.hint, 'Think about listing');
+  assert.deepEqual(s.hints, ['Think about listing', 'Look at ls flags', 'ls -la shows hidden files']);
+  const none = loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace(', hint: nudge', '') })).tracks[0].labs[0].steps[1];
+  assert.deepEqual([none.hint, none.hints], ['', []]);
+});
+
+test('a malformed hint list is reported: too many tiers, blank or non-text tiers, an overlong tier', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const problems = (hint) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: ${hint}}`) })).problems.join('\n');
+  assert.match(problems('[a, b, c, d]'), /hint: at most 3 tiers/);
+  assert.match(problems('["a", ""]'), /hint: every tier must be non-empty text/);
+  assert.match(problems('["a", 5]'), /hint: every tier must be non-empty text/);
+  assert.match(problems(`"${'x'.repeat(301)}"`), /hint: each tier is at most 300 characters/);
+  assert.match(problems('{a: 1}'), /hint: must be text or a list of text/);
+});
