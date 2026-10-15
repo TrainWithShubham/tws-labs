@@ -13,5 +13,5 @@ name=$(yaml_get "$f" 'd.metadata && d.metadata.name')
 [ "$name" = "nginx-service" ] || fail "Name the Service nginx-service in metadata.name."
 
 type=$(yaml_get "$f" 'd.spec && d.spec.type')
-[ -z "$type" ] || [ "$type" = "ClusterIP" ] || fail "Set spec.type to ClusterIP (or omit it for default ClusterIP)."
+[ -z "$type" ] || [ "$type" = undefined ] || [ "$type" = "ClusterIP" ] || fail "Set spec.type to ClusterIP (or omit it for default ClusterIP)."
 

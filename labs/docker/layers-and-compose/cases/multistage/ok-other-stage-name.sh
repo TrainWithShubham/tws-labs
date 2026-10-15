@@ -1,0 +1,1 @@
+printf '%s\n' 'FROM node:22-alpine AS builder' 'WORKDIR /app' 'COPY . .' 'RUN npm ci' '' 'FROM node:22-alpine' 'WORKDIR /app' 'COPY --from=builder /app/server.js .' 'USER node' 'CMD ["node", "server.js"]' > Dockerfile

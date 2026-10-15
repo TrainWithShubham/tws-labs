@@ -1,0 +1,1 @@
+printf '%s\n' 'services:' '  web:' '    image: node:22-alpine' '    networks:' '      backend: {}' '  db:' '    image: postgres:17' '    networks:' '      backend: {}' 'networks:' '  backend:' > compose.yaml

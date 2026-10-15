@@ -1,0 +1,1 @@
+git branch -D feature

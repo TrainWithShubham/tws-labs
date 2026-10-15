@@ -1,0 +1,1 @@
+dig example.org

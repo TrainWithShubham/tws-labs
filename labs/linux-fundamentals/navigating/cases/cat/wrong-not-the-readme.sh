@@ -1,0 +1,1 @@
+cat docs/other.txt

@@ -4,7 +4,8 @@
 //   - every script parses (bash -n); solutions are one command per line; checks source the helpers,
 //     print a nudge when they fail, and do not change the learner's files
 //   - a task whose check is the same as another lab's check (a repeated task) is flagged
-//   - advice ("note", never fails a build, even with --strict): no success message, a check that only reads the typed
+//   - cases/ files are validated (names, one command per line, tasks that exist)
+//   - advice ("note", never fails a build, even with --strict): no success message, no near-miss case, a check that only reads the typed
 //     history, a hint that is too short or repeats the command from the task, labs over 15 minutes
 // `npm run lab:check` runs this and then the real proof (each check fails before its solution and passes after).
 const fs = require('fs');
@@ -13,6 +14,7 @@ const { spawnSync } = require('child_process');
 const { loadCatalog } = require('../src/loader');
 const { loadRoadmap } = require('../src/roadmap');
 const { lintLab } = require('../src/lint');
+const { loadCases } = require('../src/cases');
 
 const MUTATORS = /(^|[;&|(]\s*)(rm|mv|cp|touch|chmod|chown|mkdir|tee|sed\s+-i)\s/;
 
@@ -83,6 +85,8 @@ function lintLabs({ labsDir, only } = {}) {
       for (const [sid, sample] of [['create-file', 'Create a file'], ['list-files', 'Look around']]) {
         if (lab.steps.some((s) => s.id === sid && s.title === sample)) add(id, 'warn', `the template's sample task "${sid}" is still here: replace it with your own task (and delete its checks/solutions files)`);
       }
+      const taskCases = loadCases(lab.dir, lab.steps.filter((x) => x.type === 'task').map((x) => x.id));
+      taskCases.problems.forEach((p) => add(id, 'error', p));
       const scripts = [];
       if (fs.existsSync(path.join(lab.dir, 'setup.sh'))) scripts.push({ file: path.join(lab.dir, 'setup.sh'), what: 'setup.sh' });
       for (const step of lab.steps.filter((s) => s.type === 'task')) {
@@ -90,6 +94,7 @@ function lintLabs({ labsDir, only } = {}) {
         const solution = fs.readFileSync(step.solutionFile, 'utf8');
         scripts.push({ file: step.checkFile, what: `checks/${step.id}.sh` }, { file: step.solutionFile, what: `solutions/${step.id}.sh` });
         adviseTask(step).forEach((m) => add(id, 'info', m));
+        if (!taskCases.cases.some((c) => c.task === step.id)) add(id, 'info', `task "${step.id}" has no cases/${step.id}/ near miss: add a wrong-but-plausible answer the check must reject (and an ok- alternative it must accept)`);
         if (onlyReadsHistory(check)) add(id, 'info', `checks/${step.id}.sh only reads the command history: it grades what was typed, not what happened. Check the resulting state (a file, a process, a repo) where you can`);
         if (!/(^|\n)\s*(\.|source)\s+"?\$LAB_LIB"?/.test(check)) add(id, 'error', `checks/${step.id}.sh must start with  . "$LAB_LIB"  (it provides fail, ran, file_has ...)`);
         if (!/\bfail\b|exit\s+1/.test(check)) add(id, 'error', `checks/${step.id}.sh never fails: use  fail "what is still missing"`);

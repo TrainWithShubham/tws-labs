@@ -22,6 +22,7 @@ function labsDir(labs) {
     fs.writeFileSync(path.join(d, 'checks', 'do.sh'), labs[id].check ?? GOOD_CHECK);
     fs.writeFileSync(path.join(d, 'solutions', 'do.sh'), labs[id].solution ?? 'touch hello.txt\n');
     if (labs[id].setup) fs.writeFileSync(path.join(d, 'setup.sh'), labs[id].setup);
+    if (!labs[id].noCase) { fs.mkdirSync(path.join(d, 'cases', 'do'), { recursive: true }); fs.writeFileSync(path.join(d, 'cases', 'do', 'wrong-name.sh'), 'touch hello.tx\n'); }
   }
   fs.writeFileSync(path.join(root, 'roadmap.json'), JSON.stringify({ version: 1, domains: [{ id: 'devops', title: 'DevOps', topics: [{ id: 'x', title: 'X', status: 'live', labs: ids.map((i) => `t/${i}`) }] }] }));
   return root;
@@ -136,11 +137,20 @@ test('advice: labs over 15 minutes get a note (the hard limit stays 20)', () => 
 });
 
 test('advice never fails the CLI, even with --strict, and is printed as a note', () => {
-  const dir = labsDir({ quiet: { yaml: yamlWith('{id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt"}') } });
+  const dir = labsDir({ quiet: { noCase: false, yaml: yamlWith('{id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt"}') } });
   const r = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'scripts', 'lint-labs.js'), '--strict', '--notes'], { encoding: 'utf8', env: { ...process.env, LABS_DIR: dir } });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /note\s+t\/quiet: task "do" has no success: message/);
   const quiet = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'scripts', 'lint-labs.js'), '--strict'], { encoding: 'utf8', env: { ...process.env, LABS_DIR: dir } });
   assert.doesNotMatch(quiet.stdout, /note\s+t\/quiet/, 'listed only on request');
   assert.match(quiet.stdout, /1 note\(s\) are advice/);
+});
+
+test('advice: a task with no near-miss case gets a note; a case for a task that does not exist is an error', () => {
+  assert.match(notes({ bare: { noCase: true } }), /t\/bare: task "do" has no cases\/do\/ near miss/);
+  assert.doesNotMatch(notes({ covered: {} }), /near miss/);
+  const dir = labsDir({ stray: {} });
+  fs.mkdirSync(path.join(dir, 't', 'stray', 'cases', 'ghost'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 't', 'stray', 'cases', 'ghost', 'x.sh'), 'true\n');
+  assert.match(msgs(lintLabs({ labsDir: dir }), 'error').join('\n'), /t\/stray: cases\/ghost: no task called "ghost"/);
 });

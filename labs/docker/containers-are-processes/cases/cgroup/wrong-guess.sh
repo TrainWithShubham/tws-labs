@@ -1,0 +1,1 @@
+echo "/" > cgroup.txt
