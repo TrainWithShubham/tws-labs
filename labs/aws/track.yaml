@@ -4,3 +4,4 @@ description: Hands-on tours of AWS services, inside a real terminal on the kind 
 labs:
   - elastic-beanstalk-cluster-mode
   - aws-cli-first-steps
+  - finops-audit
