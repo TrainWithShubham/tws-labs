@@ -61,6 +61,7 @@ title: Branches and merging
 level: intermediate          # beginner | intermediate | advanced
 minutes: 12
 summary: One sentence shown on the track page.
+# requires: aws             # optional: the lab uses the learner's OWN AWS account (see "Account labs" below)
 steps:
   - id: why                  # unique within the lab; also names checks/why.sh for tasks
     type: lesson             # lesson: read and press "Got it"
@@ -166,6 +167,16 @@ All run as the learner, in their home directory; start every check with `. "$LAB
 Aim for none on a new lab. They cover a task with no `success:` message, a check that only reads the typed history
 (grades the command, not the result), a hint shorter than 10 characters or one that repeats the command from the task, and a lab over
 15 minutes. `npm run lab:lint -- --notes` lists them for every lab.
+
+## Account labs (`requires: aws`)
+
+A lab that says `requires: aws` runs against the learner's **own AWS account**, so it only runs on their machine:
+
+- **Hosted**: the lab page is a read-only walkthrough with the commands to run it locally, and `POST /session` answers 403 `needs-local`. The hosted site never asks for AWS keys.
+- **Local**: the learner's `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION` and `AWS_PROFILE` are passed to their shell and to your checks, and **only** for these labs (`src/lab-env.js`). Never put keys, account IDs or ARNs in a lab file.
+- **Checks** read the account (`aws ... describe/get/list`) and stay read-only. Pair state with `ran` where a learner could fake it.
+- **The offline validator skips these labs** (it prints why); the scheduled AWS workflow proves them against a disposable account (`TWS_PROVE_AWS=1`).
+- Keep them cheap and safe: free-tier or pennies, tag everything you create `tws-labs=<lab-id>`, and end with a graded cleanup task.
 
 ## Validation rules (`node scripts/validate-labs.js`)
 

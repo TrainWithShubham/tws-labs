@@ -238,6 +238,29 @@ function trackBody(track, place) {
 
 const STAT = (id, label) => `<div class="stat-cell"><div class="stat-label">${label}</div><div class="stat-value" id="stat-${id}">&mdash;</div>${id === 'uptime' ? '' : `<div class="stat-bar"><div class="stat-bar-fill" id="stat-${id}-bar"></div></div>`}</div>`;
 
+// A lab that needs the learner's own AWS account never opens a terminal on the hosted site (it would hold strangers'
+// credentials). The page is a read-only walkthrough plus how to run the real thing on their own machine.
+function accountLabBody(lab, trackTitle, place) {
+  const steps = lab.steps.map((s) => `
+      <li><b>${esc(s.title)}</b><div class="step-body">${s.bodyHtml}</div></li>`).join('');
+  return {
+    body: `
+  <div class="wrap track ${place ? lineClass(place.domain.id) : 'line-more'}">
+    ${crumb([['Labs', '/'], ...(place ? [[place.domain.title, `/roadmap#${place.domain.id}`]] : []), [trackTitle, `/t/${lab.track}`]])}
+    <h1 class="page-title">${esc(lab.title)}</h1>
+    <p class="lede">${esc(lab.summary)}</p>
+    <div class="video-banner"><div><strong>This lab uses your own AWS account, so it runs on your machine.</strong><br/>
+      <small>The hosted site never asks for AWS keys. Start TWS Labs locally with your credentials set:</small>
+      <pre><code>git clone https://github.com/TrainWithShubham/tws-labs.git &amp;&amp; cd tws-labs
+AWS=1 ./start_local_labs.sh</code></pre>
+      <small>Setup, the learner role and the cost guardrails: <a href="https://github.com/TrainWithShubham/tws-labs/blob/main/docs/aws-labs.md" target="_blank" rel="noopener noreferrer">docs/aws-labs.md</a></small></div></div>
+    <h2>What you will do</h2>
+    <ol class="walkthrough">${steps}</ol>
+  </div>`,
+    scripts: '',
+  };
+}
+
 // The lab page is a seatless shell: it embeds the steps and the client mints its
 // own session with POST /session. Nothing about GET /lab/... takes a seat.
 function labBody(lab, trackTitle, cfg, place, next) {
@@ -293,4 +316,4 @@ function labBody(lab, trackTitle, cfg, place, next) {
   };
 }
 
-module.exports = { notFoundBody, homeBody, roadmapBody, videosBody, trackBody, labBody, placeOf, nextLab };
+module.exports = { notFoundBody, homeBody, roadmapBody, videosBody, trackBody, labBody, accountLabBody, placeOf, nextLab };

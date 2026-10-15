@@ -98,3 +98,14 @@ test('a malformed hint list is reported: too many tiers, blank or non-text tiers
   assert.match(problems(`"${'x'.repeat(301)}"`), /hint: each tier is at most 300 characters/);
   assert.match(problems('{a: 1}'), /hint: must be text or a list of text/);
 });
+
+test('a lab can say it needs the learner\'s own AWS account; any other value is reported', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const load = (extra) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': extra + GOOD_LAB }));
+  const aws = load('requires: aws\n');
+  assert.deepEqual(aws.problems, []);
+  assert.equal(aws.tracks[0].labs[0].requires, 'aws');
+  assert.equal(load('').tracks[0].labs[0].requires, '', 'offline by default');
+  assert.match(load('requires: gcp\n').problems.join('\n'), /requires must be "aws"/);
+  assert.match(load('requires: [aws]\n').problems.join('\n'), /requires must be "aws"/);
+});

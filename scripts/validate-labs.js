@@ -14,6 +14,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { loadCatalog } = require('../src/loader');
 const { lintLab } = require('../src/lint');
+const { proofSkipReason } = require('../src/lab-env');
 const { createSandbox } = require('../src/sandbox');
 const { killProcessSession } = require('../src/lib');
 
@@ -106,7 +107,9 @@ async function validateLab(lab, work) {
       const id = `${track.id}/${lab.id}`;
       if (only && only !== id) continue;
       console.log(`- ${id}`);
-      const errors = await validateLab(lab, path.join(root, `${track.id}-${lab.id}`));
+      const skip = proofSkipReason(lab);
+      if (skip) console.log(`    skipped: ${skip}`);
+      const errors = skip ? [] : await validateLab(lab, path.join(root, `${track.id}-${lab.id}`));
       errors.forEach((e) => console.error(`    FAIL ${e}`));
       failed += errors.length;
       for (const warning of lintLab(lab)) {

@@ -50,22 +50,22 @@ function createSandbox({ labsDir }) {
 
   // Lab setup.sh seeds the learner's fresh home. Synchronous on purpose: it must
   // finish before the learner's shell starts.
-  function runSetup(labDir, home, uid) {
+  function runSetup(labDir, home, uid, extraEnv = {}) {
     const script = path.join(labDir, 'setup.sh');
     if (!fs.existsSync(script)) return { code: 0, out: '' };
     const [file, args] = asUser(uid, home, 'bash', [script]);
-    const r = spawnSync(file, args, { cwd: home, env: scriptEnv(home), timeout: 15000, encoding: 'utf8' });
+    const r = spawnSync(file, args, { cwd: home, env: scriptEnv(home, extraEnv), timeout: 15000, encoding: 'utf8' });
     return { code: r.status === null ? 1 : r.status, out: (r.stdout || '') + (r.stderr || '') };
   }
 
   // Check contract: `bash checks/<step>.sh`, cwd = learner home, exit 0 = pass.
   // The first stdout line (if any) is shown to the learner as the failure message.
-  function runCheck(scriptPath, { home, uid, shellPid, historyFile }) {
+  function runCheck(scriptPath, { home, uid, shellPid, historyFile, env = {} }) {
     return new Promise((resolve) => {
       const [file, args] = asUser(uid, home, 'bash', [scriptPath]);
       const child = spawn(file, args, {
         cwd: home,
-        env: scriptEnv(home, { LAB_SHELL_PID: String(shellPid || ''), LAB_HISTORY: historyFile || '/dev/null' }),
+        env: scriptEnv(home, { ...env, LAB_SHELL_PID: String(shellPid || ''), LAB_HISTORY: historyFile || '/dev/null' }),
         stdio: ['ignore', 'pipe', 'ignore'],
       });
       let out = '';

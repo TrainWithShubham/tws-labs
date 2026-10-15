@@ -3,6 +3,7 @@ const pty = require('node-pty');
 const WebSocket = require('ws');
 const { killProcessSession, killProcessesOfUid } = require('./lib');
 const { guardOk } = require('./guards');
+const { labEnv } = require('./lab-env');
 
 const MAX_WS_MESSAGE_BYTES = 64 * 1024;
 
@@ -27,7 +28,8 @@ function attachTerminal(server, d) {
     let shell;
     try {
       sandbox.prepareHome(home, uid);
-      const setup = sandbox.runSetup(lab.dir, home, uid);
+      const extraEnv = labEnv(lab, cfg);
+      const setup = sandbox.runSetup(lab.dir, home, uid, extraEnv);
       if (setup.code !== 0) throw new Error('setup.sh failed:\n' + setup.out);
       sandbox.prepareHistory(historyOf(token), uid);
       // bash, not sh: on Debian sh is dash, which has no `ulimit -u` (and would fail silently).
@@ -36,7 +38,7 @@ function attachTerminal(server, d) {
       // process's config or secrets.
       shell = pty.spawn(file, args, {
         name: 'xterm-256color', cols: 80, rows: 24, cwd: home,
-        env: { PATH: process.env.PATH, HOME: home, TERM: 'xterm-256color', LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0' },
+        env: { PATH: process.env.PATH, HOME: home, TERM: 'xterm-256color', LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0', ...extraEnv },
       });
     } catch (e) {
       // A resource-exhausted host must not crash the process for every other visitor.

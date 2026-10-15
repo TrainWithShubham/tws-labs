@@ -27,7 +27,10 @@ module.exports = function siteRoutes(router, d) {
     const lab = findLab(m[1], m[2]);
     if (!lab) return send(res, 404, 'text/html', page('labs', 'Not found', pages.notFoundBody()));
     const trackTitle = getCatalog().tracks.find((x) => x.id === lab.track).title;
-    const { body, scripts } = pages.labBody(lab, trackTitle, cfg, pages.placeOf(getRoadmap(), lab.track), pages.nextLab(getCatalog(), lab.track, lab.id));
+    const place = pages.placeOf(getRoadmap(), lab.track);
+    const { body, scripts } = lab.requires === 'aws' && !cfg.isLocal
+      ? pages.accountLabBody(lab, trackTitle, place)
+      : pages.labBody(lab, trackTitle, cfg, place, pages.nextLab(getCatalog(), lab.track, lab.id));
     send(res, 200, 'text/html', page('labs', lab.title, body, scripts), { 'Cache-Control': 'no-store' });
   });
 };

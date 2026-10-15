@@ -2,6 +2,7 @@ const { json, readJson } = require('../http');
 const { guardOk, tokenOk } = require('../guards');
 const { clientIp } = require('../lib');
 const { codeId } = require('../usage');
+const { labEnv } = require('../lab-env');
 
 // Seats: minting a session, its countdown, and grading a task.
 module.exports = function sessionRoutes(router, d) {
@@ -12,6 +13,9 @@ module.exports = function sessionRoutes(router, d) {
     return readJson(req, res, ({ track, lab }) => {
       const found = findLab(String(track), String(lab));
       if (!found) return json(res, 404, { error: 'unknown lab' });
+      if (found.requires === 'aws' && !cfg.isLocal) {
+        return json(res, 403, { error: 'needs-local', message: 'This lab uses your own AWS account, so it runs on your machine. The hosted site never asks for AWS keys; see the lab page for how to run it locally.' });
+      }
       if (!cfg.isLocal && !tokenOk(req, cfg)) {
         return json(res, 401, { error: 'token-required', message: 'This lab needs an invite code.' });
       }
@@ -52,7 +56,7 @@ module.exports = function sessionRoutes(router, d) {
       if (!step) return json(res, 404, { pass: false });
       if (!session.shellPid) return json(res, 200, { pass: false, message: 'Terminal is still connecting.' });
       const r = await sandbox.runCheck(step.checkFile, {
-        home: session.home, uid: session.uid, shellPid: session.shellPid, historyFile: historyOf(token),
+        home: session.home, uid: session.uid, shellPid: session.shellPid, historyFile: historyOf(token), env: labEnv(lab, cfg),
       });
       usage.check({ track: session.meta.track, lab: session.meta.lab, step: stepId, pass: r.pass, ip: session.ip, code: session.meta.code });
       json(res, 200, { pass: r.pass, message: r.pass ? '' : r.message });
