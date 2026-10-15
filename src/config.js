@@ -31,8 +31,9 @@ function loadConfig(env = process.env) {
     // Per client IP, counting minted-but-unconnected tokens. Kept above 1 because a
     // classroom/campus NAT puts many real learners behind one address. 0 = unlimited.
     maxPerIp: isLocal ? 0 : intEnv(env, 'MAX_SESSIONS_PER_IP', 3),
-    idleMs: intEnv(env, 'LAB_IDLE_MIN', isLocal ? 30 : 5) * 60 * 1000,
-    hardCapMs: intEnv(env, 'LAB_HARD_CAP_MIN', isLocal ? 120 : 15) * 60 * 1000,
+    // Minutes are the real knob. The *_SEC variants exist so browser tests can watch a timeout in seconds, not minutes; they win when set.
+    idleMs: intEnv(env, 'LAB_IDLE_SEC', 0) * 1000 || intEnv(env, 'LAB_IDLE_MIN', isLocal ? 30 : 5) * 60 * 1000,
+    hardCapMs: intEnv(env, 'LAB_HARD_CAP_SEC', 0) * 1000 || intEnv(env, 'LAB_HARD_CAP_MIN', isLocal ? 120 : 15) * 60 * 1000,
     // The page connects its terminal right after minting; a token that never does
     // must not hold a seat for long.
     connectDeadlineMs: 15 * 1000,

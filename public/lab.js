@@ -69,8 +69,8 @@
   function busy(message) {
     setStatus('ended', 'waiting');
     tries++;
-    if (tries > 20) { term.write('\r\n\x1b[33m' + message + ' Reload the page to try again.\x1b[0m\r\n'); return; }
-    term.write('\r\n\x1b[33m' + message + ' Retrying in a few seconds…\x1b[0m');
+    if (tries > 20) { term.write('\r\n\x1b[33m' + window.twsWrap(message + ' Reload the page to try again.', term.cols - 2).join('\r\n') + '\x1b[0m\r\n'); return; }
+    term.write('\r\n\x1b[33m' + window.twsWrap(message + ' Retrying in a few seconds…', term.cols - 2).join('\r\n') + '\x1b[0m');
     setTimeout(startSession, 8000 + Math.random() * 7000);
   }
   function connect() {
@@ -78,7 +78,14 @@
     ws = new WebSocket(proto + '//' + location.host + '/ws?token=' + token);
     ws.onopen = function () { setStatus('live', 'live'); sendSize(); term.focus(); render(); };
     ws.onmessage = function (ev) { term.write(ev.data); };
-    ws.onclose = function (ev) { stopTimer(); setStatus('ended', 'ended'); term.write('\r\n[session ended: ' + (ev.reason || ev.code) + ']\r\n'); };
+    ws.onclose = function (ev) {
+      stopTimer(); setStatus('ended', 'ended');
+      $('lab-timer-text').textContent = /time limit/i.test(ev.reason || '') ? '00:00' : '--:--';   // never leave a stale countdown behind
+      $('lab-timer').classList.remove('is-low');
+      var msg = window.twsEndMessage(ev.code, ev.reason);
+      term.write('\r\n\x1b[33m' + window.twsWrap(msg, term.cols - 2).join('\r\n') + '\x1b[0m\r\n');
+      setHint(msg, false);
+    };
     ws.onerror = function () { setStatus('ended', 'error'); };
   }
 

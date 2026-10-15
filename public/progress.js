@@ -67,6 +67,31 @@
     var m = /^\S*@\S*[:\s]\S*[$#]\s(.*)$/.exec(String(line || '').replace(/\s+$/, ''));
     return m ? m[1].trim() : '';
   };
+  // Wrap a message at word boundaries for a terminal `cols` wide (a terminal would otherwise cut it in the middle of a word).
+  window.twsWrap = function (text, cols) {
+    var width = cols > 0 ? cols : 100000, words = String(text).split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function (w) {
+      if (!cur) cur = w;
+      else if ((cur + ' ' + w).length <= width) cur += ' ' + w;
+      else { lines.push(cur); cur = w; }
+    });
+    lines.push(cur);
+    return lines;
+  };
+  // What to tell a learner when their terminal session ends, in plain words, and what to do next.
+  window.twsEndMessage = function (code, reason) {
+    var r = String(reason || '').toLowerCase(), why;
+    if (/idle/.test(r)) why = 'Your session ended because it was idle for too long.';
+    else if (/time limit/.test(r)) why = 'Your session reached its time limit.';
+    else if (/shell exited/.test(r)) why = 'The shell exited (you typed exit, or pressed Ctrl+D).';
+    else if (/ended by learner|restarted|page closed/.test(r)) why = 'The session was ended.';
+    else if (/invalid or expired/.test(r)) why = 'This session is no longer valid, it may have expired.';
+    else if (/already connected/.test(r)) why = 'This session is already open in another tab.';
+    else if (/could not start/.test(r)) why = 'The lab sandbox could not start.';
+    else if (code === 1006 || code === 1001 || code === 1005 || code === undefined) why = 'The connection was lost (the server may have restarted, or your network dropped).';
+    else why = 'The session ended.';
+    return why + ' Press Restart lab to start again.';
+  };
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

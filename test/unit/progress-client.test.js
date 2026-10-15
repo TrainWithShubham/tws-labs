@@ -135,3 +135,30 @@ test('pending input: text left on the prompt line is found, so a failed Check ca
   assert.equal(p('root@host:/# echo hi'), 'echo hi', 'a # prompt works too');
   assert.equal(p('learner@lab:~$ echo "cost: $5"'), 'echo "cost: $5"', 'a dollar sign inside the command is not the prompt');
 });
+
+test('end-of-session messages: plain words for every way a session can end, never a bare close code', () => {
+  const { window } = load();
+  const m = (code, reason) => window.twsEndMessage(code, reason);
+  assert.match(m(4000, 'idle timeout'), /idle/i);
+  assert.match(m(4000, 'session time limit reached'), /time limit/i);
+  assert.match(m(1000, 'shell exited'), /exit/i);
+  assert.match(m(1000, 'ended by learner'), /ended/i);
+  assert.match(m(4001, 'invalid or expired session'), /expired|no longer valid/i);
+  assert.match(m(4002, 'session already connected'), /another tab/i);
+  assert.match(m(1011, 'could not start the lab sandbox'), /could not start/i);
+  assert.match(m(1006, ''), /connection (was )?lost|dropped/i);
+  assert.match(m(1001, ''), /connection (was )?lost|dropped|closed/i);
+  for (const code of [1006, 1001, 4000, 1000, 4999]) assert.match(m(code, ''), /Restart lab|reload/i, `${code} tells the learner what to do next`);
+  assert.ok(!/undefined|\[object/.test(m(undefined, undefined)));
+});
+
+test('terminal messages are wrapped at word boundaries to the terminal width, never in the middle of a word', () => {
+  const { window } = load();
+  const w = (s, n) => Array.from(window.twsWrap(s, n));
+  assert.deepEqual(w('one two three four five', 10), ['one two', 'three four', 'five']);
+  assert.deepEqual(w('short', 80), ['short']);
+  assert.deepEqual(w('', 80), ['']);
+  assert.deepEqual(w('a verylongwordthatcannotfit here', 8), ['a', 'verylongwordthatcannotfit', 'here'], 'a word longer than the width stays whole on its own line');
+  for (const line of w('All lab seats on this server are taken right now. A seat usually frees up within a few minutes. Retrying in a few seconds…', 40)) assert.ok(line.length <= 40, line);
+  assert.deepEqual(w('x', 0), ['x'], 'a nonsense width falls back to no wrapping');
+});

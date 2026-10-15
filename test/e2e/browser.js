@@ -21,15 +21,21 @@ async function launch() {
 }
 
 // A page that records console errors and uncaught exceptions, so every flow can assert the learner never triggers one.
-async function newPage(browser, { width = 1440, height = 900 } = {}) {
-  const page = await browser.newPage();
+// isolated: its own browser profile (separate localStorage), like a different learner. invite: pre-fill the saved invite code.
+async function newPage(browser, { width = 1440, height = 900, isolated = false, invite = '' } = {}) {
+  const context = isolated ? await browser.createBrowserContext() : null;
+  const page = await (context || browser).newPage();
+  page.context_ = context;
+  if (invite) await page.evaluateOnNewDocument((v) => { try { localStorage.setItem('tws:invite', v); } catch (e) { /* ignore */ } }, invite);
   await page.setViewport({ width, height });
   page.problems = [];
   page.on('pageerror', (e) => page.problems.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') page.problems.push(`console: ${m.text()}`); });
-  page.on('requestfailed', (r) => { if (!/favicon|\/ws\?/.test(r.url())) page.problems.push(`request failed: ${r.url()}`); });
+  page.on('requestfailed', (r) => { if (!/favicon|\/ws\?|fonts\.(googleapis|gstatic)\.com/.test(r.url())) page.problems.push(`request failed: ${r.url()}`); });
   return page;
 }
+
+async function closePage(page) { const c = page.context_; await page.close().catch(() => {}); if (c) await c.close().catch(() => {}); }
 
 const terminalText = (page) => page.$eval('.xterm-rows', (e) => e.innerText).catch(() => '');
 
@@ -86,4 +92,6 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`) });
 }
 
-module.exports = { BASE, sleep, launch, newPage, openLab, typeLine, waitPrompt, waitFor, terminalText, stepCounter, hintText, actionLabel, isHidden, clickAction, shot };
+const HOSTED = process.env.BASE_HOSTED || '';
+const HOSTED_CAP = process.env.BASE_HOSTED_CAP || '';
+module.exports = { BASE, HOSTED, HOSTED_CAP, closePage, sleep, launch, newPage, openLab, typeLine, waitPrompt, waitFor, terminalText, stepCounter, hintText, actionLabel, isHidden, clickAction, shot };

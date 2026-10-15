@@ -184,6 +184,7 @@ A lab that says `requires: aws` runs against the learner's **own AWS account**, 
 
 `test/e2e/` drives real Chrome against a running stack (`./start_local_labs.sh`, then `npm run e2e`; set `BASE` for another port and `CHROME_PATH` if Chrome is not found):
 it types into the real terminal, clicks Check, and asserts what a learner sees (green confirmation, hint tiers, Restart, the "typed but not run" nudge, buttons that do not wrap at 1440/1024/390 px, no console errors).
+The hosted-profile and session-end flows (invite code, seat cap, idle and time-limit ends, two tabs, a server restart) need the two small servers in `test/e2e/docker-compose.hosted.yml`; set `BASE_HOSTED=http://localhost:8081`, `BASE_HOSTED_CAP=http://localhost:8082` and `E2E_HOSTED_CONTAINER=tws-e2e-hosted` (they are skipped otherwise).
 CI runs it in its own job and keeps the screenshots as an artifact. Add a flow there whenever you change what a learner sees.
 
 ## Near misses and alternatives: `cases/`
