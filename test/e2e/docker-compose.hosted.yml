@@ -1,0 +1,36 @@
+# Two hosted-profile servers for the browser tests (run from the repo root, after the normal stack built tws-labs:dev):
+#   docker compose -f test/e2e/docker-compose.hosted.yml up -d --wait
+# hosted  :8081  invite gate, 2 seats, 8 s idle timeout          (invite flow, seat cap, idle end, restart, two tabs)
+# cap     :8082  invite gate, 12 s hard cap, long idle timeout   (the time-limit end)
+# Not for real use: tiny limits on purpose.
+x-hosted: &hosted
+  image: tws-labs:dev
+  cap_drop: [ALL]
+  cap_add: [SETUID, SETGID, KILL, CHOWN, DAC_OVERRIDE]
+  security_opt: ["no-new-privileges:true"]
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+    - /sandbox:size=128m,mode=0755,exec
+  pids_limit: 512
+  mem_limit: 512m
+
+services:
+  hosted:
+    <<: *hosted
+    container_name: tws-e2e-hosted
+    ports: ["127.0.0.1:8081:8080"]
+    environment:
+      LAB_ACCESS_TOKENS: e2e-code,e2e-other
+      MAX_SESSIONS: "2"
+      LAB_IDLE_SEC: "8"
+      LAB_HARD_CAP_SEC: "600"
+  cap:
+    <<: *hosted
+    container_name: tws-e2e-cap
+    ports: ["127.0.0.1:8082:8080"]
+    environment:
+      LAB_ACCESS_TOKENS: e2e-code
+      MAX_SESSIONS: "3"
+      LAB_IDLE_SEC: "600"
+      LAB_HARD_CAP_SEC: "12"

@@ -1,0 +1,1 @@
+printf '%s\n' '  test:' '    runs-on: ${{ matrix.os }}' '    steps:' '      - run: npm test' '    strategy:' '      matrix:' '        node: [20]' '        os: [ubuntu-latest]' >> shop/.github/workflows/ci.yml

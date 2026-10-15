@@ -1,0 +1,75 @@
+title: "Text processing with awk and sed"
+level: intermediate
+minutes: 15
+summary: Extract log columns with awk and transform configuration text with sed.
+steps:
+  - id: intro-awk-sed
+    type: lesson
+    title: "Text pipelines: awk and sed"
+    body: |
+      `grep` finds whole lines. When you need to pull out specific columns or edit text on the fly, you reach for `awk` and `sed`:
+
+      - `awk` splits each line into columns by whitespace (`$1` is column 1, `$2` is column 2):
+        `awk '{print $1}' access.log`
+      - `sed` edits text as it streams through, like search-and-replace:
+        `sed 's/old/new/' config.txt`
+
+      A folder called `web-server/` is waiting in your terminal with real server logs and a config file to practice on.
+  - id: extract-ips
+    type: task
+    title: Extract client IPs with awk
+    body: |
+      Look at `web-server/access.log`: every line starts with the visitor's IP address.
+
+      Use `awk` to grab just that first column (`$1`) from `web-server/access.log`, and save the list to `client-ips.txt`. Keep all entries in order.
+    hint: "Print column 1 with '{print $1}' and redirect (>) into client-ips.txt."
+    success: Saved client IPs to client-ips.txt.
+  - id: filter-status
+    type: task
+    title: Filter error logs with awk
+    body: |
+      Some visitors received HTTP 500 errors. In `web-server/access.log`, column 9 (`$9`) contains the HTTP status code, and column 7 (`$7`) contains the URL path.
+
+      In `awk`, place your condition right before the action to filter lines:
+      `awk 'condition {print $1, $2}' filename`
+
+      Filter `web-server/access.log` to find requests with status code `500`. Save each matching client IP (`$1`) and URL path (`$7`) to `server-errors.txt`.
+    hint: "Put the condition $9 == 500 before {print $1, $7}, and redirect with > to server-errors.txt."
+    success: Filtered 500 errors into server-errors.txt.
+  - id: replace-config
+    type: task
+    title: Update port in nginx.conf with sed
+    body: |
+      Next, a config change: Nginx needs to listen on port 8080 instead of port 80.
+
+      `sed` reads a file, applies changes, and prints the result without touching the original file:
+      `sed 's/find/replace/' file`
+
+      Replace `listen 80;` with `listen 8080;` in `web-server/nginx.conf`. Save the new config as `nginx-updated.conf` in your home directory.
+    hint: "Use sed substitution 's/find/replace/' on web-server/nginx.conf and redirect to nginx-updated.conf."
+    success: Updated Nginx port in nginx-updated.conf.
+  - id: mask-tokens
+    type: task
+    title: Mask API tokens with sed
+    body: |
+      The log `web-server/debug.log` has sensitive tokens like `api_key=sk9948...` that shouldn't be shared.
+
+      To match patterns with `sed`, use `-E` (extended regex):
+      - `[a-zA-Z0-9]+` matches one or more letters and numbers.
+      - `/g` at the end replaces every match on a line, not just the first.
+
+      Use `sed -E` to replace `api_key=` followed by letters/numbers with `api_key=REDACTED`. Save the clean log to `debug-clean.log`.
+    hint: "Run sed -E with 's/pattern/replacement/g' on web-server/debug.log and redirect to debug-clean.log."
+    success: Sanitized tokens in debug-clean.log.
+  - id: wrap-up
+    type: lesson
+    title: Text processing recap
+    body: |
+      You now have the two classic Linux stream editors under your belt:
+
+      - **`awk '{print $1}' file`** — print specific columns
+      - **`awk '$9 == 500 {print $1, $7}' file`** — filter by condition first
+      - **`sed 's/old/new/' file`** — quick search-and-replace
+      - **`sed -E 's/pattern/new/g' file`** — regex replacement across the whole line
+
+      Combine them with pipes (`|`) and you can slice through gigabytes of logs right from the terminal.

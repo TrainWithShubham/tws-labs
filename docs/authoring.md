@@ -47,7 +47,7 @@ Videos page and every breadcrumb are built from it. Each topic belongs to a line
 
 The catalog decides what is true, and the server reports any mismatch on the home page and in `npm test`: a `live` topic needs labs; a topic
 with labs must be `live`; **every lab must belong to a topic** (so no lab is invisible); unknown tracks or labs are errors.
-Keep the home map calm: about six topics per line at most (live + next); put the rest under `later`.
+Keep the home map calm: about seven topics per line at most (live + next); put the rest under `later`.
 
 `labs/site.yaml` holds `channel: {name, url}` and optional extra `videos:` (https only).
 
@@ -61,6 +61,7 @@ title: Branches and merging
 level: intermediate          # beginner | intermediate | advanced
 minutes: 12
 summary: One sentence shown on the track page.
+# requires: aws             # optional: the lab uses the learner's OWN AWS account (see "Account labs" below)
 steps:
   - id: why                  # unique within the lab; also names checks/why.sh for tasks
     type: lesson             # lesson: read and press "Got it"
@@ -72,6 +73,8 @@ steps:
     title: Create a branch
     body: Create a branch called `feature` and switch to it.
     hint: "Try: git switch -c feature"     # shown when the check fails and prints no message
+    # or up to three tiers, gentle to specific; a "Need a hint?" button reveals them one at a time after a failed Check:
+    # hint: ["Think about how branches are created", "git switch can create one", "Use the -c flag"]
     success: Correct. Branches are cheap.  # optional (<= 100 chars): the green confirmation when the check passes
     local_body: |                          # optional: different wording when run on a learner's own machine
       Same task, but mention the laptop instead of the hosted cluster.
@@ -157,6 +160,53 @@ All run as the learner, in their home directory; start every check with `. "$LAB
 - **A hint that is the whole answer**: say which command family to look at, not the finished line.
 - **A check that changes the learner's files**: checks are read-only.
 - **Heredocs or multi-line `if`s in solutions**: one command per line.
+
+### Advice notes
+
+`npm run lab:lint -- <track>/<lab-id>` also prints **notes**: suggestions that never fail a build, so old labs can catch up.
+Aim for none on a new lab. They cover a task with no `success:` message, a check that only reads the typed history
+(grades the command, not the result), a hint shorter than 10 characters or one that repeats the command from the task, and a lab over
+15 minutes. `npm run lab:lint -- --notes` lists them for every lab.
+
+## Account labs (`requires: aws`)
+
+A lab that says `requires: aws` runs against the learner's **own AWS account**, so it only runs on their machine:
+
+- **Hosted**: the lab page is a read-only walkthrough with the commands to run it locally, and `POST /session` answers 403 `needs-local`. The hosted site never asks for AWS keys.
+- **Local**: the learner's `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION` and `AWS_PROFILE` are passed to their shell and to your checks, and **only** for these labs (`src/lab-env.js`). Never put keys, account IDs or ARNs in a lab file.
+- **Checks** read the account (`aws ... describe/get/list`) and stay read-only. Pair state with `ran` where a learner could fake it.
+- **The offline validator skips these labs** (it prints why); the scheduled AWS workflow proves them against a disposable account (`TWS_PROVE_AWS=1`).
+- Keep them cheap and safe: free-tier or pennies, tag everything you create `tws-labs=<lab-id>`, and end with a graded cleanup task.
+- **Helpers** (`labs/lib.sh`): call `aws_ready` first in every check (it refuses missing, expired and root credentials with a friendly line), then `aws_account`, `aws_region_is REGION` and `retry TRIES SECONDS CMD...` for eventual consistency. Name bucket-style resources after the account id so they are unique, and keep the `tws-labs` prefix so `scripts/aws-lab-sweep.sh` and the learner role's permissions cover them.
+- **Testing a check without an account**: `test/support/fake-aws.js` is a test double that answers only the calls your checks make; add what you need there and use `test/support/aws-env.js` (see `test/unit/aws-first-steps.test.js`). It proves the check logic, not AWS itself.
+
+## Real-browser tests (`npm run e2e`)
+
+`test/e2e/` drives real Chrome against a running stack (`./start_local_labs.sh`, then `npm run e2e`; set `BASE` for another port and `CHROME_PATH` if Chrome is not found):
+it types into the real terminal, clicks Check, and asserts what a learner sees (green confirmation, hint tiers, Restart, the "typed but not run" nudge, buttons that do not wrap at 1440/1024/390 px, no console errors).
+The hosted-profile and session-end flows (invite code, seat cap, idle and time-limit ends, two tabs, a server restart) need the two small servers in `test/e2e/docker-compose.hosted.yml`; set `BASE_HOSTED=http://localhost:8081`, `BASE_HOSTED_CAP=http://localhost:8082` and `E2E_HOSTED_CONTAINER=tws-e2e-hosted` (they are skipped otherwise).
+CI runs it in its own job and keeps the screenshots as an artifact. Add a flow there whenever you change what a learner sees.
+
+## Skipping ahead: `setup/<task>.sh`
+
+Learners can press **Skip** or jump to any step. A task that needs files from an earlier task would leave them stuck, so every task must be solvable without the ones before it. `labs/<track>/<lab>/setup/<task-id>.sh` creates what that task needs:
+
+- It runs **as the learner, in their home, in their own sandbox**, when they reach the task while an earlier task is still undone (once per session, silently; they are told "you skipped ahead, so the files this task needs were set up for you").
+- It must be **safe to run again and never overwrite their work**: only fill in what is missing (`[ -f x ] || ...`, `mkdir -p`). It cannot `cd` the learner's shell, so a `# cwd: folder` line in the first lines names a folder under home that their shell is moved into (`# cwd: myrepo`). Plain folder names only.
+- A task that genuinely builds on the one before and cannot be seeded (for example "you must have started it yourself") can say so with a marker file whose first lines are `# no-skip: why`; it runs nothing and the learner is shown the reason if they skip to it.
+- `validate-labs` proves it for **every** task: a fresh sandbox with only the lab's own `setup.sh` plus the task's setup, then the task's solution; the check must fail first and pass after. A task that does not work this way fails validation with what to add.
+
+## Near misses and alternatives: `cases/`
+
+A check can be wrong in two directions: too lax (it passes an answer that is not really right) or too strict (it rejects a valid way of doing it). `cases/` proves both:
+
+```
+labs/<track>/<lab>/cases/<task-id>/wrong-typo.sh        leaves a wrong-but-plausible state: the check must FAIL
+labs/<track>/<lab>/cases/<task-id>/ok-other-flag.sh     a valid alternative to the solution: the check must PASS
+```
+
+Write them like solutions (one command per line, no heredocs; use `printf '%s\n' 'line' ... > file` for files). The validator replays the lab up to that task in a fresh sandbox (setup and every earlier solution), runs the case, then grades it. A case that proves a check is lax or strict fails `validate-labs` with a message saying which.
+Aim for two or three per task: the mistake a learner is most likely to make, and the other correct ways to do it (a different flag, a path spelled differently, `pkill` for `kill`). Names use `a-z`, `0-9` and `-`. `npm run lab:lint -- <lab>` notes tasks that have none.
 
 ## Validation rules (`node scripts/validate-labs.js`)
 

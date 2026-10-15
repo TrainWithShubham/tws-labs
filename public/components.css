@@ -33,7 +33,7 @@
 .btn-primary:hover { background: #fff; transform: translateY(-1px); } .btn-primary span { transition: transform .2s; } .btn-primary:hover span { transform: translateX(3px); }
 .btn-quiet { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-size: 14px; padding: 12px 4px; transition: color .2s; }
 .btn-quiet:hover { color: var(--text); }
-.btn { font: inherit; border-radius: 999px; border: 1px solid var(--rule2); background: transparent; color: var(--text); padding: 8px 16px; cursor: pointer; transition: border-color .2s, background .2s; }
+.btn { white-space: nowrap; font: inherit; border-radius: 999px; border: 1px solid var(--rule2); background: transparent; color: var(--text); padding: 8px 16px; cursor: pointer; transition: border-color .2s, background .2s; }
 .btn:hover { border-color: var(--text); }
 .btn.primary { background: var(--text); color: #000; border-color: var(--text); font-weight: 600; } .btn.primary:hover { background: #fff; } .btn.primary:disabled { opacity: .55; cursor: wait; }
 .btn.link { border: none; background: none; color: var(--muted); padding: 8px 6px; } .btn.link:hover { color: var(--text); }
@@ -116,3 +116,10 @@ details > summary::before { content: '+'; display: inline-block; width: 1.1em; c
   .tabs { order: 3; flex-basis: 100%; margin: 0 -12px; } .tab.is-active::after { bottom: 0; }
   .wrap { padding: 36px 18px 72px; }
 }
+
+/* Keyboard focus: one thin ring everywhere, shown only for keyboard users (not on mouse click). */
+:focus-visible { outline: 1px solid var(--cloud); outline-offset: 3px; border-radius: 2px; }
+.btn:focus-visible, .btn-primary:focus-visible, .btn-yt:focus-visible { outline-offset: 2px; border-radius: 999px; }
+.skip { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 8px 14px; background: var(--bg); color: var(--text); border: 1px solid var(--rule2); border-radius: 999px; text-decoration: none; font-size: 13px; }
+.skip:focus { top: 10px; }
+main { display: contents; }

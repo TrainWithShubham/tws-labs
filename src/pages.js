@@ -31,11 +31,14 @@ function orbitArt(domains) {
   let orbits = '', stations = '', labels = '', names = '';
   domains.slice(0, 3).forEach((d, i) => {
     const [rx, ry] = SIZES[i];
-    const topics = d.topics.filter((t) => t.status !== 'later').slice(0, 6);
+    const topics = d.topics.filter((t) => t.status !== 'later').slice(0, 7);
     const phase = [0.35, 2.35, 4.0][i];
     orbits += `<ellipse rx="${rx}" ry="${ry}" class="orbit ${lineClass(d.id)}"/>`;
     topics.forEach((t, k) => {
-      const p = local(rx, ry, phase + (k / Math.max(topics.length, 1)) * Math.PI * 2);
+      let a = phase + (k / Math.max(topics.length, 1)) * Math.PI * 2;
+      const gap = ((a + Math.PI / 2 + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;   // angle from the orbit's name at the top
+      if (Math.abs(gap) < 0.4) a += (gap < 0 ? -1 : 1) * (0.4 - Math.abs(gap));  // keep stations clear of that caption
+      const p = local(rx, ry, a);
       const st = t.status === 'live' ? 'live' : t.status === 'building' ? 'building' : 'next';
       stations += `<g class="st ${lineClass(d.id)}" data-status="${st}" transform="translate(${p[0].toFixed(1)} ${p[1].toFixed(1)})">${st === 'live' ? '<circle r="12" class="halo"/>' : ''}<circle r="7" class="ring"/>${st === 'live' ? '<circle r="2.8" class="core"/>' : ''}</g>`;
       if (t.status === 'live') {                      // label sits just outside the orbit, away from the hub, so labels never collide
@@ -96,7 +99,7 @@ function homeBody(catalog, roadmap, cfg) {
     : `Hosted playground &middot; a private user per session &middot; ${mins(cfg.idleMs)}-minute idle timeout`;
 
   const body = `
-<main class="home">
+<div class="home">
   <section class="hero">
     <div class="hero-copy">
       <span class="eyebrow">TWS Labs</span>
@@ -137,7 +140,7 @@ function homeBody(catalog, roadmap, cfg) {
     <a class="btn-primary" href="${startHref}">Launch the first lab <span aria-hidden="true">&rarr;</span></a>
     <p class="fine">${note}<br/><a href="/roadmap">Roadmap</a> &middot; <a href="/videos">Videos</a> &middot; <a href="https://github.com/TrainWithShubham/tws-labs">Source</a></p>
   </section>
-</main>`;
+</div>`;
   return {
     body,
     head: '<script>document.documentElement.classList.add("js")</script><link rel="stylesheet" href="/home.css" />',
@@ -221,19 +224,42 @@ function trackBody(track, place) {
   const line = place ? lineClass(place.domain.id) : 'line-more';
   const items = track.labs.map((l) => `
       <li data-status="live"><a href="/lab/${track.id}/${l.id}" data-labs="${track.id}/${l.id}"><i class="stn-dot"></i>
-        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}</small></a></li>`).join('');
+        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}<span data-lab-tasks="${track.id}/${l.id}" data-total="${l.steps.filter((x) => x.type === 'task').length}"></span></small></a></li>`).join('');
   const parts = [['Labs', '/']];
   if (place) parts.push([place.domain.title, `/roadmap#${place.domain.id}`]);
   parts.push([track.title, '']);
   const video = track.video
     ? `<a class="vlink" href="${esc(track.video.url)}" target="_blank" rel="noopener noreferrer">${YT_ICON}<span>Watch first: ${esc(track.video.title)}</span></a>` : '';
-  return `<div class="wrap track ${line}">${crumb(parts)}
+  return `<div class="wrap track ${line}" data-track="${track.id}">${crumb(parts)}
     <h1 class="page-title">${esc(track.title)}</h1><p class="lede">${esc(track.description)}</p>
     <div class="track-meta"><span class="meta" data-track-progress="${track.id}" data-labs="${track.labs.map((l) => l.id).join(',')}"></span>${video}</div>
     <ol class="route labs">${items}</ol></div>`;
 }
 
 const STAT = (id, label) => `<div class="stat-cell"><div class="stat-label">${label}</div><div class="stat-value" id="stat-${id}">&mdash;</div>${id === 'uptime' ? '' : `<div class="stat-bar"><div class="stat-bar-fill" id="stat-${id}-bar"></div></div>`}</div>`;
+
+// A lab that needs the learner's own AWS account never opens a terminal on the hosted site (it would hold strangers'
+// credentials). The page is a read-only walkthrough plus how to run the real thing on their own machine.
+function accountLabBody(lab, trackTitle, place) {
+  const steps = lab.steps.map((s) => `
+      <li><b>${esc(s.title)}</b><div class="step-body">${s.bodyHtml}</div></li>`).join('');
+  return {
+    body: `
+  <div class="wrap track ${place ? lineClass(place.domain.id) : 'line-more'}">
+    ${crumb([['Labs', '/'], ...(place ? [[place.domain.title, `/roadmap#${place.domain.id}`]] : []), [trackTitle, `/t/${lab.track}`]])}
+    <h1 class="page-title">${esc(lab.title)}</h1>
+    <p class="lede">${esc(lab.summary)}</p>
+    <div class="video-banner"><div><strong>This lab uses your own AWS account, so it runs on your machine.</strong><br/>
+      <small>The hosted site never asks for AWS keys. Start TWS Labs locally with your credentials set:</small>
+      <pre><code>git clone https://github.com/TrainWithShubham/tws-labs.git &amp;&amp; cd tws-labs
+AWS=1 ./start_local_labs.sh</code></pre>
+      <small>Setup, the learner role and the cost guardrails: <a href="https://github.com/TrainWithShubham/tws-labs/blob/main/docs/aws-labs.md" target="_blank" rel="noopener noreferrer">docs/aws-labs.md</a></small></div></div>
+    <h2>What you will do</h2>
+    <ol class="walkthrough">${steps}</ol>
+  </div>`,
+    scripts: '',
+  };
+}
 
 // The lab page is a seatless shell: it embeds the steps and the client mints its
 // own session with POST /session. Nothing about GET /lab/... takes a seat.
@@ -243,7 +269,7 @@ function labBody(lab, trackTitle, cfg, place, next) {
     local: cfg.isLocal, gated: !cfg.isLocal, banner: ASCII_BANNER,
     links: lab.links, resources: lab.resources, next,
     steps: lab.steps.map((s) => ({
-      id: s.id, type: s.type, title: s.title, hint: s.hint, success: s.success,
+      id: s.id, type: s.type, title: s.title, hint: s.hint, hints: s.hints, success: s.success, setup: !!s.setupFile, setupCwd: s.setupCwd || '', skipNote: s.skipNote || '',
       bodyHtml: (cfg.isLocal && s.localBodyHtml) || s.bodyHtml,
     })),
   };
@@ -265,14 +291,15 @@ function labBody(lab, trackTitle, cfg, place, next) {
         <div class="step-footer">
           <button class="btn link" id="back-btn">&larr; Back</button>
           <button class="btn link" id="skip-btn">Skip &rarr;</button>
+          <button class="btn link" id="hint-btn" hidden></button>
           <span class="spacer"></span>
           <button class="btn primary" id="action-btn"></button>
         </div>
       </div>
-      <button class="btn danger" id="end-btn">End lab</button>
+      <div class="lab-actions"><button class="btn" id="restart-btn" title="Start over with fresh files">Restart lab</button><button class="btn danger" id="end-btn">End lab</button></div>
     </div>
     <div class="terminal-pane">
-      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> Terminal
+      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> <span title="Tab goes to the shell; press Shift+Tab to leave the terminal">Terminal</span>
         <span class="terminal-links">${links}<button class="fullscreen-btn" id="fs-btn" title="Fullscreen" aria-label="Fullscreen">&#x26F6;</button></span></div>
       <form class="invite" id="invite" hidden autocomplete="off">
         <label for="invite-code">Invite code</label>
@@ -289,4 +316,4 @@ function labBody(lab, trackTitle, cfg, place, next) {
   };
 }
 
-module.exports = { notFoundBody, homeBody, roadmapBody, videosBody, trackBody, labBody, placeOf, nextLab };
+module.exports = { notFoundBody, homeBody, roadmapBody, videosBody, trackBody, labBody, accountLabBody, placeOf, nextLab };

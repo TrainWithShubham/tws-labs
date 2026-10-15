@@ -57,8 +57,10 @@ test('home: a calm map - live topics link to labs, next topics are plain, later 
     const dim = [...html.matchAll(/<li data-status="(next|building)" class="dim">(.*?)<\/li>/g)];
     assert.ok(dim.length >= 4 && dim.every((m) => !m[2].includes('<a ')));
     for (const hidden of ['Ansible', 'Jenkins', 'OpenTelemetry', 'Helm', 'AIOps']) assert.ok(!html.includes(hidden), `${hidden} stays on the roadmap page`);
-    for (const col of html.split('<div class="col ').slice(1)) assert.ok((col.match(/<li data-status=/g) || []).length <= 6, 'each route keeps to six stations');
+    for (const col of html.split('<div class="col ').slice(1)) assert.ok((col.match(/<li data-status=/g) || []).length <= 7, 'each route keeps to seven stations');
     assert.match(html, /6 more on the roadmap/);
+    const devopsLine = loadRoadmap(loadCatalog(LABS)).domains.find((d) => d.id === 'devops').topics.filter((t) => t.status !== 'later').length;
+    assert.equal((html.match(/class="st line-devops"/g) || []).length, devopsLine, 'the hero orbit draws every DevOps station on the map');
     assert.match(html, /&#8644; DevOps/, "an interchange is hinted");
     assert.match(html, /href="\/lab\/linux-fundamentals\/navigating"|href="\/t\/linux-fundamentals"/, 'the main call to action launches the first lab');
     for (const os of ['windows', 'macos', 'linux']) assert.match(html, new RegExp(`role="tab" id="tab-${os}"`));
@@ -139,7 +141,7 @@ test('videos: grouped by line, safe links, "Practice" only where a lab is online
     assert.match(track, /<p class="crumb"><a href="\/">Labs<\/a><i>\/<\/i><a href="\/roadmap#devops">DevOps<\/a><i>\/<\/i><span>Linux Fundamentals<\/span><\/p>/);
     assert.match(track, /Watch first: Linux For DevOps In One Shot/);
     assert.equal((track.match(/<li data-status="live">/g) || []).length, loadCatalog(LABS).tracks.find((t) => t.id === 'linux-fundamentals').labs.length, 'every Linux lab is a station on the route (derived from the catalog, so adding a lab needs no test edit)');
-    assert.match(track, /class="wrap track line-devops"/);
+    assert.match(track, /class="wrap track line-devops" data-track="linux-fundamentals"/);
   } finally { app.stop(); }
 });
 
@@ -158,6 +160,23 @@ test('the lab page carries its line, a breadcrumb, the progress route with the r
     const last = JSON.parse((await get(app, '/lab/github-actions/' + lastId)).body.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
     assert.equal(last.next, null, 'nothing follows the last lab');
     assert.match((await get(app, '/lab/aws/elastic-beanstalk-cluster-mode')).body, /class="lab-shell line-cloud"/);
+  } finally { app.stop(); }
+});
+
+test('a track page carries each lab\'s task total so the browser can show "n of m tasks" (and the lab page loads the progress script)', async () => {
+  const app = await start();
+  try {
+    const track = loadCatalog(LABS).tracks.find((t) => t.id === 'linux-fundamentals');
+    const html = (await get(app, '/t/linux-fundamentals')).body;
+    for (const lab of track.labs) {
+      const total = lab.steps.filter((s) => s.type === 'task').length;
+      assert.ok(html.includes(`data-lab-tasks="linux-fundamentals/${lab.id}" data-total="${total}"`), `${lab.id} total`);
+    }
+    const labPage = (await get(app, '/lab/linux-fundamentals/files')).body;
+    assert.ok(labPage.includes('/progress.js'), 'the lab page loads progress.js');
+    assert.ok(labPage.includes('id="hint-btn"'), 'the lab page has the hint button');
+    assert.ok(labPage.includes('id="restart-btn"'), 'the lab page has the restart button');
+    assert.match(labPage, /"hints":\[/, 'each step carries its hint tiers');
   } finally { app.stop(); }
 });
 

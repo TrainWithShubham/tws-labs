@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TWS Labs learner role: a least-privilege role for the AWS labs, plus a small monthly budget alarm.
+  Create it once in YOUR AWS account (CloudFormation console -> Create stack -> upload this file), then use
+  scripts/aws-lab-creds.sh to get one-hour credentials for it. Delete the stack when you are done with the labs.
+
+Parameters:
+  LearnerPrincipalArn:
+    Type: String
+    Description: The IAM user or role that may assume the learner role (your own ARN, e.g. arn:aws:iam::123456789012:user/me). Never root.
+    AllowedPattern: 'arn:aws:iam::[0-9]{12}:(user|role)/[A-Za-z0-9+=,.@_/-]+'
+    ConstraintDescription: Must be the ARN of an IAM user or role (not the account root).
+  BudgetEmail:
+    Type: String
+    Description: Where the budget alarm is sent.
+    AllowedPattern: '[^@\s]+@[^@\s]+\.[^@\s]+'
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Alarm when the account's monthly cost reaches 80% of this (US dollars).
+
+Resources:
+  LearnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tws-labs-learner
+      Description: Least-privilege role for the TWS Labs AWS labs. Everything it can create is named or tagged tws-labs.
+      MaxSessionDuration: 14400
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref LearnerPrincipalArn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: tws-labs-learner
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # S3: only buckets named tws-labs-*. No bucket policies or ACLs, so a lab cannot make a bucket public.
+              - Sid: BucketsByPrefix
+                Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                  - s3:DeleteBucket
+                  - s3:ListBucket
+                  - s3:ListBucketVersions
+                  - s3:GetBucketTagging
+                  - s3:PutBucketTagging
+                  - s3:GetBucketVersioning
+                  - s3:PutBucketVersioning
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:PutBucketPublicAccessBlock
+                  - s3:GetLifecycleConfiguration
+                  - s3:PutLifecycleConfiguration
+                Resource: arn:aws:s3:::tws-labs-*
+              - Sid: ObjectsByPrefix
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
+                Resource: arn:aws:s3:::tws-labs-*/*
+              - Sid: ListOwnBuckets
+                Effect: Allow
+                Action: s3:ListAllMyBuckets
+                Resource: '*'
+              # EC2: read everything; create only tiny tagged volumes; change only volumes that carry the tws-labs tag.
+              - Sid: Describe
+                Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - tag:GetResources
+                  - iam:Get*
+                  - iam:List*
+                  - iam:SimulatePrincipalPolicy
+                Resource: '*'
+              - Sid: CreateSmallTaggedVolumes
+                Effect: Allow
+                Action: ec2:CreateVolume
+                Resource: arn:aws:ec2:*:*:volume/*
+                Condition:
+                  NumericLessThanEquals:
+                    ec2:VolumeSize: 2
+                  'Null':
+                    aws:RequestTag/tws-labs: 'false'
+              - Sid: TagOnCreate
+                Effect: Allow
+                Action: ec2:CreateTags
+                Resource: arn:aws:ec2:*:*:volume/*
+                Condition:
+                  StringEquals:
+                    ec2:CreateAction: CreateVolume
+              - Sid: ManageLabVolumes
+                Effect: Allow
+                Action:
+                  - ec2:DeleteVolume
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                Resource: arn:aws:ec2:*:*:volume/*
+                Condition:
+                  'Null':
+                    ec2:ResourceTag/tws-labs: 'false'
+              # IAM: roles and policies under the /tws-labs/ path only, and only lab policies can be attached.
+              - Sid: LabRoles
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:TagRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/tws-labs/*
+              - Sid: LabPolicies
+                Effect: Allow
+                Action:
+                  - iam:CreatePolicy
+                  - iam:DeletePolicy
+                  - iam:CreatePolicyVersion
+                  - iam:DeletePolicyVersion
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:policy/tws-labs/*
+              - Sid: AttachOnlyLabPolicies
+                Effect: Allow
+                Action:
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/tws-labs/*
+                Condition:
+                  ArnLike:
+                    iam:PolicyARN: !Sub arn:aws:iam::${AWS::AccountId}:policy/tws-labs/*
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: tws-labs-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetEmail
+
+Outputs:
+  RoleArn:
+    Description: Pass this to scripts/aws-lab-creds.sh
+    Value: !GetAtt LearnerRole.Arn

@@ -1,0 +1,1 @@
+rm workspace/archive.txt

@@ -27,6 +27,8 @@
   term.write(DATA.banner + '\r\n\r\n  \x1b[38;2;245;185;66mHappy Learning\x1b[0m\r\n\r\n');
   window.addEventListener('resize', function () { fit.fit(); sendSize(); });
   term.onData(function (d) { if (ws && ws.readyState === 1) ws.send(d); });
+  // Tab belongs to the shell (completion), so Shift+Tab is how a keyboard user leaves the terminal: let the browser have it.
+  term.attachCustomKeyEventHandler(function (e) { return !(e.key === 'Tab' && e.shiftKey); });
   function sendSize() { if (ws && ws.readyState === 1) ws.send('\u0000resize:' + term.cols + ',' + term.rows); }
 
   // --- session: the page shell takes no seat; we ask for one -------------------
@@ -58,7 +60,7 @@
     fetch('/session', { method: 'POST', headers: headers, body: JSON.stringify({ track: DATA.track, lab: DATA.lab }) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
       .then(function (r) {
-        if (r.status === 200) { token = r.body.token; connect(); pollTimer(); setInterval(pollTimer, 5000); return; }
+        if (r.status === 200) { token = r.body.token; connect(); pollTimer(); stopTimer(); timerInterval = setInterval(pollTimer, 5000); return; }
         if (r.status === 401) { var sent = !!savedInvite(); saveInvite(''); return askInvite(sent); }
         busy(r.body.message || 'No seat is free right now.');
       })
@@ -67,8 +69,8 @@
   function busy(message) {
     setStatus('ended', 'waiting');
     tries++;
-    if (tries > 20) { term.write('\r\n\x1b[33m' + message + ' Reload the page to try again.\x1b[0m\r\n'); return; }
-    term.write('\r\n\x1b[33m' + message + ' Retrying in a few seconds…\x1b[0m');
+    if (tries > 20) { term.write('\r\n\x1b[33m' + window.twsWrap(message + ' Reload the page to try again.', term.cols - 2).join('\r\n') + '\x1b[0m\r\n'); return; }
+    term.write('\r\n\x1b[33m' + window.twsWrap(message + ' Retrying in a few seconds…', term.cols - 2).join('\r\n') + '\x1b[0m');
     setTimeout(startSession, 8000 + Math.random() * 7000);
   }
   function connect() {
@@ -76,20 +78,29 @@
     ws = new WebSocket(proto + '//' + location.host + '/ws?token=' + token);
     ws.onopen = function () { setStatus('live', 'live'); sendSize(); term.focus(); render(); };
     ws.onmessage = function (ev) { term.write(ev.data); };
-    ws.onclose = function (ev) { setStatus('ended', 'ended'); term.write('\r\n[session ended: ' + (ev.reason || ev.code) + ']\r\n'); };
+    ws.onclose = function (ev) {
+      stopTimer(); setStatus('ended', 'ended');
+      $('lab-timer-text').textContent = /time limit/i.test(ev.reason || '') ? '00:00' : '--:--';   // never leave a stale countdown behind
+      $('lab-timer').classList.remove('is-low');
+      var msg = window.twsEndMessage(ev.code, ev.reason);
+      term.write('\r\n\x1b[33m' + window.twsWrap(msg, term.cols - 2).join('\r\n') + '\x1b[0m\r\n');
+      setHint(msg, false);
+    };
     ws.onerror = function () { setStatus('ended', 'error'); };
   }
 
   // --- steps -------------------------------------------------------------------
   // Progress is a thin route: one tick per step, the rocket parked at the current one.
+  var before = window.twsTasksDone(DATA.track + '/' + DATA.lab);   // passed on an earlier visit; this terminal still starts fresh
   function renderDots() {
     var ticks = $('jticks'), n = STEPS.length;
     ticks.innerHTML = '';
     STEPS.forEach(function (st, i) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'jt' + (i === current ? ' is-active' : '') + (done[st.id] ? ' is-done' : '');
-      b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + st.title + (done[st.id] ? ' (done)' : ''));
+      var was = !done[st.id] && before.indexOf(st.id) >= 0;
+      b.className = 'jt' + (i === current ? ' is-active' : '') + (done[st.id] ? ' is-done' : '') + (was ? ' was-done' : '');
+      b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + st.title + (done[st.id] ? ' (done)' : was ? ' (done on an earlier visit)' : ''));
       if (i === current) b.setAttribute('aria-current', 'step');
       b.onclick = function () { current = i; render(); };
       ticks.appendChild(b);
@@ -101,7 +112,7 @@
   function render() {
     var s = STEPS[current];
     var last = current === STEPS.length - 1;
-    $('step-counter').textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson');
+    $('step-counter').textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson') + (!done[s.id] && before.indexOf(s.id) >= 0 ? ' · done before' : '');
     $('step-title').textContent = s.title;
     $('step-body').innerHTML = s.bodyHtml;          // server-rendered from escaped markdown
     setHint('', false);
@@ -117,6 +128,24 @@
     $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
     $('skip-btn').style.visibility = last ? 'hidden' : 'visible';
     renderDots();
+    renderHintButton();
+    prepareIfSkipped(s);
+  }
+  // Jumped past an earlier task? Ask the server to set up the files this one needs (the lab can ship setup/<task>.sh for that).
+  var noted = {};
+  function prepareIfSkipped(s) {
+    var i = STEPS.indexOf(s);
+    var note = window.twsSkipNote(STEPS, done, i, noted);
+    if (note) { noted[s.id] = true; setHint(note, false); }
+    if (!token || !window.twsNeedsPrep(STEPS, done, i, prepared)) return;
+    prepared[s.id] = true;
+    fetch('/lab/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token, stepId: s.id }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { prepared[s.id] = false; return; }
+        if (STEPS[current] === s) setHint('You skipped ahead, so the files this task needs were set up for you' + (s.setupCwd ? ' and your shell moved into ' + s.setupCwd : '') + '.', false);
+      })
+      .catch(function () { prepared[s.id] = false; });
   }
   function next() { if (current < STEPS.length - 1) { current++; render(); } }
   $('back-btn').onclick = function () { if (current > 0) { current--; render(); } };
@@ -124,6 +153,23 @@
 
   // One live region for feedback: amber nudge when a check fails, green confirmation when it passes.
   function setHint(text, ok) { var h = $('step-hint'); h.textContent = text; h.classList.toggle('is-ok', !!ok); }
+  var hints = window.twsHints();
+  var prepared = {};   // tasks whose starting files were already prepared in this session
+  function hintsOf(s) { return s.hints && s.hints.length ? s.hints : (s.hint ? [s.hint] : []); }
+  function renderHintButton() {
+    var s = STEPS[current], b = $('hint-btn'), r = s.type === 'task' && !done[s.id] && hints.ready(s.id, hintsOf(s));
+    b.hidden = !r;
+    if (r) { b.textContent = r.label; b.onclick = function () { setHint(hints.next(s.id, hintsOf(s)), false); renderHintButton(); }; }
+  }
+
+  // The terminal's current line (joined across wrapped rows), to notice a command that was typed but not submitted.
+  function currentTerminalLine() {
+    try {
+      var buf = term.buffer.active, y = buf.baseY + buf.cursorY, line = buf.getLine(y), text = line ? line.translateToString(true) : '';
+      while (line && line.isWrapped && y > 0) { y--; line = buf.getLine(y); text = (line ? line.translateToString(true) : '') + text; }
+      return text;
+    } catch (e) { return ''; }
+  }
 
   function check() {
     var s = STEPS[current];
@@ -134,11 +180,17 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         btn.disabled = false;
-        if (d.pass) { done[s.id] = true; render(); setHint(s.success || 'Correct. Step complete.', true); return; }
-        btn.textContent = 'Not yet — try again';
-        setHint(d.message || s.hint || '', false);
+        if (d.pass) { done[s.id] = true; window.twsMarkTask(DATA.track + '/' + DATA.lab, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
+        btn.textContent = 'Check again';
+        hints.failed(s.id);
+        var msg = d.message;
+        if (!msg && hintsOf(s).length === 1) { msg = s.hint; hints.next(s.id, hintsOf(s)); }   // a lone hint shows as before
+        if (window.twsPendingInput(currentTerminalLine())) msg = 'You have a command typed but not run yet. Press Enter in the terminal first.' + (msg ? ' ' + msg : '');
+        setHint(msg || '', false);
+        renderHintButton();
+        term.focus();   // the next thing a learner does is type (or press Enter), so hand the keyboard back to the terminal
       })
-      .catch(function () { btn.disabled = false; btn.textContent = 'Error — retry'; });
+      .catch(function () { btn.disabled = false; btn.textContent = 'Retry'; });
   }
 
   function finish() {
@@ -167,20 +219,48 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   // --- chrome ------------------------------------------------------------------
-  function endLab() { try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
+  function endLab() { stopTimer(); try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
   $('end-btn').onclick = endLab;
+  // Restart = a fresh session: closing the socket removes this sandbox, and a new session gets fresh files and a clean command history.
+  var armRestart = window.twsTwoStep(4000), restartLabel = $('restart-btn').textContent, restartTimer = null;
+  $('restart-btn').onclick = function () {
+    var btn = $('restart-btn');
+    clearTimeout(restartTimer);
+    if (!armRestart()) {
+      btn.textContent = 'Click again to restart';
+      restartTimer = setTimeout(function () { btn.textContent = restartLabel; }, 4000);
+      return;
+    }
+    btn.textContent = restartLabel;
+    restartLab();
+  };
+  function restartLab() {
+    stopTimer(); token = null; tries = 0;
+    done = {}; current = 0; hints = window.twsHints(); prepared = {}; noted = {};
+    var old = ws, started = false;
+    function go() { if (!started) { started = true; startSession(); } }
+    ws = null;
+    if (old) { old.onerror = null; old.onclose = go; try { old.close(1000, 'restarted by learner'); } catch (e) { go(); } setTimeout(go, 1500); } else go();
+    term.reset();
+    term.write(DATA.banner + '\r\n\r\n  \x1b[38;2;245;185;66mFresh start. Happy Learning\x1b[0m\r\n\r\n');
+    setStatus('', 'starting');
+    render();
+  }
   $('fs-btn').onclick = function () {
     var el = document.querySelector('.terminal-pane');
     if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen();
   };
   window.addEventListener('beforeunload', function () { try { if (ws) ws.close(1000, 'page closed'); } catch (e) { /* closed */ } });
 
+  var timerInterval = null;
+  function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
   function pollTimer() {
     if (!token) return;
     fetch('/session/remaining?token=' + token).then(function (r) { return r.json(); }).then(function (d) {
       var t = d.remainingSec, el = $('lab-timer');
       $('lab-timer-text').textContent = t <= 0 ? '00:00' : String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
       el.classList.toggle('is-low', t > 0 && t < 120);
+      if (t <= 0) stopTimer();
     }).catch(function () { /* transient */ });
   }
   function pollStats() {

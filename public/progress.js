@@ -5,6 +5,107 @@
   window.twsMarkDone = function (id) {
     try { var d = read(); if (d.indexOf(id) < 0) d.push(id); localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* storage blocked */ }
   };
+  // Passed tasks per lab, for "3 of 5 tasks" and the "done before" marks. A fresh terminal starts clean each visit,
+  // so this records what you have achieved, never state to restore.
+  var TKEY = 'tws-local:tasks';
+  function readTasks() {
+    try { var t = JSON.parse(localStorage.getItem(TKEY)); return t && typeof t === 'object' && !Array.isArray(t) ? t : {}; } catch (e) { return {}; }
+  }
+  window.twsTasksDone = function (lab) { var l = readTasks()[lab]; return Array.isArray(l) ? l.slice() : []; };
+  window.twsMarkTask = function (lab, id) {
+    try {
+      var t = readTasks(), l = Array.isArray(t[lab]) ? t[lab] : [];
+      if (l.indexOf(id) < 0) l.push(id);
+      t[lab] = l;
+      localStorage.setItem(TKEY, JSON.stringify(t));
+    } catch (e) { /* storage blocked */ }
+  };
+  window.twsTaskSummary = function (lab, total) {
+    var n = window.twsTasksDone(lab).length;
+    return n > 0 && n < total ? n + ' of ' + total + ' tasks' : '';
+  };
+  document.querySelectorAll('[data-lab-tasks]').forEach(function (el) {
+    var s = window.twsTaskSummary(el.getAttribute('data-lab-tasks'), parseInt(el.getAttribute('data-total'), 10) || 0);
+    if (s) el.textContent = ' \u00b7 ' + s;
+  });
+  // Hints come one tier at a time, and only after the learner has tried: the button appears after a failed Check.
+  window.twsHints = function () {
+    var fails = {}, asked = {};
+    return {
+      failed: function (id) { fails[id] = (fails[id] || 0) + 1; },
+      ready: function (id, tiers) {
+        if (!tiers.length || !fails[id] || (asked[id] || 0) >= tiers.length) return false;
+        return { label: asked[id] ? 'Another hint' : 'Need a hint?' };
+      },
+      next: function (id, tiers) {
+        var n = asked[id] || 0;
+        if (n >= tiers.length) return null;
+        asked[id] = n + 1;
+        return (tiers.length > 1 ? 'Hint ' + (n + 1) + ' of ' + tiers.length : 'Hint') + ': ' + tiers[n];
+      },
+      shown: function (id, tiers) {
+        var n = asked[id] || 0;
+        if (!n) return '';
+        return (tiers.length > 1 ? 'Hint ' + n + ' of ' + tiers.length : 'Hint') + ': ' + tiers[n - 1];
+      },
+    };
+  };
+  // A click that must be repeated within `ms` to count, so a destructive button cannot be hit by accident.
+  window.twsTwoStep = function (ms, clock) {
+    var armedAt = 0;
+    clock = clock || Date.now;
+    return function () {
+      var n = clock();
+      if (armedAt && n - armedAt <= ms) { armedAt = 0; return true; }
+      armedAt = n;
+      return false;
+    };
+  };
+  // The text a learner has typed after the prompt on the terminal's current line (empty when the line is program output or an empty prompt).
+  // A failed Check uses it to say "press Enter": a typed but unsubmitted command is the most common reason a correct answer fails.
+  window.twsPendingInput = function (line) {
+    var m = /^\S*@\S*[:\s]\S*[$#]\s(.*)$/.exec(String(line || '').replace(/\s+$/, ''));
+    return m ? m[1].trim() : '';
+  };
+  // Skipping ahead: a task that ships setup is prepared (once per session) when an earlier task is not done yet.
+  window.twsNeedsPrep = function (steps, done, i, prepared) {
+    var s = steps[i];
+    if (!s || s.type !== 'task' || !s.setup || (prepared && prepared[s.id])) return false;
+    for (var k = 0; k < i; k++) if (steps[k].type === 'task' && !done[steps[k].id]) return true;
+    return false;
+  };
+  // Skipped to a task that genuinely builds on an earlier one (it has no setup, only a note): say so, once.
+  window.twsSkipNote = function (steps, done, i, noted) {
+    var s = steps[i];
+    if (!s || s.type !== 'task' || !s.skipNote || (noted && noted[s.id])) return '';
+    for (var k = 0; k < i; k++) if (steps[k].type === 'task' && !done[steps[k].id]) return 'This task builds on an earlier one: ' + s.skipNote + '.';
+    return '';
+  };
+  // Wrap a message at word boundaries for a terminal `cols` wide (a terminal would otherwise cut it in the middle of a word).
+  window.twsWrap = function (text, cols) {
+    var width = cols > 0 ? cols : 100000, words = String(text).split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function (w) {
+      if (!cur) cur = w;
+      else if ((cur + ' ' + w).length <= width) cur += ' ' + w;
+      else { lines.push(cur); cur = w; }
+    });
+    lines.push(cur);
+    return lines;
+  };
+  // What to tell a learner when their terminal session ends, in plain words, and what to do next.
+  window.twsEndMessage = function (code, reason) {
+    var r = String(reason || '').toLowerCase(), why;
+    if (/idle/.test(r)) why = 'Your session ended because it was idle for too long.';
+    else if (/time limit/.test(r)) why = 'Your session reached its time limit.';
+    else if (/shell exited/.test(r)) why = 'The shell exited (you typed exit, or pressed Ctrl+D).';
+    else if (/ended by learner|restarted|page closed/.test(r)) why = 'The session was ended.';
+    else if (/invalid or expired/.test(r)) why = 'This session is no longer valid, it may have expired.';
+    else if (/already connected/.test(r)) why = 'This session is already open in another tab.';
+    else if (/could not start/.test(r)) why = 'The lab sandbox could not start.';
+    else if (code === 1006 || code === 1001 || code === 1005 || code === undefined) why = 'The connection was lost (the server may have restarted, or your network dropped).';
+    else why = 'The session ended.';
+    return why + ' Press Restart lab to start again.';
+  };
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

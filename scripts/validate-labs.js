@@ -5,7 +5,8 @@
 // sandbox the way a learner would: for each task, the check MUST fail first,
 // then the step's solutions/<id>.sh commands are typed into a persistent shell,
 // and the check MUST pass. So a lab that merged is a lab that is solvable and
-// whose checks aren't vacuous. Needs Linux (/proc, ps) - run it in the container:
+// whose checks aren't vacuous. It also proves every task can be solved after skipping ahead (setup/<task>.sh seeds the files it needs). Then it grades the lab's cases/ (wrong-but-plausible answers must fail the check, ok-* alternatives must pass).
+// Needs Linux (/proc, ps) - run it in the container:
 //   docker compose run --rm labs node scripts/validate-labs.js --strict
 // --strict also fails on house-style warnings (src/lint.js): first step is a lesson, every task has a hint, sizes stay small.
 const fs = require('fs');
@@ -14,6 +15,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { loadCatalog } = require('../src/loader');
 const { lintLab } = require('../src/lint');
+const { proofSkipReason } = require('../src/lab-env');
+const { loadCases } = require('../src/cases');
 const { createSandbox } = require('../src/sandbox');
 const { killProcessSession } = require('../src/lib');
 
@@ -32,9 +35,9 @@ function solutionLines(file) {
 // A persistent bash reading commands from a pipe stands in for the learner's
 // terminal: its cwd and background jobs persist between steps, and (being
 // detached) it is its own session leader, exactly like the pty shell.
-function startShell(home) {
+function startShell(home, cwd = home) {
   const [file, args] = sandbox.asUser(UID, home, 'bash', []);
-  const child = spawn(file, args, { cwd: home, env: sandbox.scriptEnv(home), detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(file, args, { cwd, env: sandbox.scriptEnv(home), detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (c) => { out += c; });
   child.stderr.on('data', () => {});
@@ -90,6 +93,100 @@ async function validateLab(lab, work) {
   return errors;
 }
 
+// Replay the lab up to `task` in a fresh sandbox (setup, then every earlier task's solution), run one case, and grade it.
+async function runCase(lab, c, work) {
+  const home = path.join(work, 'home');
+  const history = path.join(work, 'history');
+  fs.mkdirSync(work, { recursive: true });
+  sandbox.prepareHistory(history, UID);
+  sandbox.prepareHome(home, UID);
+  const setup = sandbox.runSetup(lab.dir, home, UID);
+  if (setup.code !== 0) return `setup.sh failed:\n${setup.out}`;
+  const shell = startShell(home);
+  try {
+    const tasks = lab.steps.filter((s) => s.type === 'task');
+    const target = tasks.find((s) => s.id === c.task);
+    for (const step of tasks.slice(0, tasks.indexOf(target))) {
+      const lines = solutionLines(step.solutionFile);
+      fs.appendFileSync(history, lines.join('\n') + '\n');
+      await shell.run(lines);
+    }
+    fs.appendFileSync(history, c.lines.join('\n') + '\n');
+    await shell.run(c.lines);
+    const r = await sandbox.runCheck(target.checkFile, { home, uid: UID, shellPid: shell.pid, historyFile: history });
+    if (c.expect === 'fail' && r.pass) return 'the check PASSES this wrong answer (too lax)';
+    if (c.expect === 'pass' && !r.pass) return `the check REJECTS this valid alternative (too strict)${r.message ? `: "${r.message}"` : ''}`;
+    return '';
+  } catch (e) {
+    return e.message;
+  } finally {
+    shell.stop();
+  }
+}
+
+// Skipping ahead: a fresh sandbox with only the lab's own setup (and the task's setup/<task>.sh if it ships one), the shell where the
+// setup says it should be, then the task's solution. The check must fail first and pass after, as if the learner had skipped everything before.
+async function runSkipAhead(lab, step, work) {
+  const home = path.join(work, 'home');
+  const history = path.join(work, 'history');
+  fs.mkdirSync(work, { recursive: true });
+  sandbox.prepareHistory(history, UID);
+  sandbox.prepareHome(home, UID);
+  const base = sandbox.runSetup(lab.dir, home, UID);
+  if (base.code !== 0) return `setup.sh failed:\n${base.out}`;
+  if (step.setupFile) {
+    const r = await sandbox.runScript(step.setupFile, { home, uid: UID });
+    if (r.code !== 0) return `setup/${step.id}.sh failed:\n${r.out}`;
+  }
+  const cwd = step.setupCwd ? path.join(home, step.setupCwd) : home;
+  if (!fs.existsSync(cwd)) return `setup/${step.id}.sh says "# cwd: ${step.setupCwd}" but that folder does not exist after the setup runs`;
+  const shell = startShell(home, cwd);
+  try {
+    const ctx = { home, uid: UID, shellPid: shell.pid, historyFile: history };
+    if ((await sandbox.runCheck(step.checkFile, ctx)).pass) return 'the check already passes before the solution';
+    const lines = solutionLines(step.solutionFile);
+    fs.appendFileSync(history, lines.join('\n') + '\n');
+    await shell.run(lines);
+    const after = await sandbox.runCheck(step.checkFile, ctx);
+    return after.pass ? '' : `the check still fails after the solution${after.message ? ` ("${after.message}")` : ''}`;
+  } catch (e) {
+    return e.message;
+  } finally {
+    shell.stop();
+  }
+}
+
+// Every task must work when skipped to: with its setup/<task>.sh if it ships one, and as it is otherwise. A task that does not
+// (and is not marked "# no-skip") would leave a learner who clicks Skip stuck, so it fails validation.
+async function validateSkipAhead(lab, root) {
+  const errors = [];
+  const tasks = lab.steps.filter((x) => x.type === 'task');
+  for (const [i, step] of tasks.entries()) {
+    if ((i === 0 && !step.setupFile) || step.skipNote) continue;   // the first task starts from the lab's own setup; "no-skip" tasks say they need an earlier one
+    const err = await runSkipAhead(lab, step, path.join(root, `skip-${step.id}`));
+    if (step.setupFile) {
+      console.log(`    ${err ? 'x' : 'ok'}  skip-ahead ${step.id} (with setup)`);
+      if (err) errors.push(`skip-ahead ${step.id}: ${err}`);
+    } else if (err && !/already passes/.test(err)) {   // already satisfied at the start is not a dead end: the learner can just press Check
+      console.log(`    x  skip-ahead ${step.id}`);
+      errors.push(`skip-ahead ${step.id}: a learner who skips to this task is stuck (${err.split('\n')[0]}). Add setup/${step.id}.sh to create what it needs (and "# cwd: folder" if the shell must be there), or "# no-skip: reason" if it really builds on the step before`);
+    }
+  }
+  return errors;
+}
+
+async function validateCases(lab, root) {
+  const taskIds = lab.steps.filter((s) => s.type === 'task').map((s) => s.id);
+  const { cases, problems } = loadCases(lab.dir, taskIds);
+  const errors = problems.map((p) => `cases: ${p}`);
+  for (const c of cases) {
+    const err = await runCase(lab, c, path.join(root, `case-${c.task}-${c.name}`));
+    console.log(`    ${err ? 'x' : 'ok'}  case ${c.task}/${c.name} (${c.expect === 'pass' ? 'valid alternative' : 'near miss'})`);
+    if (err) errors.push(`case ${c.task}/${c.name}: ${err}`);
+  }
+  return errors;
+}
+
 (async () => {
   if (process.platform !== 'linux') {
     // macOS / Windows: the same proof, run in the project image (see scripts/docker-run.js).
@@ -106,7 +203,11 @@ async function validateLab(lab, work) {
       const id = `${track.id}/${lab.id}`;
       if (only && only !== id) continue;
       console.log(`- ${id}`);
-      const errors = await validateLab(lab, path.join(root, `${track.id}-${lab.id}`));
+      const skip = proofSkipReason(lab);
+      if (skip) console.log(`    skipped: ${skip}`);
+      const errors = skip ? [] : await validateLab(lab, path.join(root, `${track.id}-${lab.id}`));
+      if (!skip && !errors.length) errors.push(...await validateCases(lab, path.join(root, `${track.id}-${lab.id}-cases`)));
+      if (!skip && !errors.length) errors.push(...await validateSkipAhead(lab, path.join(root, `${track.id}-${lab.id}-skip`)));
       errors.forEach((e) => console.error(`    FAIL ${e}`));
       failed += errors.length;
       for (const warning of lintLab(lab)) {

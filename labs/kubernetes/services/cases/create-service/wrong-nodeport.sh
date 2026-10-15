@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: v1' 'kind: Service' 'metadata:' '  name: nginx-service' 'spec:' '  type: NodePort' '  selector:' '    app: nginx' '  ports:' '    - port: 80' '      targetPort: 80' > app/service.yaml

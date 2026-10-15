@@ -74,3 +74,67 @@ test('an optional success message is kept, and a too-long or non-text one is rej
   const long = loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: nudge, success: "${'x'.repeat(101)}"}`) }));
   assert.match(long.problems.join('\n'), /success must be text/);
 });
+
+test('a hint can be one nudge or a list of up to three, from gentle to specific; the first stays as `hint`', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const load = (hint) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: ${hint}}`) }));
+  const one = load('nudge').tracks[0].labs[0].steps[1];
+  assert.deepEqual([one.hint, one.hints], ['nudge', ['nudge']]);
+  const three = load('["Think about listing", "Look at ls flags", "ls -la shows hidden files"]');
+  assert.deepEqual(three.problems, []);
+  const s = three.tracks[0].labs[0].steps[1];
+  assert.equal(s.hint, 'Think about listing');
+  assert.deepEqual(s.hints, ['Think about listing', 'Look at ls flags', 'ls -la shows hidden files']);
+  const none = loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace(', hint: nudge', '') })).tracks[0].labs[0].steps[1];
+  assert.deepEqual([none.hint, none.hints], ['', []]);
+});
+
+test('a malformed hint list is reported: too many tiers, blank or non-text tiers, an overlong tier', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const problems = (hint) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': GOOD_LAB.replace('hint: nudge}', `hint: ${hint}}`) })).problems.join('\n');
+  assert.match(problems('[a, b, c, d]'), /hint: at most 3 tiers/);
+  assert.match(problems('["a", ""]'), /hint: every tier must be non-empty text/);
+  assert.match(problems('["a", 5]'), /hint: every tier must be non-empty text/);
+  assert.match(problems(`"${'x'.repeat(301)}"`), /hint: each tier is at most 300 characters/);
+  assert.match(problems('{a: 1}'), /hint: must be text or a list of text/);
+});
+
+test('a lab can say it needs the learner\'s own AWS account; any other value is reported', () => {
+  const files = { 't/track.yaml': TRACK, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const load = (extra) => loadCatalog(fixture({ ...files, 't/one/lab.yaml': extra + GOOD_LAB }));
+  const aws = load('requires: aws\n');
+  assert.deepEqual(aws.problems, []);
+  assert.equal(aws.tracks[0].labs[0].requires, 'aws');
+  assert.equal(load('').tracks[0].labs[0].requires, '', 'offline by default');
+  assert.match(load('requires: gcp\n').problems.join('\n'), /requires must be "aws"/);
+  assert.match(load('requires: [aws]\n').problems.join('\n'), /requires must be "aws"/);
+});
+
+test('a task can ship setup/<task>.sh, the starting state for skipping ahead; an optional "# cwd: folder" line says where the shell should be', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const none = loadCatalog(fixture(base)).tracks[0].labs[0].steps[1];
+  assert.deepEqual([none.setupFile, none.setupCwd], ['', '']);
+  const plain = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': 'mkdir -p x\n' })).tracks[0].labs[0].steps[1];
+  assert.match(plain.setupFile, /setup\/b\.sh$/);
+  assert.equal(plain.setupCwd, '');
+  const cwd = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': '#!/bin/bash\n# cwd: myrepo\nmkdir -p myrepo\n' }));
+  assert.deepEqual(cwd.problems, []);
+  assert.equal(cwd.tracks[0].labs[0].steps[1].setupCwd, 'myrepo');
+});
+
+test('setup files for a task that does not exist, or for a lesson, and unsafe cwd lines are reported', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const p = (extra) => loadCatalog(fixture({ ...base, ...extra })).problems.join('\n');
+  assert.match(p({ 't/one/setup/ghost.sh': 'true\n' }), /setup\/ghost\.sh: no task called "ghost"/);
+  assert.match(p({ 't/one/setup/a.sh': 'true\n' }), /setup\/a\.sh: no task called "a"/, 'a lesson has no setup');
+  for (const bad of ['/etc', '../up', 'a b', 'a/../b', '~/x']) assert.match(p({ 't/one/setup/b.sh': `# cwd: ${bad}\ntrue\n` }), /setup\/b\.sh: cwd must be a plain relative folder/, bad);
+});
+
+test('a task can say it genuinely builds on an earlier one: "# no-skip: reason" in setup/<task>.sh runs nothing and is shown to a learner who skips to it', () => {
+  const base = { 't/track.yaml': TRACK, 't/one/lab.yaml': GOOD_LAB, 't/one/checks/b.sh': 'true', 't/one/solutions/b.sh': 'true' };
+  const step = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': '# no-skip: it reads the file you create in the step before\n' })).tracks[0].labs[0].steps[1];
+  assert.equal(step.setupFile, '', 'nothing to run');
+  assert.equal(step.skipNote, 'it reads the file you create in the step before');
+  const normal = loadCatalog(fixture({ ...base, 't/one/setup/b.sh': 'true\n' })).tracks[0].labs[0].steps[1];
+  assert.equal(normal.skipNote, '');
+});

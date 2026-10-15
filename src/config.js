@@ -31,8 +31,9 @@ function loadConfig(env = process.env) {
     // Per client IP, counting minted-but-unconnected tokens. Kept above 1 because a
     // classroom/campus NAT puts many real learners behind one address. 0 = unlimited.
     maxPerIp: isLocal ? 0 : intEnv(env, 'MAX_SESSIONS_PER_IP', 3),
-    idleMs: intEnv(env, 'LAB_IDLE_MIN', isLocal ? 30 : 5) * 60 * 1000,
-    hardCapMs: intEnv(env, 'LAB_HARD_CAP_MIN', isLocal ? 120 : 15) * 60 * 1000,
+    // Minutes are the real knob. The *_SEC variants exist so browser tests can watch a timeout in seconds, not minutes; they win when set.
+    idleMs: intEnv(env, 'LAB_IDLE_SEC', 0) * 1000 || intEnv(env, 'LAB_IDLE_MIN', isLocal ? 30 : 5) * 60 * 1000,
+    hardCapMs: intEnv(env, 'LAB_HARD_CAP_SEC', 0) * 1000 || intEnv(env, 'LAB_HARD_CAP_MIN', isLocal ? 120 : 15) * 60 * 1000,
     // The page connects its terminal right after minting; a token that never does
     // must not hold a seat for long.
     connectDeadlineMs: 15 * 1000,
@@ -48,6 +49,13 @@ function loadConfig(env = process.env) {
     // Invite tokens: on the hosted profile every lab needs one (the local app never asks).
     // Comma-separated so a cohort's token can be revoked without touching the others.
     accessTokens: isLocal ? [] : String(env.LAB_ACCESS_TOKENS || env.LAB_ACCESS_TOKEN || '').split(',').map((s) => s.trim()).filter(Boolean),
+    // Usage counters (sessions per lab, distinct visitors per day, task pass/fail) are opt-in. They keep no IP address
+    // and no invite code. USAGE_DIR keeps them across restarts; the admin page needs its own token and is absent without one.
+    usageStats: env.USAGE_STATS === '1',
+    usageDir: env.USAGE_DIR || undefined,
+    usageSalt: env.USAGE_SALT || undefined,
+    usageRetentionDays: intEnv(env, 'USAGE_RETENTION_DAYS', 90),
+    adminToken: String(env.ADMIN_TOKEN || '').trim(),
     ownerNote: isLocal ? 'this container' : 'this replica only',
   };
 }

@@ -1,0 +1,2 @@
+cd projects
+cd website

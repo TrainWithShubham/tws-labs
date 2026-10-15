@@ -1,0 +1,1 @@
+printf '%s\n' 'name: CI' 'on:' '  push:' '    branches: [main]' 'jobs:' '  build:' '    runs-on: ubuntu-latest' '    steps:' '      - uses: actions/checkout@v4' '      - run: npm run test' > shop/.github/workflows/ci.yml

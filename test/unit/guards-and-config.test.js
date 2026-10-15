@@ -51,3 +51,28 @@ test('invite tokens: comma-separated on hosted, never read by the local profile'
   assert.deepEqual(loadConfig({ LAB_ACCESS_TOKEN: 'solo' }).accessTokens, ['solo']);
   assert.deepEqual(loadConfig({ LAB_PROFILE: 'local', LAB_ACCESS_TOKENS: 'a' }).accessTokens, []);
 });
+
+test('usage counters and the admin page are opt-in: off by default, configured from the environment', () => {
+  const off = loadConfig({});
+  assert.equal(off.usageStats, false);
+  assert.equal(off.usageDir, undefined);
+  assert.equal(off.adminToken, '');
+  const on = loadConfig({ USAGE_STATS: '1', USAGE_DIR: '/data/usage', USAGE_SALT: 's', USAGE_RETENTION_DAYS: '30', ADMIN_TOKEN: ' adm ' });
+  assert.equal(on.usageStats, true);
+  assert.equal(on.usageDir, '/data/usage');
+  assert.equal(on.usageSalt, 's');
+  assert.equal(on.usageRetentionDays, 30);
+  assert.equal(on.adminToken, 'adm');
+  assert.equal(loadConfig({ USAGE_STATS: '0' }).usageStats, false);
+  assert.equal(loadConfig({ USAGE_STATS: '1' }).usageRetentionDays, 90);
+});
+
+test('LAB_IDLE_SEC and LAB_HARD_CAP_SEC are seconds-level overrides for tests; the minute settings stay the normal way', () => {
+  assert.equal(loadConfig({}).idleMs, 5 * 60 * 1000);
+  assert.equal(loadConfig({ LAB_IDLE_MIN: '2' }).idleMs, 2 * 60 * 1000);
+  assert.equal(loadConfig({ LAB_IDLE_SEC: '8' }).idleMs, 8000);
+  assert.equal(loadConfig({ LAB_IDLE_SEC: '8', LAB_IDLE_MIN: '2' }).idleMs, 8000, 'seconds win');
+  assert.equal(loadConfig({ LAB_HARD_CAP_SEC: '30' }).hardCapMs, 30000);
+  assert.equal(loadConfig({ LAB_HARD_CAP_SEC: '0' }).hardCapMs, 15 * 60 * 1000, 'zero or junk is ignored');
+  assert.equal(loadConfig({ LAB_IDLE_SEC: 'soon' }).idleMs, 5 * 60 * 1000);
+});

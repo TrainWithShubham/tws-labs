@@ -28,10 +28,16 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       # The production image, built for the platform Beanstalk Cluster Mode nodes run.
       - run: docker buildx build --platform linux/amd64 --load -t tws-labs:ci .
+      # The image stays light: fail when it grows past the budget in image-size-budget.json.
+      - run: node scripts/check-image-size.js tws-labs:ci
       # Every task of every lab must fail before its solution and pass after it, and follow the house style.
       - run: docker run --rm tws-labs:ci node scripts/validate-labs.js --strict
       # Same tests as above, but as root with LAB_UID set, which turns on the isolation tests.
       - run: docker run --rm -v "$PWD/test:/app/test:ro" tws-labs:ci sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'
+
+      # The optional AWS overlay (AWS=1) must keep building on top of the production image.
+      - run: docker build -f Dockerfile.aws --build-arg BASE_IMAGE=tws-labs:ci -t tws-labs:aws-ci .
+      - run: docker run --rm tws-labs:aws-ci aws --version && docker images --format 'overlay image {{.Size}}' tws-labs:aws-ci
 
   compose:
     name: Local run - docker compose + smoke test (hardened container profile)
@@ -47,6 +53,38 @@ jobs:
         run: docker compose logs
       - if: always()
         run: docker compose down
+
+  e2e:
+    name: Browser - a learner's whole journey in real Chrome
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      # The same hardened stack as the smoke test, driven by a real browser: typing into the terminal, Check, hints, Restart.
+      - run: docker compose up -d --build --wait
+      # Two hosted-profile servers with tiny limits (invite code, 2 seats, 8 s idle, 12 s time limit) for the session-edge flows.
+      - run: docker compose -f test/e2e/docker-compose.hosted.yml up -d --wait
+      - run: npm run e2e
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          BASE_HOSTED: http://localhost:8081
+          BASE_HOSTED_CAP: http://localhost:8082
+          E2E_HOSTED_CONTAINER: tws-e2e-hosted
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screenshots
+          path: test/e2e/screenshots
+          if-no-files-found: ignore
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: |
+          docker compose -f test/e2e/docker-compose.hosted.yml down
+          docker compose down
 
   terraform:
     name: Terraform fmt + validate

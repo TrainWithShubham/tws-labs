@@ -1,0 +1,1 @@
+sed -E 's/api_key=[a-zA-Z0-9]+/api_key=REDACTED/g' web-server/debug.log > debug-clean.log

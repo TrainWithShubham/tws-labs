@@ -6,6 +6,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { start, check, openLab, sleep, ISOLATED, WebSocket } = require('./helpers');
+const { awsLabsDir } = require('./aws-labs-fixture');
+const { loadCatalog } = require('../../src/loader');
 
 function canSpawnPty() {
   if (process.platform !== 'linux') return 'needs Linux';
@@ -224,5 +226,98 @@ iso('isolation: learners cannot read the lab answers (solutions/) but the checks
     assert.match(out, /Permission denied/);
     await lab.run('mkdir workspace');
     assert.equal(await pass(app, lab.token, 'mkdir'), true);
+  } finally { lab.ws.close(); app.stop(); }
+});
+
+t('usage counters see real check results per task: a failed Check and then a pass are counted separately', async () => {
+  const app = await start({ usageStats: true, adminToken: 'adm' });
+  const lab = await openLab(app, 'linux-fundamentals', 'files');
+  try {
+    assert.equal(await pass(app, lab.token, 'mkdir'), false);
+    await lab.run('mkdir workspace');
+    assert.equal(await pass(app, lab.token, 'mkdir'), true);
+    const { json } = await require('./helpers').get(app, '/admin/stats', { headers: { Authorization: 'Bearer adm' } });
+    const l = Object.values(json.days)[0].labs['linux-fundamentals/files'];
+    assert.deepEqual(l.tasks.mkdir, { pass: 1, fail: 1 });
+    assert.deepEqual(l.checks, { pass: 1, fail: 1 });
+  } finally { lab.ws.close(); app.stop(); }
+});
+
+t('restarting a lab (close the terminal, start a new session) gives fresh files and a clean command history', async () => {
+  const app = await start();
+  const first = await openLab(app, 'linux-fundamentals', 'files');
+  let second;
+  try {
+    await first.run('mkdir workspace');
+    assert.equal(await pass(app, first.token, 'mkdir'), true);
+    first.ws.close(1000, 'restarted by learner');
+    for (let i = 0; i < 50 && app.store.size() > 0; i++) await sleep(40);   // the server frees the seat and the sandbox on close
+    assert.equal(app.store.size(), 0, 'the old session is gone');
+    second = await openLab(app, 'linux-fundamentals', 'files');
+    assert.equal(await pass(app, second.token, 'mkdir'), false, 'the new sandbox has no workspace folder');
+    await second.run('mkdir workspace');
+    assert.equal(await pass(app, second.token, 'mkdir'), true);
+  } finally { first.ws.close(); if (second) second.ws.close(); app.stop(); }
+});
+
+t('local, in a real shell: AWS variables reach an account lab and its checks, other labs and other secrets never', async () => {
+  const saved = { ...process.env };
+  Object.assign(process.env, { AWS_REGION: 'us-east-1', AWS_ACCESS_KEY_ID: 'AKIAEXAMPLE', AWS_SECRET_ACCESS_KEY: 'shh', ADMIN_TOKEN: 'adm-secret' });
+  const app = await start({ profile: 'local', labsDir: awsLabsDir() });
+  try {
+    const acct = await openLab(app, 'cloud', 'acct');
+    try {
+      const out = await acct.run('echo "[$AWS_ACCESS_KEY_ID][$AWS_REGION][$ADMIN_TOKEN]"');
+      assert.match(out, /\[AKIAEXAMPLE\]\[us-east-1\]\[\]/);
+      assert.equal((await check(app, acct.token, 'show')).json.pass, true, 'checks see the variables too');
+    } finally { acct.ws.close(); }
+    const plain = await openLab(app, 'cloud', 'plain');
+    try {
+      const out = await plain.run('echo "[$AWS_ACCESS_KEY_ID][$AWS_REGION]"');
+      assert.match(out, /\[\]\[\]/);
+      assert.equal((await check(app, plain.token, 'show')).json.pass, false, 'a plain lab\'s checks do not see them');
+    } finally { plain.ws.close(); }
+  } finally {
+    for (const k of ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'ADMIN_TOKEN']) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }
+    app.stop();
+  }
+});
+
+// The playthrough: every offline lab, every task, through the path a learner uses (a real WebSocket shell, the line tracker that feeds
+// `ran` checks, and POST /lab/check), not the validator's own shell. Account labs need a real AWS account and have their own tests.
+const solutionLines = (file) => fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+for (const track of loadCatalog(path.join(__dirname, '..', '..', 'labs')).tracks) {
+  for (const lab of track.labs) {
+    if (lab.requires) continue;
+    test(`playthrough ${track.id}/${lab.id}: each task fails before its solution and passes after it, as a learner would run it`, { skip: SKIP, timeout: 180000 }, async () => {
+      const app = await start();
+      const session = await openLab(app, track.id, lab.id);
+      try {
+        for (const step of lab.steps.filter((x) => x.type === 'task')) {
+          assert.equal(await pass(app, session.token, step.id), false, `${step.id} must fail before its solution`);
+          for (const line of solutionLines(step.solutionFile)) await session.run(line);
+          const after = await check(app, session.token, step.id);
+          assert.equal(after.json.pass, true, `${step.id} must pass after its solution (the learner would see: "${after.json.message || ''}")`);
+        }
+      } finally { session.ws.close(); app.stop(); }
+    });
+  }
+}
+
+t('skipping ahead: the task\'s setup is run in the learner\'s own sandbox, moves their shell to the right folder, and is safe to repeat', async () => {
+  const { skipLabsDir } = require('./aws-labs-fixture');
+  const app = await start({ profile: 'local', labsDir: skipLabsDir() });
+  const lab = await openLab(app, 's', 'skip');
+  try {
+    const post = (stepId) => require('./helpers').post(app, '/lab/setup', { token: lab.token, stepId });
+    assert.equal(await pass(app, lab.token, 'use'), false, 'before: proj/data.txt is not there');
+    const r = await post('use');
+    assert.deepEqual([r.status, r.json.ok], [200, true]);
+    await lab.waitFor(/~\/proj/, 8000);                                  // the shell was moved into proj
+    const ls = await lab.run('ls -d ~/proj && pwd');
+    assert.match(ls, /\/proj\r?\n.*\/proj/s, 'proj exists and the shell is inside it');
+    assert.equal((await post('use')).json.ok, true, 'running it twice is fine');
+    await lab.run('echo x > data.txt');                                  // the learner now solves the task from where setup put them
+    assert.equal(await pass(app, lab.token, 'use'), true);
   } finally { lab.ws.close(); app.stop(); }
 });

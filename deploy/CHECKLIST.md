@@ -47,3 +47,14 @@ Last full verification: the restructure to one engine + one catalog (see git log
 - [x] Hygiene check: no other products named anywhere in the repo
 - [ ] (live) push to `main` runs `deploy.yml` end to end: Terraform apply → build/push → EB deploy → wait for Ready → smoke test. Paths changed in the restructure; the first run is the real proof
 - [ ] (live) `terraform fmt -check && terraform validate` in `deploy/infra` — only a comment changed there; CI runs it
+
+## 1.2 (2026-10-15)
+- [x] (live) after the 1.2 deploys: `/healthz`, home, a track and a lab return 200; the lab page carries the new buttons (hint, restart) and `setup` flags; an unknown path 404s
+- [x] (live) `POST /session` for an account lab (`requires: aws`) is refused with 403 `needs-local` even with a valid invite code, and its page is a read-only walkthrough with no terminal
+- [x] (live) `/admin/stats` is 404 without an `ADMIN_TOKEN`; `USAGE_STATS=1` reaches the pod and `usage` lines (hashes only, no IP or invite code) appear in the application log group
+- [x] (live) `POST /lab/setup` from another origin is refused (403)
+- [x] Browser tests in CI (real Chrome, the hardened compose stack plus two small hosted-profile servers): journey, hints, Restart, Skip, axe, invite code, seat cap, idle and time-limit ends, two tabs, server restart
+- [ ] (live) a full lab played in a browser on the hosted site with the real invite code (the hosted flows ran against local hosted-profile servers, not the live environment)
+- [x] AWS CLI first steps run once on a real AWS account with an IAM user (all six tasks fail before / pass after; the bucket was created, tagged, versioned, read and deleted; no leftovers)
+- [ ] The `tws-labs-learner` role (`deploy/learner-role.yaml`) created in an account and the lab run as that role (validated with CloudFormation and IAM Access Analyzer only)
+

@@ -1,0 +1,1 @@
+cat docs/readme.txt

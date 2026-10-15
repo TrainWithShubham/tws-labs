@@ -2,7 +2,7 @@
    hairline rules, muted logo-derived accents, a serif for display and a clean sans for the interface. */
 :root {
   --bg: #000; --panel: #09090e; --panel2: #0e0e15;
-  --text: #ececf2; --muted: #8e8da0; --faint: #5f5e70;
+  --text: #ececf2; --muted: #8e8da0; --faint: #7c7b8e;
   --rule: rgba(255, 255, 255, .08); --rule2: rgba(255, 255, 255, .16);
   /* the three lines, taken from the logo: purple, amber, and an ion-cyan for space */
   --devops: #8a63e8; --cloud: #f4b860; --ai: #5ccfee; --more: #8e8da0;

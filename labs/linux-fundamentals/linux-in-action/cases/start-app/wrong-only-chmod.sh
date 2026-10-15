@@ -1,0 +1,1 @@
+chmod +x start.sh

@@ -1,0 +1,91 @@
+title: Linux Process Management
+level: beginner
+minutes: 10
+summary: Learn to list processes with ps, monitor the system with top, and control background tasks.
+steps:
+  - id: intro
+    type: lesson
+    title: Processes and PIDs
+    body: |
+      Every program running on Linux is a **process**. To keep track of them, the kernel assigns each one a unique **Process ID (PID)**.
+
+      In this lab, you'll use three essential tools:
+      - `ps`: Take a snapshot of current processes.
+      - `top`: Monitor system resources and processes in real-time.
+      - `kill`: Send signals to processes to stop them.
+
+  - id: list-user
+    type: task
+    title: List your own processes
+    body: |
+      Start by looking at the processes running under your current user.
+
+      Run `ps -u` to see a detailed list of your processes.
+    hint: "Run: ps -u"
+    success: You can list your own processes.
+
+  - id: list-all
+    type: task
+    title: List terminal processes
+    body: |
+      The `-a` flag tells `ps` to list processes for all users associated with a terminal (excluding session leaders).
+
+      Run `ps -a` to see what else is running.
+    hint: "Run: ps -a"
+    success: You can list processes across a terminal.
+
+  - id: monitor
+    type: task
+    title: Monitor with top
+    body: |
+      `top` provides a dynamic, real-time view of a running system. It shows CPU usage, memory usage, and the most active processes.
+
+      Run `top` to see the live view. Press **q** to exit the monitor and return to your shell.
+    hint: "Run: top (and press q to quit when done)"
+    success: top shows what the system is busy with.
+
+  - id: start-sleep
+    type: task
+    title: Start a background process
+    body: |
+      Sometimes you want to start a process and keep using your terminal. You can do this by adding `&` to the end of a command.
+
+      Start a `sleep` process in the background and save its PID to a file:
+      `sleep 300 & echo $! > sleep.pid`
+
+      The `$!` variable holds the PID of the last background process.
+    hint: "Run: sleep 300 & echo $! > sleep.pid"
+    success: A background process is running and its PID is saved.
+
+  - id: stop-process
+    type: task
+    title: Stop a process gracefully
+    body: |
+      The `kill` command sends a signal to a process. By default, it sends **SIGTERM**, which asks the process to shut down gracefully.
+
+      Stop your sleep process using the PID you saved:
+      `kill "$(cat sleep.pid)"`
+    hint: "Use kill with the PID stored in sleep.pid"
+    success: kill sent SIGTERM and the process shut down cleanly.
+
+  - id: force-stop
+    type: task
+    title: Force-stop a process
+    body: |
+      If a process is stuck and ignores a normal `kill`, you can use `kill -9` (**SIGKILL**). This forces the kernel to kill the process immediately.
+
+      Start one more background process, then force-kill it:
+      `sleep 300 & echo $! > force-sleep.pid`
+      `kill -9 "$(cat force-sleep.pid)"`
+    hint: "Run: kill -9 followed by the PID"
+    success: kill -9 ends a process that ignores a normal kill.
+
+  - id: recap
+    type: lesson
+    title: Control acquired
+    body: |
+      You've mastered the basics of process management:
+      - `ps`: Snapshots of processes (`-u` for user, `-a` for terminal).
+      - `top`: Real-time monitoring.
+      - `&`: Running tasks in the background.
+      - `kill`: Stopping processes (and `-9` for when they won't listen).

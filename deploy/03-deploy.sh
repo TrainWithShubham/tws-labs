@@ -73,12 +73,17 @@ import json, os
 path = os.environ["OPTS_FILE"]
 with open(path) as f:
     opts = json.load(f)
+env = {"LAB_ACCESS_TOKENS": os.environ["LAB_ACCESS_TOKENS"], "USAGE_STATS": "1"}
+# Optional: an admin token turns on /admin/stats; a fixed salt keeps distinct-visitor counts consistent across replicas.
+for name in ("ADMIN_TOKEN", "USAGE_SALT"):
+    if os.environ.get(name):
+        env[name] = os.environ[name]
 opts.append({"Namespace": "aws:elasticbeanstalk:eks:environment", "OptionName": "env-variables",
-             "Value": json.dumps({"LAB_ACCESS_TOKENS": os.environ["LAB_ACCESS_TOKENS"]})})
+             "Value": json.dumps(env)})
 with open(path, "w") as f:
     json.dump(opts, f)
 '
-  echo "Invite tokens configured for the gated lab."
+  echo "Invite tokens configured for the gated lab; usage counters on${ADMIN_TOKEN:+, admin page on}."
 else
   echo "WARNING: LAB_ACCESS_TOKENS is not set - every hosted lab will refuse everyone (set the GitHub secret)." >&2
 fi

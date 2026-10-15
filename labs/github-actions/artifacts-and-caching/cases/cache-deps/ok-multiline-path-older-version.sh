@@ -1,0 +1,1 @@
+printf '%s\n' '      - uses: actions/cache@v4' '        with:' '          path: |' '            ~/.npm' '            node_modules' '          key: ${{ runner.os }}-npm-${{ hashFiles('\''**/package-lock.json'\'') }}' '      - run: npm run build' '      - run: npm test' >> shop/.github/workflows/ci.yml

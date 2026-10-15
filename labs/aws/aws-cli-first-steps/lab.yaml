@@ -1,0 +1,92 @@
+requires: aws
+title: AWS CLI first steps
+level: beginner
+minutes: 12
+summary: Use the real AWS CLI on your own account - identity, an S3 bucket, tags, versioning and --query.
+links:
+  - title: Filtering CLI output
+    url: https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-filter.html
+resources:
+  - title: Filtering output in the AWS CLI
+    url: https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-filter.html
+    desc: The --query option and the JMESPath expressions it takes.
+  - title: General purpose bucket naming rules
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html
+    desc: Why bucket names are global and what characters they may use.
+steps:
+  - id: intro
+    type: lesson
+    title: A real account, a small footprint
+    body: |
+      This lab runs the **real AWS CLI against your own AWS account**. Nothing here is simulated, so you are practising the skill you will use on the job.
+
+      - It uses one tiny, empty S3 bucket. If you finish and clean up, it costs far less than a cent.
+      - You are using the `tws-labs-learner` role from `docs/aws-labs.md`, in the **us-east-1** region. Root user credentials are refused.
+      - Every task checks the live state of your account, so give a command a few seconds to take effect.
+
+      The first task is also your pre-flight: if your credentials are missing or have expired, the check tells you how to fix it.
+  - id: identity
+    type: task
+    title: Ask AWS who you are
+    body: |
+      Every call to AWS is made *as someone*. Run the command that reports the identity behind your credentials and **save its output** in a file called `identity.json` in your home directory.
+    hint:
+      - "STS is the service that knows about identities and temporary credentials."
+      - "The operation is named after what it returns: the caller's identity."
+      - "Redirect the command's output into identity.json."
+    success: That is the account and role your next commands act as.
+  - id: make-bucket
+    type: task
+    title: Make a bucket named after your account
+    body: |
+      S3 bucket names are unique across **all** of AWS. Create a bucket called `tws-labs-` followed by your 12-digit **account ID** (it is in `identity.json`) and then `-cli`, so for account `123456789012` the name is `tws-labs-123456789012-cli`.
+      You are in `us-east-1`, so no location setting is needed.
+    hint:
+      - "S3 has two command families; the lower-level one is s3api, and its operations mirror the API names."
+      - "The operation that makes a bucket is create-bucket, and it takes --bucket."
+    success: Your bucket exists, and the name makes it clearly a lab bucket.
+  - id: tag-bucket
+    type: task
+    title: Tag what you create
+    body: |
+      Tags are how you (and your future self) find and clean up resources. Tag the bucket with the key `tws-labs` and the value `aws-cli-first-steps`.
+    hint:
+      - "Look at the help for the s3api operation that puts tags on a bucket: add help to the end of the command."
+      - "The tags go in a TagSet, a list of Key and Value pairs; the shorthand syntax is shown in the help examples."
+    success: The bucket now carries the tag that marks it as a lab resource.
+  - id: versioning
+    type: task
+    title: Keep every version of every object
+    body: |
+      Turn on **versioning** for the bucket, so overwriting or deleting an object keeps the earlier versions.
+    hint:
+      - "Versioning is a configuration you put on the bucket, with its own operation."
+      - "The configuration has one field, Status, and the value you want is the active one."
+    success: Overwrites and deletes in this bucket are now recoverable.
+  - id: read-status
+    type: task
+    title: Ask for just the one field
+    body: |
+      AWS answers in JSON. `--query` picks out the part you want and `--output text` drops the quotes. Read the bucket's versioning setting so that **only the status word** is printed, and save it in `status.txt`.
+    hint:
+      - "The read operation is the twin of the one that set versioning."
+      - "The JSON has a single field; --query takes its name, and --output text removes the formatting."
+    success: One precise answer instead of a wall of JSON.
+  - id: cleanup
+    type: task
+    title: Clean up
+    body: |
+      Leave nothing behind. Delete the bucket you created (it is empty, so it can be removed straight away).
+    hint:
+      - "The operation that removes a bucket is named like the one that made it."
+    success: Your account is clean again.
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      - Read who you are with `aws sts get-caller-identity`.
+      - Create, tag, configure and delete S3 buckets with `aws s3api`.
+      - Cut output down with `--query` and `--output`, which makes AWS commands scriptable.
+      - Tag everything you create, and finish with a cleanup.
+
+      Next: an audit of idle resources, where those tags and queries earn their keep.

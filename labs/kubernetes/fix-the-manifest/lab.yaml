@@ -1,0 +1,89 @@
+title: Fix the broken manifest
+level: intermediate
+minutes: 12
+summary: Read what Kubernetes would complain about and repair a Deployment and a Service that do not work.
+links:
+  - title: Deployments
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+resources:
+  - title: Deprecated API migration guide
+    url: https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+    desc: Which API versions were removed, and what to use instead.
+  - title: Labels and selectors
+    url: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+    desc: How objects find each other.
+  - title: Services
+    url: https://kubernetes.io/docs/concepts/services-networking/service/
+    desc: Ports, targetPorts and selectors.
+steps:
+  - id: intro
+    type: lesson
+    title: Most outages are a typo
+    body: |
+      Real manifests break in small, boring ways: an API version that no longer exists, a label that does not match, a port off by one.
+      Kubernetes tells you, but you have to read what it says.
+
+      `app/deployment.yaml` and `app/service.yaml` describe a shop that does not work. Each task gives you the symptom the cluster would report. Open the files, find the cause, fix it.
+      Make the smallest change that fixes the problem.
+  - id: api-version
+    type: task
+    title: The API version is gone
+    body: |
+      Applying `app/deployment.yaml` fails:
+
+      ```
+      no matches for kind "Deployment" in version "apps/v1beta1"
+      ```
+
+      That beta API was removed. Deployments live in a stable API group now. Fix the `apiVersion`.
+    hint:
+      - "Look at the first line of the file: the version is the problem, not the kind."
+      - "Deployments are in the apps group; the stable version is the plain one."
+    success: The Deployment now uses an API the cluster still serves.
+  - id: selector
+    type: task
+    title: The selector matches nothing
+    body: |
+      The Deployment is rejected:
+
+      ```
+      selector does not match template labels
+      ```
+
+      A Deployment only manages Pods whose labels match `spec.selector.matchLabels`. Make the selector and the Pod template's labels agree.
+      The Service already points at the template's label, so decide which side to change.
+    hint:
+      - "Compare the label under selector.matchLabels with the label under template.metadata.labels."
+      - "The Service selects on the template's label, so changing the selector is the safer fix."
+    success: The Deployment can now find its own Pods.
+  - id: image-tag
+    type: task
+    title: Never deploy "whatever is newest"
+    body: |
+      The image is `nginx` with no tag, which means `latest`. Rolling back or even reproducing today's deploy becomes guesswork.
+      Pin the image to the specific version `nginx:1.27`.
+    hint:
+      - "A tag follows the image name after a colon."
+      - "Pin the exact version from the task, not latest."
+    success: Every rollout now runs the exact same image.
+  - id: service-port
+    type: task
+    title: The Service sends traffic to the wrong port
+    body: |
+      Requests to the Service time out. The container in `app/deployment.yaml` listens on a port; the Service forwards to `targetPort` in `app/service.yaml`.
+      Make `targetPort` match the port the container actually declares. Leave the Service's own `port` alone.
+    hint:
+      - "Find containerPort in the Deployment."
+      - "targetPort is the container's port, port is what clients call."
+    success: Traffic now reaches the container's port.
+  - id: wrap-up
+    type: lesson
+    title: A debugging routine
+    body: |
+      1. Read the error: it names the field or kind.
+      2. Check the apiVersion of the kind against the current docs.
+      3. Follow the labels: selector, template labels, Service selector.
+      4. Follow the ports: containerPort, targetPort, port.
+      5. Pin versions.
+
+      That covers a large share of the broken manifests you will meet.

@@ -1,0 +1,1 @@
+{ "maxMb": 520, "note": "Upper bound for the production image (linux/amd64, as built in CI). Lower it when you trim; raise it only with a reason in the PR." }

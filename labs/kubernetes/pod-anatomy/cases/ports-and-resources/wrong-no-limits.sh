@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: v1' 'kind: Pod' 'metadata:' '  name: web-pod' '  labels:' '    app: web' 'spec:' '  containers:' '    - name: nginx' '      image: nginx:1.27' '      ports:' '        - containerPort: 80' '      resources:' '        requests:' '          cpu: 50m' '          memory: 64Mi' > app/pod.yaml

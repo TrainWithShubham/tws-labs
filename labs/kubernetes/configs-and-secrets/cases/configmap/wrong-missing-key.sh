@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: v1' 'kind: ConfigMap' 'metadata:' '  name: app-config' 'data:' '  LOG_LEVEL: debug' > app/configmap.yaml

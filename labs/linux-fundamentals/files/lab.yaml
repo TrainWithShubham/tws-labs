@@ -18,7 +18,10 @@ steps:
     type: task
     title: Create an empty file
     body: "`touch` creates an empty file (or updates its timestamp). Create `workspace/hello.txt`."
-    hint: "Try: touch workspace/hello.txt"
+    hint:
+      - "The command is named after what it does to a timestamp."
+      - "It takes the path of the file you want: workspace/hello.txt."
+      - "Try: touch workspace/hello.txt"
   - id: write
     type: task
     title: Write into a file

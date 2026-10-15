@@ -1,0 +1,1 @@
+printf '%s\n' '  test:' '    runs-on: ubuntu-latest' '    steps:' '      - run: npm test' '    strategy:' '      matrix:' '        node: [18, 20]' '        os: [ubuntu-latest, macos-latest]' >> shop/.github/workflows/ci.yml

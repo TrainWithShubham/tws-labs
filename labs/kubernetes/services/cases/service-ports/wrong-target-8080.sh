@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: v1' 'kind: Service' 'metadata:' '  name: nginx-service' 'spec:' '  type: ClusterIP' '  selector:' '    app: nginx' '  ports:' '    - port: 80' '      targetPort: 8080' > app/service.yaml
