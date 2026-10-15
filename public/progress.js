@@ -61,6 +61,12 @@
       return false;
     };
   };
+  // The text a learner has typed after the prompt on the terminal's current line (empty when the line is program output or an empty prompt).
+  // A failed Check uses it to say "press Enter": a typed but unsubmitted command is the most common reason a correct answer fails.
+  window.twsPendingInput = function (line) {
+    var m = /^\S*@\S*[:\s]\S*[$#]\s(.*)$/.exec(String(line || '').replace(/\s+$/, ''));
+    return m ? m[1].trim() : '';
+  };
   var done = read();
   document.querySelectorAll('[data-lab]').forEach(function (el) {
     if (done.indexOf(el.getAttribute('data-lab')) >= 0) el.classList.add('is-done');

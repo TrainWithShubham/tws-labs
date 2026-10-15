@@ -120,3 +120,18 @@ test('two-step confirm: the first click arms, a second within the window confirm
   now += 100;
   assert.equal(confirm(), true);
 });
+
+test('pending input: text left on the prompt line is found, so a failed Check can say "press Enter"', () => {
+  const { window } = load();
+  const p = (line) => window.twsPendingInput(line);
+  assert.equal(p('learner@lab:~$ aws sts get-caller-identity > identity.json'), 'aws sts get-caller-identity > identity.json');
+  assert.equal(p('learner@lab:~/workspace$ ls -la   '), 'ls -la');
+  assert.equal(p('learner@lab:~$ '), '', 'an empty prompt');
+  assert.equal(p('learner@lab:~$'), '');
+  assert.equal(p('{'), '', 'program output is not a prompt');
+  assert.equal(p('"Account": "123456789012",'), '');
+  assert.equal(p(''), '');
+  assert.equal(p(undefined), '');
+  assert.equal(p('root@host:/# echo hi'), 'echo hi', 'a # prompt works too');
+  assert.equal(p('learner@lab:~$ echo "cost: $5"'), 'echo "cost: $5"', 'a dollar sign inside the command is not the prompt');
+});

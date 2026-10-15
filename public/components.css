@@ -33,7 +33,7 @@
 .btn-primary:hover { background: #fff; transform: translateY(-1px); } .btn-primary span { transition: transform .2s; } .btn-primary:hover span { transform: translateX(3px); }
 .btn-quiet { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-size: 14px; padding: 12px 4px; transition: color .2s; }
 .btn-quiet:hover { color: var(--text); }
-.btn { font: inherit; border-radius: 999px; border: 1px solid var(--rule2); background: transparent; color: var(--text); padding: 8px 16px; cursor: pointer; transition: border-color .2s, background .2s; }
+.btn { white-space: nowrap; font: inherit; border-radius: 999px; border: 1px solid var(--rule2); background: transparent; color: var(--text); padding: 8px 16px; cursor: pointer; transition: border-color .2s, background .2s; }
 .btn:hover { border-color: var(--text); }
 .btn.primary { background: var(--text); color: #000; border-color: var(--text); font-weight: 600; } .btn.primary:hover { background: #fff; } .btn.primary:disabled { opacity: .55; cursor: wait; }
 .btn.link { border: none; background: none; color: var(--muted); padding: 8px 6px; } .btn.link:hover { color: var(--text); }

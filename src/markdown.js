@@ -1,13 +1,17 @@
 // A deliberately tiny markdown renderer for lab text. Everything is HTML-escaped
 // FIRST, so community-contributed lab content can never inject markup or script.
 // Supported: paragraphs, - bullet lists, 1. numbered lists, ``` fences,
-// `inline code`, **bold**, [text](http(s)://link).
+// `inline code`, **bold**, *italic* and _italic_, [text](http(s)://link).
 const { esc } = require('./ui');
 
 function inline(src) {
   const codes = [];
   let t = esc(src).replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0001' + (codes.length - 1) + '\u0001'; });
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Emphasis only where it clearly is emphasis: a star pair hugging the text, not touching word characters, so globs (*.log),
+  // arithmetic (2 * 3) and snake_case stay literal.
+  t = t.replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?![*\w])/g, '$1<em>$2</em>');
+  t = t.replace(/(^|[^_\w])_(?=\S)([^_\n]*?\S)_(?![_\w])/g, '$1<em>$2</em>');
   t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   return t.replace(/\u0001(\d+)\u0001/g, (_, i) => '<code>' + codes[i] + '</code>');
 }

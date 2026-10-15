@@ -135,6 +135,15 @@
     if (r) { b.textContent = r.label; b.onclick = function () { setHint(hints.next(s.id, hintsOf(s)), false); renderHintButton(); }; }
   }
 
+  // The terminal's current line (joined across wrapped rows), to notice a command that was typed but not submitted.
+  function currentTerminalLine() {
+    try {
+      var buf = term.buffer.active, y = buf.baseY + buf.cursorY, line = buf.getLine(y), text = line ? line.translateToString(true) : '';
+      while (line && line.isWrapped && y > 0) { y--; line = buf.getLine(y); text = (line ? line.translateToString(true) : '') + text; }
+      return text;
+    } catch (e) { return ''; }
+  }
+
   function check() {
     var s = STEPS[current];
     var btn = $('action-btn');
@@ -145,14 +154,16 @@
       .then(function (d) {
         btn.disabled = false;
         if (d.pass) { done[s.id] = true; window.twsMarkTask(DATA.track + '/' + DATA.lab, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
-        btn.textContent = 'Not yet — try again';
+        btn.textContent = 'Check again';
         hints.failed(s.id);
         var msg = d.message;
         if (!msg && hintsOf(s).length === 1) { msg = s.hint; hints.next(s.id, hintsOf(s)); }   // a lone hint shows as before
+        if (window.twsPendingInput(currentTerminalLine())) msg = 'You have a command typed but not run yet. Press Enter in the terminal first.' + (msg ? ' ' + msg : '');
         setHint(msg || '', false);
         renderHintButton();
+        term.focus();   // the next thing a learner does is type (or press Enter), so hand the keyboard back to the terminal
       })
-      .catch(function () { btn.disabled = false; btn.textContent = 'Error — retry'; });
+      .catch(function () { btn.disabled = false; btn.textContent = 'Retry'; });
   }
 
   function finish() {

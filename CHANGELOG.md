@@ -33,6 +33,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
   The image grows by about 80 MB uncompressed, mostly the `vim` runtime files (36 MB) and the manual pages.
 
 ### Fixed
+- **A command you typed but did not run** is now noticed: a failed Check says "You have a command typed but not run yet. Press Enter", and the keyboard goes back to the terminal so Enter works at once.
+- **Italics** (`*word*`, `_word_`) in lab text render as emphasis instead of showing the asterisks.
+- **Step buttons no longer wrap** into two lines ("Another / hint"); the Check button reads "Check again" after a miss instead of an error-like label.
 - The HTTP tests no longer hardcode how many topics are live or have a "Practice" link, so a topic's first lab goes live without a test edit. Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #30).
 - The lab page stops polling `/session/remaining` once the session ends (terminal closed, time ran out or End lab). Reported by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #36).
 - Track pages now carry `data-track` on their wrapper, which the progress script needs to draw each track's completion. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #38, #39).

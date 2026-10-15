@@ -30,3 +30,23 @@ test('a quote in a link cannot break out of the href attribute', () => {
   const html = renderMarkdown('[x](https://a.com/"onmouseover="alert(1))');
   assert.ok(!/onmouseover="/.test(html));
 });
+
+test('*italic* and _italic_ render as emphasis, and bold still works around them', () => {
+  assert.equal(renderMarkdown('Every call is made *as someone*.'), '<p>Every call is made <em>as someone</em>.</p>');
+  assert.equal(renderMarkdown('A _gentle_ nudge and **bold** text'), '<p>A <em>gentle</em> nudge and <strong>bold</strong> text</p>');
+  assert.doesNotThrow(() => renderMarkdown('***both*** and ** ** and * *'), 'odd emphasis never crashes');
+});
+
+test('things that look like emphasis but are not stay literal: globs, snake_case, lone stars, code', () => {
+  assert.equal(renderMarkdown('Delete *.log and *.tmp files'), '<p>Delete *.log and *.tmp files</p>');
+  assert.equal(renderMarkdown('set my_var_name and other_var'), '<p>set my_var_name and other_var</p>');
+  assert.equal(renderMarkdown('2 * 3 = 6 and a * b'), '<p>2 * 3 = 6 and a * b</p>');
+  assert.equal(renderMarkdown('Run `echo *.txt` now'), '<p>Run <code>echo *.txt</code> now</p>');
+  assert.equal(renderMarkdown('```\necho *not italic*\n```'), '<pre><code>echo *not italic*</code></pre>');
+});
+
+test('emphasis can never inject markup', () => {
+  const html = renderMarkdown('*<script>alert(1)</script>* and _<img src=x onerror=1>_');
+  assert.ok(!html.includes('<script>') && !html.includes('<img'));
+  assert.match(html, /<em>&lt;script&gt;/);
+});
