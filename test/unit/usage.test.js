@@ -96,7 +96,9 @@ test('with a directory the counts survive a restart, and old days and bad lines 
 });
 
 test('an unwritable directory never breaks recording', () => {
-  const { usage } = make({ dir: '/proc/definitely/not/writable' });
+  const blocker = path.join(tmp(), 'a-file');
+  fs.writeFileSync(blocker, 'x');                         // a directory cannot be created underneath a regular file
+  const { usage } = make({ dir: path.join(blocker, 'usage') });
   usage.session({ track: 't', lab: 'l', ip: '1.1.1.1' });
   assert.equal(usage.summary().days['2026-10-14'].sessions, 1);
 });
