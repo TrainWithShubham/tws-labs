@@ -20,3 +20,6 @@ backend_override.tf
 videos/
 __pycache__/
 *.local.md
+
+# real-browser test screenshots (uploaded as a CI artifact)
+test/e2e/screenshots/

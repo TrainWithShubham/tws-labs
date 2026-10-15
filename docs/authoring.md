@@ -180,6 +180,12 @@ A lab that says `requires: aws` runs against the learner's **own AWS account**, 
 - **Helpers** (`labs/lib.sh`): call `aws_ready` first in every check (it refuses missing, expired and root credentials with a friendly line), then `aws_account`, `aws_region_is REGION` and `retry TRIES SECONDS CMD...` for eventual consistency. Name bucket-style resources after the account id so they are unique, and keep the `tws-labs` prefix so `scripts/aws-lab-sweep.sh` and the learner role's permissions cover them.
 - **Testing a check without an account**: `test/support/fake-aws.js` is a test double that answers only the calls your checks make; add what you need there and use `test/support/aws-env.js` (see `test/unit/aws-first-steps.test.js`). It proves the check logic, not AWS itself.
 
+## Real-browser tests (`npm run e2e`)
+
+`test/e2e/` drives real Chrome against a running stack (`./start_local_labs.sh`, then `npm run e2e`; set `BASE` for another port and `CHROME_PATH` if Chrome is not found):
+it types into the real terminal, clicks Check, and asserts what a learner sees (green confirmation, hint tiers, Restart, the "typed but not run" nudge, buttons that do not wrap at 1440/1024/390 px, no console errors).
+CI runs it in its own job and keeps the screenshots as an artifact. Add a flow there whenever you change what a learner sees.
+
 ## Validation rules (`node scripts/validate-labs.js`)
 
 For each task, in order, in a fresh sandbox: check **fails** → solution runs → check **passes**.

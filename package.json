@@ -22,7 +22,8 @@
     "lab:check": "node scripts/lab-check.js",
     "lab:new": "node scripts/new-lab.js",
     "check:hygiene": "node scripts/check-hygiene.js",
-    "readme:stats": "node scripts/readme-stats.js"
+    "readme:stats": "node scripts/readme-stats.js",
+    "e2e": "node --test --test-force-exit --test-concurrency=1 --test-timeout=240000 test/e2e/*.e2e.js"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
@@ -30,5 +31,8 @@
     "js-yaml": "^5.4.2",
     "node-pty": "^1.0.0",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.14.0"
   }
 }

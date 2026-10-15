@@ -33,6 +33,8 @@ The best labs are things a learner can do in this one container with no cloud ac
 a manifest or pipeline to write, a log to dig through. Need a cloud or cluster CLI? Grade a **stub** that reads a small fixture file instead of a real service
 (the AWS FinOps and Kubernetes manifest labs work this way). Pick an open topic with `npm run lab:new`, or open a [lab request](../../issues/new/choose) to claim one so two people do not build the same lab.
 
+Changing what a learner sees (the lab page, buttons, messages)? Run `npm run e2e` against a local stack and add a flow if you added behavior; see [docs/authoring.md](docs/authoring.md#real-browser-tests-npm-run-e2e).
+
 ## Definition of done
 
 - `npm run lab:check -- <track>/<lab-id>` passes with no warnings.
