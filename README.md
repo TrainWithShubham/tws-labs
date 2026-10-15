@@ -114,7 +114,7 @@ The home page is a quiet map of three routes; the roadmap lists every topic and 
 Self-hosting teams can count how the labs are used: `USAGE_STATS=1` records sessions per lab, distinct visitors per day and which
 tasks learners fail. It never stores an IP address or an invite code. Add `ADMIN_TOKEN=<secret>` to read it at
 `/admin/stats` (`curl -H "Authorization: Bearer <secret>" http://localhost:8080/admin/stats`), and `USAGE_DIR=<a mounted folder>`
-to keep the counts across restarts.
+to keep the counts across restarts. The page also lists the **hardest tasks** (lowest pass rate over at least 5 attempts), a good way to find a vague task or an unfair check.
 
 ## Community labs
 

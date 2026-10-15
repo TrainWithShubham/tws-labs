@@ -102,3 +102,25 @@ test('an unwritable directory never breaks recording', () => {
   usage.session({ track: 't', lab: 'l', ip: '1.1.1.1' });
   assert.equal(usage.summary().days['2026-10-14'].sessions, 1);
 });
+
+test('the summary ranks the hardest tasks: lowest pass rate first, only with enough attempts', () => {
+  const { usage, clock } = make();
+  const run = (lab, step, results) => results.forEach((pass) => usage.check({ track: 't', lab, step, pass, ip: '1.1.1.1' }));
+  run('l', 'easy', [true, true, true, true, true, false]);          // 5/6
+  run('l', 'hard', [false, false, false, true, false, false]);      // 1/6
+  run('l', 'rare', [false, false]);                                 // too few attempts to judge
+  clock.now += DAY;                                                 // counted across days
+  run('m', 'middling', [true, false, true, false, true, false]);    // 3/6
+  run('l', 'hard', [false]);                                        // now 1/7
+  const h = usage.summary().hardestTasks;
+  assert.deepEqual(h.map((x) => `${x.lab}/${x.step}`), ['t/l/hard', 't/m/middling', 't/l/easy']);
+  assert.deepEqual({ ...h[0] }, { lab: 't/l', step: 'hard', attempts: 7, passes: 1, passRate: 0.14 });
+  assert.ok(!h.some((x) => x.step === 'rare'));
+});
+
+test('the hardest list is capped at ten and is empty when nothing was graded', () => {
+  const { usage } = make();
+  assert.deepEqual(usage.summary().hardestTasks, []);
+  for (let i = 0; i < 12; i++) for (let k = 0; k < 5; k++) usage.check({ track: 't', lab: 'l', step: `s${i}`, pass: k === 0, ip: '1.1.1.1' });
+  assert.equal(usage.summary().hardestTasks.length, 10);
+});

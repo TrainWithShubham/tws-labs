@@ -75,10 +75,31 @@ function createUsage({ enabled = false, secret, dir, retentionDays = 90, now = D
     if (target) { try { fs.appendFileSync(target, line + '\n'); } catch { /* best effort */ } }
   }
 
+  // Across every kept day: the tasks learners fail most. Needs a few attempts before a rate means anything.
+  const MIN_ATTEMPTS = 5;
+  function hardestTasks() {
+    const all = new Map();
+    for (const d of Object.values(days)) {
+      for (const [labKey, lab] of Object.entries(d.labs)) {
+        for (const [step, t] of Object.entries(lab.tasks)) {
+          const k = `${labKey}\u0000${step}`;
+          const acc = all.get(k) || { lab: labKey, step, attempts: 0, passes: 0 };
+          acc.attempts += t.pass + t.fail; acc.passes += t.pass;
+          all.set(k, acc);
+        }
+      }
+    }
+    return [...all.values()]
+      .filter((t) => t.attempts >= MIN_ATTEMPTS)
+      .map((t) => ({ ...t, passRate: Math.round((t.passes / t.attempts) * 100) / 100 }))
+      .sort((a, b) => a.passRate - b.passRate || b.attempts - a.attempts)
+      .slice(0, 10);
+  }
+
   return {
     session: (x) => record('session', x),
     check: (x) => record('check', x),
-    summary: () => ({ enabled: true, since: new Date(since).toISOString(), retentionDays, days: JSON.parse(JSON.stringify(days)) }),
+    summary: () => ({ enabled: true, since: new Date(since).toISOString(), retentionDays, days: JSON.parse(JSON.stringify(days)), hardestTasks: hardestTasks() }),
   };
 }
 
