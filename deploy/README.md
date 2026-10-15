@@ -113,6 +113,19 @@ capacity. The pages themselves (home, roadmap, lab shells) stay public; the loca
   rolls the pods, which ends live sessions - rotate between events. Removing the secret does not clear an already-set
   `env-variables` option; set `LAB_ACCESS_TOKENS` to a new value instead.
 
+## Usage counters
+The hosted app counts sessions per lab, distinct visitors per day and task pass/fail (`USAGE_STATS=1`, set by `03-deploy.sh`).
+It keeps **no IP address and no invite code**: a visitor is a short keyed hash that changes every UTC day, and an invite code
+shows up only as the first 8 hex of its SHA-256.
+
+- Each event is one JSON line on stdout prefixed `usage `, so CloudWatch keeps it (the `/aws/elasticbeanstalk/application/logs`
+  group). Sessions and checks per lab, in Logs Insights:
+  `filter @message like /^usage / | parse @message '"ev":"*","track":"*","lab":"*"' as ev, track, lab | stats count() by ev, track, lab`.
+- Optional secrets `ADMIN_TOKEN` (turns on `GET /admin/stats`, sent as `Authorization: Bearer <token>`, answers per replica) and
+  `USAGE_SALT` (a fixed secret so the same visitor hashes the same on every replica). Without `USAGE_SALT` the same visitor is counted once per replica.
+- Find which invite code an id belongs to: `printf %s "<the code>" | shasum -a 256 | cut -c1-8`.
+- Replicas keep counters in memory only (Cluster Mode storage is ephemeral); the log lines are the durable record.
+
 ## Cost guardrail
 
 An AWS Budget is codified in `infra/budget.tf` (limit = `budget_limit_usd`, default $5 — too low for a

@@ -14,6 +14,8 @@ services:
     environment:
       LAB_PROFILE: local       # loopback-only guard, relaxed limits, offline fonts
       LABS_WATCH: "1"          # re-read labs/ on every page load: edit YAML, refresh, see it
+      # USAGE_STATS: "1"       # optional: count sessions per lab and task pass/fail (no IPs stored); see the README
+      # ADMIN_TOKEN: change-me  # optional: read the counts at /admin/stats (Authorization: Bearer ...)
     volumes:
       - ./labs:/app/labs:ro    # contributors: edit ./labs on your host, no rebuild needed
     cpus: 1.0

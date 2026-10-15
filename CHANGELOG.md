@@ -14,6 +14,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Kubernetes** is now a live topic with its first lab, **Pod and Deployment anatomy**: Pod specs, resource requests and limits, liveness probes and Deployments. Contributed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #35).
 - **Linux Fundamentals: text processing with `awk` and `sed`**, a lab on extracting and filtering log columns and rewriting or masking text in a stream. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #32).
 - **Kubernetes: exposing Pods with Services**, a lab on ClusterIP Services, label selectors and `port`/`targetPort`. Contributed by Sanket Dangat ([@srdangat](https://github.com/srdangat), #42).
+- **Usage counters** (opt-in): sessions per lab, distinct visitors per day, and task pass/fail per lab, with no IP address or invite code stored. Read them at `/admin/stats` with an `ADMIN_TOKEN`, or from the `usage` log lines. Off by default for self-hosters (`USAGE_STATS=1`); on for the hosted deployment.
 
 ### Changed
 - **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.
@@ -27,6 +28,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - The roadmap loader's station link no longer has two identical branches. Reported and fixed by Preetham Pereira ([@cloudwithpreetham](https://github.com/cloudwithpreetham), #40, #41).
 
 ### Upgrade notes
+- Optional repo secrets `ADMIN_TOKEN` (turns on `/admin/stats`) and `USAGE_SALT` (consistent visitor counts across replicas). `deploy.yml` passes both to `03-deploy.sh`; neither is required. The hosted app now sets `USAGE_STATS=1`.
 - The runtime image changed, so the next push to `main` redeploys it through `deploy.yml`. No Terraform or settings changes.
 
 ## [1.1.0] - 2026-10-06

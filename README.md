@@ -110,6 +110,12 @@ The home page is a quiet map of three routes; the roadmap lists every topic and 
   See `deploy/README.md`.
 - **Progress** (which labs you finished) lives in your browser's localStorage. No accounts.
 
+### Usage counters (optional, off by default)
+Self-hosting teams can count how the labs are used: `USAGE_STATS=1` records sessions per lab, distinct visitors per day and which
+tasks learners fail. It never stores an IP address or an invite code. Add `ADMIN_TOKEN=<secret>` to read it at
+`/admin/stats` (`curl -H "Authorization: Bearer <secret>" http://localhost:8080/admin/stats`), and `USAGE_DIR=<a mounted folder>`
+to keep the counts across restarts.
+
 ## Community labs
 
 Labs written by people outside the core team. Thank you.
