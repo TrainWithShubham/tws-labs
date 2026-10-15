@@ -177,6 +177,8 @@ A lab that says `requires: aws` runs against the learner's **own AWS account**, 
 - **Checks** read the account (`aws ... describe/get/list`) and stay read-only. Pair state with `ran` where a learner could fake it.
 - **The offline validator skips these labs** (it prints why); the scheduled AWS workflow proves them against a disposable account (`TWS_PROVE_AWS=1`).
 - Keep them cheap and safe: free-tier or pennies, tag everything you create `tws-labs=<lab-id>`, and end with a graded cleanup task.
+- **Helpers** (`labs/lib.sh`): call `aws_ready` first in every check (it refuses missing, expired and root credentials with a friendly line), then `aws_account`, `aws_region_is REGION` and `retry TRIES SECONDS CMD...` for eventual consistency. Name bucket-style resources after the account id so they are unique, and keep the `tws-labs` prefix so `scripts/aws-lab-sweep.sh` and the learner role's permissions cover them.
+- **Testing a check without an account**: `test/support/fake-aws.js` is a test double that answers only the calls your checks make; add what you need there and use `test/support/aws-env.js` (see `test/unit/aws-first-steps.test.js`). It proves the check logic, not AWS itself.
 
 ## Validation rules (`node scripts/validate-labs.js`)
 

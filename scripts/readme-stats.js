@@ -42,7 +42,7 @@ function render(s) {
   });
   const table = ['| Route | Online today (labs) | Next |', '|---|---|---|', ...rows].join('\n');
 
-  const pitch = `**${s.labs} labs · ${s.tasks} graded tasks · every task proven solvable by a script.**`;
+  const pitch = `**${s.labs} labs · ${s.tasks} graded tasks · every offline task proven solvable by a script.**`;
   return { badges, table, pitch };
 }
 

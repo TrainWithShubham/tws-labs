@@ -35,8 +35,14 @@ copied or leaked stops working on its own.
 
 ## Cleaning up
 
-Every lab tags what it creates `tws-labs=<lab-id>` and ends with a cleanup task. If you abandon a lab midway, delete the stack's leftovers by hand (list them with
-`aws resourcegroupstaggingapi get-resources --tag-filters Key=tws-labs`), then delete the CloudFormation stack to remove the role and the budget alarm when you are finished with the AWS labs.
+Every lab tags what it creates `tws-labs=<lab-id>` and ends with a cleanup task. If you abandon a lab midway, run the sweep on your machine with the same credentials:
+
+```bash
+scripts/aws-lab-sweep.sh          # dry run: lists tws-labs-* buckets and tws-labs-tagged volumes
+scripts/aws-lab-sweep.sh --yes    # deletes them (it never touches anything else, and refuses root credentials)
+```
+
+When you are finished with the AWS labs, delete the CloudFormation stack to remove the role and the budget alarm.
 
 ## Is it safe?
 

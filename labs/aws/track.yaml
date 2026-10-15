@@ -3,3 +3,4 @@ title: AWS
 description: Hands-on tours of AWS services, inside a real terminal on the kind of container they run.
 labs:
   - elastic-beanstalk-cluster-mode
+  - aws-cli-first-steps

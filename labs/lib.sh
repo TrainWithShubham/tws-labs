@@ -44,3 +44,39 @@ yaml_get() {
     const r = new Function("d", "return (" + process.argv[3] + ")")(d); console.log(r !== null && typeof r === "object" ? JSON.stringify(r) : r);' \
     "${LAB_LIB%/labs/lib.sh}" "$1" "$2" 2>/dev/null
 }
+
+# --- Account labs (`requires: aws`): checks that read the learner's own AWS account. Keep them read-only. ---
+
+# _timeout SECONDS CMD... : bound a call when `timeout` exists (it does in the image; some laptops lack it)
+_timeout() { if command -v timeout >/dev/null 2>&1; then timeout "$@"; else shift; "$@"; fi; }
+
+# aws_ready : call first in every account lab check. Fails with a friendly line if the AWS CLI is missing, the credentials are missing
+# or expired, or they belong to the account root user. Never prints keys.
+aws_ready() {
+  command -v aws >/dev/null 2>&1 || fail "The aws command is not here: start the labs with  AWS=1 ./start_local_labs.sh  (see docs/aws-labs.md)."
+  local arn
+  arn=$(_timeout 20 aws sts get-caller-identity --query Arn --output text 2>/dev/null) ||
+    fail "Your AWS credentials are missing or have expired. Get fresh ones and restart the labs: see docs/aws-labs.md."
+  case "$arn" in
+    *:root) fail "These are root user credentials. Use the tws-labs-learner role instead (docs/aws-labs.md)." ;;
+  esac
+}
+
+# aws_account : print the 12-digit account id of the credentials in use
+aws_account() { _timeout 20 aws sts get-caller-identity --query Account --output text 2>/dev/null; }
+
+# aws_region_is REGION : the learner's configured region is REGION
+aws_region_is() { [ -n "$1" ] && [ "${AWS_REGION:-${AWS_DEFAULT_REGION:-}}" = "$1" ]; }
+
+# retry TRIES SECONDS CMD... : run CMD until it succeeds (AWS is eventually consistent); returns the last status
+retry() {
+  local _tries="$1" _secs="$2" _i=0 _rc=1   # underscore names: bash locals are dynamically scoped, so the command must not see ours
+  shift 2
+  while [ "$_i" -lt "$_tries" ]; do
+    "$@" && return 0
+    _rc=$?
+    _i=$((_i + 1))
+    [ "$_i" -lt "$_tries" ] && sleep "$_secs"
+  done
+  return "$_rc"
+}
