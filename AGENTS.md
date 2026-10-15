@@ -16,7 +16,8 @@ It is also a content engine: the Sept 2026 Elastic Beanstalk re-release ("Beanst
 ## Layout
 
 ```
-src/        server.js (createApp factory) config.js (the two profiles) lib.js sandbox.js loader.js roadmap.js lint.js ui.js pages.js stats.js banner.js
+src/        server.js (createApp factory: wires the parts) router.js routes/{system,site,session}.js terminal.js (WebSocket + pty) guards.js http.js usage.js config.js (the two profiles)
+            lib.js sandbox.js loader.js roadmap.js lint.js ui.js pages.js stats.js banner.js
 public/     lab.js progress.js and the stylesheets (served as /app.css)        labs/  all lab content + roadmap.json + site.yaml + lib.sh
 scripts/    validate-labs.js new-lab.js check-hygiene.js import-roadmap.js                       test/  unit/ integration/
 deploy/     hosted deployment: infra/ (Terraform) 01-04 *.sh smoke-test.py README.md CHECKLIST.md

@@ -22,7 +22,8 @@
             "linux-fundamentals/permissions",
             "linux-fundamentals/pipes-and-search",
             "linux-fundamentals/linux-in-action",
-            "linux-fundamentals/awk-and-sed"
+            "linux-fundamentals/awk-and-sed",
+            "linux-fundamentals/process-management-basics"
           ],
           "subtopics": [
             "Architecture, processes, systemd",
