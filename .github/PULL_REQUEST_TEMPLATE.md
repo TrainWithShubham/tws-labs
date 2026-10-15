@@ -4,6 +4,7 @@
 ## Checklist
 - [ ] Created with `npm run lab:new -- <track> <lab-id> --topic <topic-id>` (the lab is on the roadmap)
 - [ ] `npm run lab:check -- <track>/<lab-id>` passes with no warnings
+- [ ] `npm run lab:lint -- <track>/<lab-id>` prints no notes (success messages, hints that nudge, checks that grade state)
 - [ ] I tried the lab in the browser from start to finish
 - [ ] The PR touches only `labs/**` (or explains why not)
 - [ ] Each task says exactly what to do; hints are nudges, not answers; checks grade real state and accept valid alternatives

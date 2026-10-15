@@ -158,6 +158,13 @@ All run as the learner, in their home directory; start every check with `. "$LAB
 - **A check that changes the learner's files**: checks are read-only.
 - **Heredocs or multi-line `if`s in solutions**: one command per line.
 
+### Advice notes
+
+`npm run lab:lint -- <track>/<lab-id>` also prints **notes**: suggestions that never fail a build, so old labs can catch up.
+Aim for none on a new lab. They cover a task with no `success:` message, a check that only reads the typed history
+(grades the command, not the result), a hint shorter than 10 characters or one that repeats the command from the task, and a lab over
+15 minutes. `npm run lab:lint -- --notes` lists them for every lab.
+
 ## Validation rules (`node scripts/validate-labs.js`)
 
 For each task, in order, in a fresh sandbox: check **fails** → solution runs → check **passes**.

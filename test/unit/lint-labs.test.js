@@ -18,7 +18,7 @@ function labsDir(labs) {
     const d = path.join(root, 't', id);
     fs.mkdirSync(path.join(d, 'checks'), { recursive: true });
     fs.mkdirSync(path.join(d, 'solutions'), { recursive: true });
-    fs.writeFileSync(path.join(d, 'lab.yaml'), `title: ${id}\nlevel: beginner\nminutes: 10\nsummary: s\nsteps:\n  - {id: intro, type: lesson, title: Intro, body: hi}\n  - {id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt"}\n`);
+    fs.writeFileSync(path.join(d, 'lab.yaml'), labs[id].yaml ?? `title: ${id}\nlevel: beginner\nminutes: 10\nsummary: s\nsteps:\n  - {id: intro, type: lesson, title: Intro, body: hi}\n  - {id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt", success: "Done: the file exists."}\n`);
     fs.writeFileSync(path.join(d, 'checks', 'do.sh'), labs[id].check ?? GOOD_CHECK);
     fs.writeFileSync(path.join(d, 'solutions', 'do.sh'), labs[id].solution ?? 'touch hello.txt\n');
     if (labs[id].setup) fs.writeFileSync(path.join(d, 'setup.sh'), labs[id].setup);
@@ -99,4 +99,48 @@ test('non-Linux machines run the proof in Docker: build quietly, then run the sc
     ['docker', ['compose', 'build', '--quiet', 'labs']],
     ['docker', ['compose', 'run', '--rm', 'labs', 'node', 'scripts/validate-labs.js', '--strict', 'linux-fundamentals/files']],
   ]);
+});
+
+// --- advice ("note"): suggestions that never fail a build, so new rules can land before every old lab meets them ---
+const yamlWith = (task, minutes = 10) => `title: x\nlevel: beginner\nminutes: ${minutes}\nsummary: s\nsteps:\n  - {id: intro, type: lesson, title: Intro, body: hi}\n  - ${task}\n`;
+const notes = (labs) => msgs(lintLabs({ labsDir: labsDir(labs) }), 'info').join('\n');
+
+test('advice: a task without a success message gets a note, not a warning', () => {
+  const f = lintLabs({ labsDir: labsDir({ quiet: { yaml: yamlWith('{id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt"}') } }) });
+  assert.match(msgs(f, 'info').join('\n'), /t\/quiet: task "do" has no success: message/);
+  assert.deepEqual(msgs(f, 'warn'), []);
+  assert.deepEqual(msgs(f, 'error'), []);
+});
+
+test('advice: a check that only reads the typed history grades the command, not the result', () => {
+  const historyOnly = '. "$LAB_LIB"\nran_re \'(^|[;&|[:space:]])ps[[:space:]]+-a\' || fail "Run ps -a."\n';
+  assert.match(notes({ typed: { check: historyOnly } }), /t\/typed: checks\/do\.sh only reads the command history/);
+  const mixed = '. "$LAB_LIB"\n[ -s out.txt ] || fail "out.txt is empty."\nran ps || fail "Use ps."\n';
+  assert.doesNotMatch(notes({ mixed: { check: mixed } }), /only reads the command history/);
+  assert.doesNotMatch(notes({ state: {} }), /only reads the command history/);
+});
+
+test('advice: a hint that is too short, or just repeats the command in the task body, is flagged', () => {
+  const short = '{id: do, type: task, title: Do, body: "do it", hint: "Run it", success: ok}';
+  assert.match(notes({ short: { yaml: yamlWith(short) } }), /t\/short: step "do": the hint is only 6 chars/);
+  const repeat = '{id: do, type: task, title: Do, body: "Run `touch hello.txt` now.", hint: "Run: touch hello.txt", success: ok}';
+  assert.match(notes({ repeat: { yaml: yamlWith(repeat) } }), /t\/repeat: step "do": the hint repeats the command from the task/);
+  const fine = '{id: do, type: task, title: Do, body: "Make an empty file called hello.txt.", hint: "Try the command that creates empty files", success: ok}';
+  assert.doesNotMatch(notes({ fine: { yaml: yamlWith(fine) } }), /hint/);
+});
+
+test('advice: labs over 15 minutes get a note (the hard limit stays 20)', () => {
+  const t = '{id: do, type: task, title: Do, body: "do it", hint: "Try: touch hello.txt", success: ok}';
+  assert.match(notes({ long: { yaml: yamlWith(t, 18) } }), /t\/long: 18 minutes: labs of 5-15 minutes finish more often/);
+  assert.doesNotMatch(notes({ ok: { yaml: yamlWith(t, 15) } }), /minutes/);
+});
+
+test('advice never fails the CLI, even with --strict, and is printed as a note', () => {
+  const dir = labsDir({ quiet: { yaml: yamlWith('{id: do, type: task, title: Do, body: do it, hint: "Try: touch hello.txt"}') } });
+  const r = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'scripts', 'lint-labs.js'), '--strict', '--notes'], { encoding: 'utf8', env: { ...process.env, LABS_DIR: dir } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /note\s+t\/quiet: task "do" has no success: message/);
+  const quiet = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', '..', 'scripts', 'lint-labs.js'), '--strict'], { encoding: 'utf8', env: { ...process.env, LABS_DIR: dir } });
+  assert.doesNotMatch(quiet.stdout, /note\s+t\/quiet/, 'listed only on request');
+  assert.match(quiet.stdout, /1 note\(s\) are advice/);
 });

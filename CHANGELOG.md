@@ -18,6 +18,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Task progress** is remembered in your browser: a track page shows "3 of 5 tasks" for a lab you started, and the lab's step dots show which tasks you passed on an earlier visit. The terminal still starts fresh each time, so earlier tasks are marked, not restored. Nothing leaves your browser.
 - A runbook for giving each audience its own invite code and rotating one (`deploy/README.md`).
 - **Linux Fundamentals: process management** (`ps`, `top`, background jobs, `kill` and `kill -9`). Contributed by Muhammad Ishaq ([@techwithiishaq](https://github.com/techwithiishaq), #45).
+- `npm run lab:lint` now gives advice on labs: tasks without a success message, checks that only read the typed history, hints that repeat the answer or are too short, and labs over 15 minutes. It never fails a build; `--notes` lists them all.
 
 ### Changed
 - **Kubernetes now sits on the DevOps line** (with a cross-link to Cloud), since its labs are manifest practice that needs no cluster. The home map allows seven topics per line.
