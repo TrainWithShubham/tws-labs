@@ -22,6 +22,7 @@ steps:
 
       Run `ps -u` to see a detailed list of your processes.
     hint: "Run: ps -u"
+    success: You can list your own processes.
 
   - id: list-all
     type: task
@@ -31,6 +32,7 @@ steps:
 
       Run `ps -a` to see what else is running.
     hint: "Run: ps -a"
+    success: You can list processes across a terminal.
 
   - id: monitor
     type: task
@@ -40,6 +42,7 @@ steps:
 
       Run `top` to see the live view. Press **q** to exit the monitor and return to your shell.
     hint: "Run: top (and press q to quit when done)"
+    success: top shows what the system is busy with.
 
   - id: start-sleep
     type: task
@@ -52,6 +55,7 @@ steps:
 
       The `$!` variable holds the PID of the last background process.
     hint: "Run: sleep 300 & echo $! > sleep.pid"
+    success: A background process is running and its PID is saved.
 
   - id: stop-process
     type: task
@@ -62,6 +66,7 @@ steps:
       Stop your sleep process using the PID you saved:
       `kill "$(cat sleep.pid)"`
     hint: "Use kill with the PID stored in sleep.pid"
+    success: kill sent SIGTERM and the process shut down cleanly.
 
   - id: force-stop
     type: task
@@ -73,6 +78,7 @@ steps:
       `sleep 300 & echo $! > force-sleep.pid`
       `kill -9 "$(cat force-sleep.pid)"`
     hint: "Run: kill -9 followed by the PID"
+    success: kill -9 ends a process that ignores a normal kill.
 
   - id: recap
     type: lesson
