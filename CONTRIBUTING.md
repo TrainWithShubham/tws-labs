@@ -27,9 +27,17 @@ You need Node 22+ and Docker (Docker Desktop on Windows and macOS). Run `npm ci`
    Then try it as a learner: `./start_local_labs.sh`, edit, refresh (labs are re-read on every page load).
 5. **Open a PR.** The template has a short checklist. If you had to change anything outside `labs/**`, say why in the PR.
 
+## What to build next
+
+The best labs are things a learner can do in this one container with no cloud account and no new tools: a config file to fix, a repo to repair,
+a manifest or pipeline to write, a log to dig through. Need a cloud or cluster CLI? Grade a **stub** that reads a small fixture file instead of a real service
+(the AWS FinOps and Kubernetes manifest labs work this way). Pick an open topic with `npm run lab:new`, or open a [lab request](../../issues/new/choose) to claim one so two people do not build the same lab.
+
 ## Definition of done
 
 - `npm run lab:check -- <track>/<lab-id>` passes with no warnings.
+- `npm run lab:lint -- <track>/<lab-id>` prints no notes: a `success:` message on every task, hints that nudge (a hint can be a list of up to three tiers, gentle to specific), checks that grade what happened and not only what was typed.
+- Your lab is on the roadmap (`lab:new --topic` does it). A topic that goes live with its first lab needs no test edits.
 - You played it once in the browser from start to finish.
 - Every task says exactly what to do, has a hint (a nudge, not the answer), and its check grades real state.
 - The lab teaches something the track does not already teach (the linter flags a task that repeats another lab's).
