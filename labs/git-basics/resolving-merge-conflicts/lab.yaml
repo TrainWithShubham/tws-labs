@@ -1,0 +1,83 @@
+title: Resolve merge conflicts safely
+level: intermediate
+minutes: 15
+summary: Resolve a real Git conflict, keep both changes, and finish a merge without losing history.
+resources:
+  - title: Git merge documentation
+    url: https://git-scm.com/docs/git-merge
+    desc: Conflict resolution, merge commits, and aborting a merge.
+steps:
+  - id: intro
+    type: lesson
+    title: Two teammates, one configuration
+    body: |-
+      A repository named `proj` is ready. Two teammates changed different settings on the same line in `app.conf`, one on `main` and one on `feature`, so Git needs your help.
+
+      Your goal is to keep **both changes**, finish a merge commit on `main`, and preserve both histories. Everything here is local: no remote or account is needed. Start by reviewing the edits rather than choosing one whole branch.
+  - id: inspect-changes
+    type: task
+    title: Compare the two branches
+    body: 'Move into `proj`. Use `git diff` to compare `main` against `feature` for `app.conf`, saving
+      the output to `../changes.diff`. Read the patch and note the change made on each branch so you can
+      preserve both when resolving the conflict.'
+    hint:
+      - A diff between two branch names compares their snapshots.
+      - Put main first, then feature. Limit the diff to app.conf.
+      - 'Try: git diff main feature -- app.conf > ../changes.diff (the report stays outside the repository).'
+    success: You compared both versions before deciding how to combine them.
+  - id: start-merge
+    type: task
+    title: Start the conflicting merge
+    body: 'While on `main` inside `proj`, merge `feature`. A conflict is expected. Run `git status` and
+      read `app.conf`: the lines between `<<<<<<<`, `=======`, and `>>>>>>>` show the two versions. Leave
+      the conflict unresolved for this check.'
+    hint:
+      - A merge tries to combine histories; conflicting edits need a human decision.
+      - Merge feature into your current branch, main.
+      - The conflict message is expected; do not abort or resolve it before checking this task.
+    success: The merge is paused with a real conflict in app.conf.
+  - id: markers
+    type: lesson
+    title: Combine the intent, not just the text
+    body: |-
+      Between `<<<<<<< HEAD` and `=======` is the current branch version. Between `=======` and `>>>>>>> feature` is the incoming version.
+
+      Choosing only "ours" or only "theirs" loses the other branch's change. Replace the entire conflict block with one valid configuration line that combines both intended changes. Saving the file resolves the text; staging it tells Git you have resolved the conflict.
+  - id: resolve-config
+    type: task
+    title: Keep both configuration changes
+    body: 'Edit `proj/app.conf` (or `app.conf` if you are already inside `proj`). Replace the conflict
+      block with exactly one valid configuration line that preserves the changes from both branches.
+      Remove every conflict marker. Save the file, but leave staging for the next task.'
+    hint:
+      - Use your branch comparison and the conflict block to identify both intended settings.
+      - Combine the two branch changes on one line.
+      - Use nano or vim, or replace the file using printf with a newline.
+    success: Both teammates' changes are present and the conflict markers are gone.
+  - id: stage-resolution
+    type: task
+    title: Mark the conflict as resolved
+    body: From inside `proj`, stage the resolved `app.conf`. Do not commit yet. Git should have no unmerged
+      entries, while the merge is still in progress.
+    hint:
+      - Saving a file and resolving Git's index are separate actions.
+      - Add the resolved file to the index, then inspect git status.
+      - Stage app.conf; the merge commit comes in the next task.
+    success: The index contains the combined configuration and no unresolved entries.
+  - id: complete-merge
+    type: task
+    title: Finish and verify the merge
+    body: Complete the merge on `main` with a nonempty commit message. Keep `feature` intact. Verify that
+      the working tree is clean and the new commit has both original branch tips as parents.
+    hint:
+      - A merge commit records both lines of history; a normal replacement commit does not.
+      - Commit the staged resolution, then inspect the graph with `git log --graph --oneline --all` and check the working tree.
+      - Supply a message with -m to finish without opening an editor.
+    success: Your clean main branch contains a merge commit preserving both histories.
+  - id: wrap-up
+    type: lesson
+    title: A repeatable conflict routine
+    body: |-
+      Review both edits, start the merge, combine their intent, stage the resolution, and commit. You preserved both teammates' changes rather than discarding either one.
+
+      If a real merge becomes confusing before you commit, `git merge --abort` returns to the pre-merge state. Start with a clean working tree so your unrelated edits are not at risk. Here, use Restart lab to practice again.

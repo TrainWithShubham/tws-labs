@@ -1,0 +1,11 @@
+. "$LAB_LIB"
+[ "$(in_repo proj branch --show-current)" = "main" ] || fail "Switch to main before continuing."
+[ "$(cat "$LAB_HOME/proj/app.conf" 2>/dev/null)" = "PORT=8080 LOG_LEVEL=debug" ] || fail "Resolve app.conf with one line that preserves both branch changes and removes all conflict markers."
+if in_repo proj rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then fail "The merge is still in progress: commit the staged resolution."; fi
+[ "$(in_repo proj rev-parse HEAD^1 2>/dev/null)" = "$(in_repo proj rev-parse main-start)" ] || fail "Preserve the original main tip as the first merge parent."
+[ "$(in_repo proj rev-parse HEAD^2 2>/dev/null)" = "$(in_repo proj rev-parse feature-start)" ] || fail "Finish a merge commit with the original feature tip as its second parent."
+[ "$(in_repo proj rev-list --parents -n 1 HEAD | awk '{print NF}')" = "3" ] || fail "The final commit must have exactly two parents."
+[ "$(in_repo proj rev-parse feature)" = "$(in_repo proj rev-parse feature-start)" ] || fail "Keep the original feature branch intact."
+[ -n "$(in_repo proj log -1 --format=%B)" ] || fail "Give the merge commit a nonempty message."
+[ -z "$(in_repo proj status --porcelain)" ] || fail "The merge is committed, but the working tree is not clean."
+[ "$(in_repo proj show HEAD:app.conf)" = "PORT=8080 LOG_LEVEL=debug" ] || fail "Commit the resolved configuration with both branch changes."
