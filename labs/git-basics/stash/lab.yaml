@@ -1,0 +1,98 @@
+title: Stashing uncommitted work in Git
+level: intermediate
+minutes: 10
+summary: "Save uncommitted work, switch branches for a hotfix, and restore with Git Stash."
+steps:
+  - id: intro
+    type: lesson
+    title: When an urgent fix interrupts your work
+    body: |
+      You are midway through developing a feature on a branch, but the code is unfinished and not ready to commit. Suddenly, an urgent bug requires an immediate fix on `main`.
+
+      If switching branches would overwrite your uncommitted changes, Git blocks the checkout to protect your work:
+      `error: Your local changes would be overwritten by checkout.`
+
+      You do not want to create a messy "WIP" commit that pollutes history.
+
+      **`git stash`** solves this by temporarily saving your modified tracked files to a stash stack and resetting your working tree to `HEAD`. A repository named `proj` is waiting in your home directory with unfinished work on the `feature` branch.
+  - id: enter
+    type: task
+    title: Enter the repository
+    body: Move into `proj` and run `git status` to inspect the uncommitted changes in `app.py`.
+    hint:
+      - "Use cd to enter the project directory."
+      - "Run cd proj from your home directory."
+    success: Correct. You are inside the repository.
+  - id: shelve-changes
+    type: task
+    title: Stash your uncommitted work
+    body: |
+      Save your unfinished changes using `git stash`
+      to return to a clean working directory.
+
+      Run `git stash list` to verify that your changes
+      have been saved.
+    hint:
+      - "Temporarily save your modified tracked files so you can work on another branch."
+      - "Inspect the stash stack to verify your changes are saved."
+    success: Correct. Your changes are saved in the stash, and your working directory is clean.
+  - id: stash-list-concept
+    type: lesson
+    title: Inspecting the stash stack
+    body: |
+      Where did your stashed changes go?
+
+      Git stores stashed changes in a Last-In-First-Out (LIFO) stack. You can inspect saved stashes with:
+      ```bash
+      git stash list
+      ```
+      Each entry has an identifier like `stash@{0}`, followed by the branch name and commit message.
+
+      Because your working directory is clean, you can now safely switch branches without Git blocking you.
+  - id: switch-and-fix
+    type: task
+    title: Switch to main and apply a hotfix
+    body: |
+      Switch to the `main` branch. Create a hotfix file named `hotfix.txt`, stage it, and commit it with message `Apply hotfix`.
+    hint:
+      - "Use git switch to move to main."
+      - "Create hotfix.txt, stage it with git add, and commit with -m."
+    success: Correct. You switched to main and committed the hotfix.
+  - id: pop-vs-apply
+    type: lesson
+    title: Restoring stashed changes
+    body: |
+      Now that the hotfix is committed on `main`, you can return to your feature.
+
+      Git gives you two ways to restore stashed changes:
+      - **`git stash pop`**: Re-applies the stashed changes to your working tree and removes the stash entry upon successful application.
+      - **`git stash apply`**: Re-applies the changes while retaining the stash entry on the stack (useful if you want to apply the same changes to multiple branches).
+
+      In most everyday workflows, `git stash pop` is what you want.
+  - id: restore-work
+    type: task
+    title: Restore your stashed changes
+    body: |
+      Switch back to the `feature` branch.
+
+      Use `git stash pop` to restore your previously saved
+      changes.
+
+      Run `git stash list` to verify that the stash entry
+      has been removed after successfully restoring your work.
+    hint:
+      - "Switch back to your feature branch using git switch."
+      - "Use git stash pop to restore your saved changes."
+      - "Check the stash list to confirm it is empty."
+    success: Correct. Your feature changes are restored and the stash list is empty.
+  - id: wrap-up
+    type: lesson
+    title: Git Stash workflow recap
+    body: |
+      You completed a real-world interrupted developer workflow:
+
+      - **`git stash`**: Temporarily saved uncommitted tracked changes without making a messy commit.
+      - **`git stash list`**: Inspected saved stashes in the stash stack.
+      - **`git switch main`**: Switched to the main branch to deliver a hotfix.
+      - **`git switch feature`**: Returned to the feature branch.
+      - **`git stash pop`**: Restored unfinished changes and removed the stash entry after successful application.

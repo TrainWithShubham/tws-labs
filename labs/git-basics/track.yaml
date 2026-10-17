@@ -6,6 +6,7 @@ labs:
   - branches-and-merge
   - undoing
   - gitignore
+  - stash
 video:
   title: Git & GitHub Crash Course 2025
   url: https://www.youtube.com/watch?v=vA5TTz6BXhY
