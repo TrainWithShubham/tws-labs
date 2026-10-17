@@ -1,0 +1,8 @@
+. "$LAB_LIB"
+[ "$(in_repo proj branch --show-current)" = "main" ] || fail "Switch to main before continuing."
+in_repo proj rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 || fail "Start the merge of feature into main; it must still be in progress."
+[ "$(in_repo proj rev-parse MERGE_HEAD)" = "$(in_repo proj rev-parse feature-start)" ] || fail "Merge the original feature branch into main."
+[ "$(in_repo proj diff --name-only --diff-filter=U)" = "app.conf" ] || fail "Leave app.conf as the unresolved file for this task."
+file_has "$LAB_HOME/proj/app.conf" '^<<<<<<< ' || fail "Keep the conflict markers until the next task."
+file_has "$LAB_HOME/proj/app.conf" '^=======$' || fail "The conflict separator is missing; start the merge again."
+file_has "$LAB_HOME/proj/app.conf" '^>>>>>>> ' || fail "The incoming conflict marker is missing."

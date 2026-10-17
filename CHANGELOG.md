@@ -8,6 +8,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+### Added
+- **Git: Resolve merge conflicts safely**: a 15-minute offline lab that combines conflicting configuration edits, stages the resolution, and verifies a merge preserving both histories. Includes tiered hints, skip-ahead setup, and near-miss/valid-alternative cases.
+
 ## [1.2.0] - 2026-10-15
 
 ### Highlights
