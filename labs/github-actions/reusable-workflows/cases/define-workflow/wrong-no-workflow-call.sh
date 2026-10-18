@@ -1,0 +1,1 @@
+printf '%s\n' 'name: Reusable Deploy' 'on:' '  push:' '    branches: [main]' 'permissions:' '  contents: read' 'jobs:' '  deploy:' '    runs-on: ubuntu-latest' '    steps:' '      - uses: actions/checkout@v4' '      - run: ./scripts/deploy.sh "staging"' > shop/.github/workflows/deploy.yml

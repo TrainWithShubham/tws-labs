@@ -1,0 +1,154 @@
+title: Multi-environment CI/CD with reusable workflows
+level: intermediate
+minutes: 15
+summary: Standardize CI/CD pipelines with workflow_call, typed inputs, and promotion stages.
+links:
+  - title: Reusing workflows
+    url: https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+resources:
+  - title: Creating a reusable workflow
+    url: https://docs.github.com/en/actions/sharing-automations/reusing-workflows#creating-a-reusable-workflow
+    desc: How to define workflow_call inputs and secrets.
+  - title: Calling a reusable workflow
+    url: https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow
+    desc: Syntax for uses, with, and secrets in caller jobs.
+steps:
+  - id: intro
+    type: lesson
+    title: Modular CI/CD with reusable workflows
+    body: |
+      Duplicating deployment steps across staging and production creates configuration drift and maintenance bugs.
+
+      GitHub Actions solves this with **reusable workflows**.
+
+      A reusable workflow is a standalone template triggered by the **`workflow_call`** event. Caller pipelines invoke it like a function, passing environment parameters and secrets without duplicating steps.
+
+      In this lab, you will build a reusable deployment workflow and call it in `shop/.github/workflows/main.yml` to promote changes from Staging to Production.
+  - id: define-workflow
+    type: task
+    title: Define reusable deploy workflow
+    body: |
+      Create a reusable workflow file at `shop/.github/workflows/deploy.yml`.
+
+      Configure it with:
+      - Name: `Reusable Deploy`
+      - Trigger: `workflow_call` with a required input named `environment` of type `string`
+      - Permissions: `contents: read`
+      - Job: `deploy` running on `ubuntu-latest`
+      - Steps: Check out code with `actions/checkout@v4`, and run `./scripts/deploy.sh "${{ inputs.environment }}"`
+    hint:
+      - "Set the trigger to workflow_call, declaring environment under inputs with required true and type string."
+      - "In the deploy job steps, pass inputs.environment as an argument to the deployment script."
+    success: Correct. You defined a reusable deployment workflow with typed inputs.
+  - id: secrets-concept
+    type: lesson
+    title: Secrets across workflow boundaries
+    body: |
+      By default, reusable workflows do not inherit secrets from the caller workflow.
+
+      To accept credentials, a reusable workflow declares what it expects under `workflow_call.secrets`:
+
+      ```yaml
+      on:
+        workflow_call:
+          secrets:
+            deploy-token:
+              required: false
+      ```
+
+      Inside steps, the workflow references `${{ secrets.deploy-token }}` safely through an environment variable (`env:`) rather than raw string interpolation.
+  - id: declare-secrets
+    type: task
+    title: Declare deployment secret
+    body: |
+      Update `shop/.github/workflows/deploy.yml` to accept credentials:
+      - Under `workflow_call.secrets`, declare an optional secret named `deploy-token` with `required: false`
+      - In the `./scripts/deploy.sh` step, add an `env:` block mapping `DEPLOY_TOKEN` to `${{ secrets.deploy-token }}`
+    hint:
+      - "Under workflow_call, add a secrets key containing deploy-token marked as optional."
+      - "In the deploy step, map the environment variable to the declared secret context."
+    success: Correct. The reusable workflow securely declares and maps the deployment token.
+  - id: call-concept
+    type: lesson
+    title: Calling reusable workflows
+    body: |
+      A caller workflow invokes a reusable workflow at the job level using **`uses:`**:
+
+      ```yaml
+      jobs:
+        deploy-staging:
+          uses: ./.github/workflows/deploy.yml
+          with:
+            environment: staging
+          secrets: inherit
+      ```
+
+      Key caller rules:
+      - **`uses:`** points to the workflow file path.
+      - **`with:`** provides values for declared inputs.
+      - **`secrets: inherit`** passes caller secrets down to the called workflow.
+      - A caller job cannot define `steps:` or `runs-on:` because the called workflow owns its runner.
+  - id: call-staging
+    type: task
+    title: Call deploy workflow for staging
+    body: |
+      In `shop/.github/workflows/main.yml`, add a caller job named `deploy-staging`.
+
+      Configure `deploy-staging` to:
+      - Invoke `./.github/workflows/deploy.yml` using `uses:`
+      - Pass `environment: staging` under `with:`
+      - Pass `secrets: inherit`
+    hint:
+      - "Under jobs in main.yml, create deploy-staging using the relative workflow path in uses."
+      - "Supply the environment parameter under with, and enable secret inheritance."
+    success: Correct. Staging now deploys through the reusable workflow.
+  - id: promote-concept
+    type: lesson
+    title: Promoting across environments
+    body: |
+      In a real CI/CD pipeline, production deployments must only trigger after staging succeeds.
+
+      Because reusable workflows are called at the job level, you can chain them with **`needs:`**:
+
+      ```yaml
+      jobs:
+        deploy-staging:
+          uses: ./.github/workflows/deploy.yml
+          with:
+            environment: staging
+          secrets: inherit
+
+        deploy-production:
+          needs: [deploy-staging]
+          uses: ./.github/workflows/deploy.yml
+          with:
+            environment: production
+          secrets: inherit
+      ```
+
+      Both stages share the exact same deployment logic without a single duplicated step!
+  - id: promote-production
+    type: task
+    title: Promote deployment to production
+    body: |
+      In `shop/.github/workflows/main.yml`, add a second caller job named `deploy-production`.
+
+      Configure `deploy-production` to:
+      - Depend on `needs: [deploy-staging]`
+      - Invoke `./.github/workflows/deploy.yml` using `uses:`
+      - Pass `environment: production` under `with:`
+      - Pass `secrets: inherit`
+    hint:
+      - "Under jobs in main.yml, define deploy-production with a dependency on deploy-staging."
+      - "Use the same deploy.yml path with uses, passing the production environment in with."
+    success: Correct. You created a multi-stage promotion pipeline with reusable workflows!
+  - id: wrap-up
+    type: lesson
+    title: Reusable workflows recap
+    body: |
+      You standardized CI/CD deployments using reusable workflows:
+
+      - **`workflow_call`**: Turned a deployment workflow into a reusable template with typed inputs.
+      - **`workflow_call.secrets`**: Defined explicit secret contracts across workflow boundaries.
+      - **Job-level `uses:`**: Replaced duplicated deployment scripts with modular calls.
+      - **Pipeline promotion**: Chained staging and production stages using `needs:` without copying code.

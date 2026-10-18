@@ -1,0 +1,1 @@
+printf '%s\n' 'name: Reusable Deploy' 'on:' '  workflow_call:' '    inputs:' '      environment:' '        required: false' '        type: string' 'permissions:' '  contents: read' 'jobs:' '  deploy:' '    runs-on: ubuntu-latest' '    steps:' '      - uses: actions/checkout@v4' '      - run: ./scripts/deploy.sh "${{ inputs.environment }}"' > shop/.github/workflows/deploy.yml
