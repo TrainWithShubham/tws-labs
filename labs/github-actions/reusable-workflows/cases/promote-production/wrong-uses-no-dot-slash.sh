@@ -1,0 +1,2 @@
+printf '%s\n' 'name: Deploy Pipeline' 'on:' '  push:' '    branches: [main]' 'permissions:' '  contents: read' 'jobs:' '  deploy-staging:' '    uses: .github/workflows/deploy.yml' '    with:' '      environment: staging' '    secrets: inherit' '  deploy-production:' '    needs: [deploy-staging]' '    uses: ./.github/workflows/deploy.yml' '    with:' '      environment: production' '    secrets:' '      DEPLOY_TOKEN: ${{ secrets.PROD_DEPLOY_TOKEN }}' > shop/.github/workflows/main.yml
+

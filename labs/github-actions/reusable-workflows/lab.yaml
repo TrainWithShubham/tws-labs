@@ -37,7 +37,7 @@ steps:
       - Job: `deploy` running on `ubuntu-latest`
       - Steps: Check out code with `actions/checkout@v4`, and run `./scripts/deploy.sh "${{ inputs.environment }}"`
     hint:
-      - "Set the trigger to workflow_call, declaring environment under inputs with required true and type string."
+      - "Which event makes a workflow callable by another workflow? Its inputs are declared under that event."
       - "In the deploy job steps, pass inputs.environment as an argument to the deployment script."
     success: Correct. You defined a reusable deployment workflow with typed inputs.
   - id: secrets-concept
@@ -52,20 +52,20 @@ steps:
       on:
         workflow_call:
           secrets:
-            deploy-token:
+            DEPLOY_TOKEN:
               required: false
       ```
 
-      Inside steps, the workflow references `${{ secrets.deploy-token }}` safely through an environment variable (`env:`) rather than raw string interpolation.
+      Inside steps, the workflow references `${{ secrets.DEPLOY_TOKEN }}` safely through an environment variable (`env:`) rather than raw string interpolation.
   - id: declare-secrets
     type: task
     title: Declare deployment secret
     body: |
       Update `shop/.github/workflows/deploy.yml` to accept credentials:
-      - Under `workflow_call.secrets`, declare an optional secret named `deploy-token` with `required: false`
-      - In the `./scripts/deploy.sh` step, add an `env:` block mapping `DEPLOY_TOKEN` to `${{ secrets.deploy-token }}`
+      - Under `workflow_call.secrets`, declare an optional secret named `DEPLOY_TOKEN` with `required: false`
+      - In the `./scripts/deploy.sh` step, add an `env:` block mapping `DEPLOY_TOKEN` to `${{ secrets.DEPLOY_TOKEN }}`
     hint:
-      - "Under workflow_call, add a secrets key containing deploy-token marked as optional."
+      - "Under workflow_call, add a secrets key containing DEPLOY_TOKEN marked as optional."
       - "In the deploy step, map the environment variable to the declared secret context."
     success: Correct. The reusable workflow securely declares and maps the deployment token.
   - id: call-concept

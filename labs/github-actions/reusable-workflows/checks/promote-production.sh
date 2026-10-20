@@ -13,7 +13,7 @@ esac
 
 uses=$(yaml_get "$f" 'String(d.jobs?.["deploy-production"]?.uses || "")')
 case "$uses" in
-  *deploy.yml*|*deploy.yaml*) ;;
+  ./.github/workflows/deploy.yml) ;;
   *) fail "The deploy-production job must use ./.github/workflows/deploy.yml.";;
 esac
 

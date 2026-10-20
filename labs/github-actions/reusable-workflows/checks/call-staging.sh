@@ -7,7 +7,7 @@ has_job=$(yaml_get "$f" 'Boolean(d.jobs && d.jobs["deploy-staging"])')
 
 uses=$(yaml_get "$f" 'String(d.jobs?.["deploy-staging"]?.uses || "")')
 case "$uses" in
-  *deploy.yml*|*deploy.yaml*) ;;
+  ./.github/workflows/deploy.yml) ;;
   *) fail "The deploy-staging job must use ./.github/workflows/deploy.yml.";;
 esac
 
