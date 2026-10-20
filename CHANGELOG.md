@@ -10,6 +10,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ### Added
 - **Git and GitHub: stashing uncommitted work** (`git stash`, `git stash list`, `git stash pop`): save in-progress changes, ship a hotfix on `main`, then restore them. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #69.
+- **GitHub Actions: multi-environment CI/CD with reusable workflows** (`workflow_call` inputs and secrets, calling a workflow with `uses:` and `with:`, staging to production with `needs:`). Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #70.
 
 ## [1.2.0] - 2026-10-15
 
