@@ -8,14 +8,14 @@
 [![CI](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/TrainWithShubham/tws-labs?style=flat-square&color=7b52c3)](https://github.com/TrainWithShubham/tws-labs/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Labs](https://img.shields.io/badge/labs-30-7b52c3?style=flat-square)](#whats-online)
-[![Graded tasks](https://img.shields.io/badge/graded%20tasks-153-f4b860?style=flat-square)](#how-it-works)
+[![Labs](https://img.shields.io/badge/labs-31-7b52c3?style=flat-square)](#whats-online)
+[![Graded tasks](https://img.shields.io/badge/graded%20tasks-157-f4b860?style=flat-square)](#how-it-works)
 [![Runs on](https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey?style=flat-square)](#run-it-locally)
 [![Stars](https://img.shields.io/github/stars/TrainWithShubham/tws-labs?style=flat-square)](https://github.com/TrainWithShubham/tws-labs/stargazers)
 <!-- badges:end -->
 
 <!-- pitch:start -->
-**30 labs · 153 graded tasks · every offline task proven solvable by a script.**
+**31 labs · 157 graded tasks · every offline task proven solvable by a script.**
 <!-- pitch:end -->
 
 <img src="docs/media/lab-demo.gif" alt="A learner types a command but forgets Enter and Check says so, then a missed task gets tiered hints, then skipping ahead sets up the files the next task needs, and Check turns green" width="900">
@@ -56,7 +56,7 @@ Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 <!-- routes:start -->
 | Route | Online today (labs) | Next |
 |---|---|---|
-| **DevOps** | Linux (7) · Shell scripting (1) · Git and GitHub (5) · Docker (3) · Kubernetes (4) · CI/CD with GitHub Actions (5) · Networking (3) | — · +6 later |
+| **DevOps** | Linux (8) · Shell scripting (1) · Git and GitHub (5) · Docker (3) · Kubernetes (4) · CI/CD with GitHub Actions (5) · Networking (3) | — · +6 later |
 | **Cloud** | Elastic Beanstalk Cluster Mode (1) · AWS fundamentals (1) | Terraform on AWS · +3 later |
 | **AI** | — | Python for DevOps · Building AI agents · Agentic AI for DevOps · +3 later |
 <!-- routes:end -->
