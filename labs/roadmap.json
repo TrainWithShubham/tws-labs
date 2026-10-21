@@ -309,7 +309,7 @@
         {
           "id": "gitops",
           "title": "GitOps with ArgoCD",
-          "status": "later",
+          "status": "next",
           "relevance": 80,
           "subtopics": [
             "GitOps patterns",
@@ -360,10 +360,13 @@
         {
           "id": "ai-agents",
           "title": "Building AI agents",
-          "status": "next",
+          "status": "live",
           "subtopics": [
             "Agent basics",
             "Tools and loops"
+          ],
+          "labs": [
+            "ai/your-first-agent-loop"
           ]
         },
         {

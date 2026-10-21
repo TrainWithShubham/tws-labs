@@ -7,17 +7,21 @@ const { esc } = require('./ui');
 function inline(src) {
   const codes = [];
   let t = esc(src).replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0001' + (codes.length - 1) + '\u0001'; });
+  // Link targets are set aside first, like code: an underscore or star pair inside a URL is part of the URL, not emphasis.
+  const urls = [];
+  t = t.replace(/\]\((https?:\/\/[^)\s]+)\)/g, (_, u) => { urls.push(u); return ']\u0002' + (urls.length - 1) + '\u0002'; });
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // Emphasis only where it clearly is emphasis: a star pair hugging the text, not touching word characters, so globs (*.log),
   // arithmetic (2 * 3) and snake_case stay literal.
   t = t.replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?![*\w])/g, '$1<em>$2</em>');
   t = t.replace(/(^|[^_\w])_(?=\S)([^_\n]*?\S)_(?![_\w])/g, '$1<em>$2</em>');
-  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  t = t.replace(/\[([^\]]+)\]\u0002(\d+)\u0002/g, (_, text, i) => '<a href="' + urls[i] + '" target="_blank" rel="noopener noreferrer">' + text + '</a>');
+  t = t.replace(/\u0002(\d+)\u0002/g, (_, i) => urls[i]);   // a stray marker (no matching [text]) goes back to plain text
   return t.replace(/\u0001(\d+)\u0001/g, (_, i) => '<code>' + codes[i] + '</code>');
 }
 
 function renderMarkdown(text) {
-  const lines = String(text || '').replace(/[\u0000\u0001]/g, '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = String(text || '').replace(/[\u0000-\u0002]/g, '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let i = 0;
   while (i < lines.length) {

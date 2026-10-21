@@ -9,6 +9,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **AI agents: your first agent loop** (a new AI-agents track, and the first AI lab): learn what a language model, a tool call and an agent loop are by building one in Python against a scripted stand-in model that runs on your machine, so it needs no GPU, network or key. The lab says plainly what a stand-in can and cannot teach.
 - **Terraform learning track**: a new hands-on track of five labs (*Your First Terraform Project*, *Providers and Resources*, *Variables, Outputs and References*, *State and Remote Backends*, and the integrated *Terraform in Action* practice lab), teaching declarative HCL syntax, provider configuration, resource definitions, input variables, outputs, resource references, state inspection, and native S3 remote locking. Contributed by Prakhar Srivastava, [@Heyyprakhar1](https://github.com/Heyyprakhar1), #71.
 - **Git and GitHub: stashing uncommitted work** (`git stash`, `git stash list`, `git stash pop`): save in-progress changes, ship a hotfix on `main`, then restore them. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #69.
 - **GitHub Actions: multi-environment CI/CD with reusable workflows** (`workflow_call` inputs and secrets, calling a workflow with `uses:` and `with:`, staging to production with `needs:`). Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #70.
@@ -18,12 +19,18 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ### Fixed
 - **A command you completed with Tab or recalled with the arrow keys now counts.** Tasks that check which command you ran missed commands built that way (`cat docs/rea` + Tab was logged as `cat docs/rea`). The shell now reports each command exactly as it ran it.
+- **A crafted lab link could run script on the completion screen.** The finish page built resource links without escaping them. They are escaped now, and a link containing a quote, angle bracket or space is refused when the lab is loaded.
+- **Links with underscores or stars in the URL rendered wrongly.** `[docs](https://example.com/_static_/a.html)` had its URL turned into emphasis markup; the URL is now kept as written.
+- **One odd request could stop the whole server.** A request target such as `//` made the handler throw and the process exit, ending every learner's session. Any target now gets an answer.
+- **A stalled browser tab could exhaust the server's memory.** Output from a command like `yes` piled up without limit while the tab was not reading (about 50 MB a second in a test). The server now stops reading the terminal until the browser catches up, as a real terminal does.
+- **Another page on `localhost` could open a shell.** The local app accepted a request from any loopback port; it now requires its own origin, port included. A native `npm start` in the local profile also now listens on `127.0.0.1` only (set `HOST` to change it); Docker is unchanged.
 
 ### Changed
 - **Python 3 is now in the lab image** (Debian's `python3`, about 55 MB, standard library only: no `pip`), so labs can teach scripting for operations. The image budget in `image-size-budget.json` rises from 520 MB to 540 MB for it (the CI image is 520 MB with it; about 20 MB of headroom is kept on purpose). `PYTHONDONTWRITEBYTECODE` is set so learners' folders do not fill with `__pycache__`.
 
 ### Upgrade notes
 - Self-hosters: `git pull && ./start_local_labs.sh` rebuilds the image once (about 55 MB larger). Nothing in `deploy/` changes.
+- Running the local profile natively (`LAB_PROFILE=local npm start`)? It now binds `127.0.0.1`; set `HOST=0.0.0.0` if you really want other machines to reach it (a shell is on offer, so rarely).
 
 ## [1.2.0] - 2026-10-15
 
