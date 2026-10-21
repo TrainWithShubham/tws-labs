@@ -321,3 +321,24 @@ t('skipping ahead: the task\'s setup is run in the learner\'s own sandbox, moves
     assert.equal(await pass(app, lab.token, 'use'), true);
   } finally { lab.ws.close(); app.stop(); }
 });
+
+t('the command log sees what bash ran: Tab completion and arrow-key recall count', async () => {
+  const app = await start();
+  const lab = await openLab(app, 'linux-fundamentals', 'files');
+  try {
+    const historyLines = () => {
+      const f = fs.readdirSync(app.sandboxDir).find((n) => n.endsWith('.history'));
+      return fs.readFileSync(path.join(app.sandboxDir, f), 'utf8').split('\n').filter(Boolean);
+    };
+    await lab.type('cd /tm\t');            // Tab completes to /tmp/
+    await lab.type('\r');
+    await sleep(300);
+    assert.ok(historyLines().includes('cd /tmp/'), `bash ran "cd /tmp/", the log has: ${historyLines().join(' | ')}`);
+    await lab.type('echo first-cmd\r');
+    await sleep(300);
+    assert.equal(historyLines().filter((l) => l === 'echo first-cmd').length, 2, 'typed once: the server saw the keystrokes and bash saw the command');
+    await lab.type('\x1b[A\r');           // Up arrow recalls it, Enter runs it again: only bash knows
+    await sleep(300);
+    assert.equal(historyLines().filter((l) => l === 'echo first-cmd').length, 3, `a recalled command is logged again: ${historyLines().join(' | ')}`);
+  } finally { lab.ws.close(); app.stop(); }
+});

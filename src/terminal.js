@@ -39,7 +39,7 @@ function attachTerminal(server, d) {
       // process's config or secrets.
       shell = pty.spawn(file, args, {
         name: 'xterm-256color', cols: 80, rows: 24, cwd: home,
-        env: { PATH: process.env.PATH, HOME: home, TERM: 'xterm-256color', LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0', ...extraEnv },
+        env: { PATH: process.env.PATH, HOME: home, TERM: 'xterm-256color', LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0', LAB_HISTORY: historyOf(token), ...extraEnv },
       });
     } catch (e) {
       // A resource-exhausted host must not crash the process for every other visitor.

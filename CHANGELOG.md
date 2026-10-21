@@ -16,6 +16,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Git and GitHub: resolving merge conflicts** (read conflict markers, resolve `app.conf`, stage it, complete the merge): the conflict a teammate's branch leaves behind, fixed by hand. Contributed by Rakesh Patra, [@Rakesh-Patra](https://github.com/Rakesh-Patra), #68.
 - **Python for DevOps: automating with Python** (the first lab of a new Python track; the topic goes live on the AI line): read a log and count by level, summarise it as JSON, take a command-line argument, and archive big files with `gzip`. Every script is graded by running it against a log it has not seen.
 
+### Fixed
+- **A command you completed with Tab or recalled with the arrow keys now counts.** Tasks that check which command you ran missed commands built that way (`cat docs/rea` + Tab was logged as `cat docs/rea`). The shell now reports each command exactly as it ran it.
+
 ### Changed
 - **Python 3 is now in the lab image** (Debian's `python3`, about 55 MB, standard library only: no `pip`), so labs can teach scripting for operations. The image budget in `image-size-budget.json` rises from 520 MB to 540 MB for it (the CI image is 520 MB with it; about 20 MB of headroom is kept on purpose). `PYTHONDONTWRITEBYTECODE` is set so learners' folders do not fill with `__pycache__`.
 
