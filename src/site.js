@@ -9,8 +9,12 @@ const DEFAULT_FILE = path.join(__dirname, '..', 'labs', 'site.yaml');
 const DEFAULT_CHANNEL = { name: 'TrainWithShubham', url: 'https://www.youtube.com/@TrainWithShubham' };
 
 // External links in contributed content must be plain https:// URLs.
+// A quote, angle bracket, backtick, space or control character cannot be part of a link we would put in an href, and would let a
+// contributed URL break out of the attribute where one is built by hand.
 function httpsUrl(u) {
-  try { return new URL(String(u)).protocol === 'https:' ? String(u) : null; } catch { return null; }
+  const s = String(u);
+  if (/["'<>`\s\u0000-\u001f]/.test(s)) return null;
+  try { return new URL(s).protocol === 'https:' ? s : null; } catch { return null; }
 }
 
 function readYaml(file, problems) {
