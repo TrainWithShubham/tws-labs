@@ -1,0 +1,1 @@
+printf 'import gzip, os, shutil\nos.makedirs('\''logs/archive'\'', exist_ok=True)\nfor n in os.listdir('\''logs'\''):\n    p = '\''logs/'\'' + n\n    if n.endswith('\''.log'\'') and os.path.getsize(p) > 1000:\n        with open(p, '\''rb'\'') as s, gzip.open('\''logs/archive/'\'' + n + '\''.gz'\'', '\''wb'\'') as d:\n            shutil.copyfileobj(s, d)\n' > archive_logs.py

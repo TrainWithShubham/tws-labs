@@ -1,0 +1,1 @@
+printf 'import json\nfrom collections import defaultdict\ncounts = defaultdict(int)\nfor line in open('\''logs/app.log'\''):\n    counts[line.split()[2]] += 1\nwith open('\''report.json'\'', '\''w'\'') as f:\n    json.dump(counts, f, indent=2, sort_keys=True)\n' > summarise.py

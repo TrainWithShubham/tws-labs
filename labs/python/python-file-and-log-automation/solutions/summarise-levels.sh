@@ -1,0 +1,1 @@
+printf 'import json\nfrom collections import Counter\ncounts = Counter()\nfor line in open('\''logs/app.log'\''):\n    parts = line.split()\n    if len(parts) > 2:\n        counts[parts[2]] += 1\nwith open('\''report.json'\'', '\''w'\'') as out:\n    json.dump(dict(counts), out)\n' > summarise.py

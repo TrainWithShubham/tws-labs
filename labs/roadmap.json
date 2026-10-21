@@ -340,7 +340,7 @@
         {
           "id": "python-ai",
           "title": "Python for DevOps",
-          "status": "next",
+          "status": "live",
           "also": [
             "devops"
           ],
@@ -352,7 +352,10 @@
           "video": {
             "title": "Python For DevOps",
             "url": "https://www.youtube.com/live/9ErAlY2Ifw0"
-          }
+          },
+          "labs": [
+            "python/python-file-and-log-automation"
+          ]
         },
         {
           "id": "ai-agents",
@@ -367,6 +370,9 @@
           "id": "agentic-devops",
           "title": "Agentic AI for DevOps",
           "status": "next",
+          "also": [
+            "devops"
+          ],
           "relevance": 30,
           "subtopics": [
             "Generative AI and agents",
@@ -376,7 +382,7 @@
         {
           "id": "mcp",
           "title": "MCP, tools and gateways",
-          "status": "later",
+          "status": "next",
           "subtopics": [
             "Deploying agents",
             "MCP integration"

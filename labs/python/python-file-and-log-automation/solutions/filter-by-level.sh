@@ -1,0 +1,1 @@
+printf 'import sys\nlevel = sys.argv[1]\nfor line in open('\''logs/app.log'\''):\n    parts = line.split()\n    if len(parts) > 2 and parts[2] == level:\n        print(line.rstrip())\n' > filter_logs.py

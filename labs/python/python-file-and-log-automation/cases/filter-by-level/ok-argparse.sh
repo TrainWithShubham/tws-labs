@@ -1,0 +1,1 @@
+printf 'import argparse\np = argparse.ArgumentParser()\np.add_argument('\''level'\'')\na = p.parse_args()\nwith open('\''logs/app.log'\'') as f:\n    for line in f:\n        if line.split()[2] == a.level:\n            print(line, end='\'''\'')\n' > filter_logs.py

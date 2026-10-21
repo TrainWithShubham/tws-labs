@@ -1,0 +1,82 @@
+title: "Automating with Python: files and logs"
+level: beginner
+minutes: 15
+summary: Write four short scripts that count and summarise a log, take an argument, and archive big files.
+steps:
+  - id: why-python
+    type: lesson
+    title: Scripts for work you repeat
+    body: |
+      A shell one-liner is perfect until the job needs a dictionary, a JSON file or a decision. Then a **Python script** reads better.
+
+      In `~/logs` you have a day of service logs. Each line looks like this:
+
+      ```
+      2026-10-01 09:12:30 ERROR payments: card gateway timeout
+      ```
+
+      The **third word** is the level (`INFO`, `WARN` or `ERROR`). Some `INFO` lines mention ERROR in their message, so read the level field, not the whole line.
+
+      `for line in open(path):` reads a file line by line, and `line.split()` turns a line into a list of words. Run a script with `python3 name.py`.
+
+      *Your scripts are graded on a log they have not seen: read `logs/app.log` from the current directory and compute the answer.*
+
+  - id: count-errors
+    type: task
+    title: Count the errors
+    body: |
+      Create `count_errors.py` in your home directory. When run from a folder that has `logs/app.log`, it must print one number: how many lines have the level `ERROR`.
+
+      Run it yourself and compare the number with what you expect.
+    hint:
+      - "Start a counter at 0, loop over the lines of the file, and print the counter after the loop."
+      - "Split each line into words; the level is a word in a fixed position, not a substring of the line."
+      - "Lines that only mention ERROR in their message must not be counted."
+    success: Counted. You parsed the level field instead of searching the text.
+
+  - id: summarise-levels
+    type: task
+    title: Summarise by level
+    body: |
+      Create `summarise.py`. When run, it reads `logs/app.log` and writes `report.json` in the current directory: a JSON object that maps each level to how many lines have it.
+
+      Use the `json` module rather than building the text by hand.
+    hint:
+      - "A dictionary maps a key to a number: add one to the level's entry for every line."
+      - "collections.Counter does the counting for you, and json.dump writes a dictionary to an open file."
+      - "Open report.json for writing with open(name, 'w')."
+    success: Summarised. A dictionary plus the json module turned a log into data.
+
+  - id: filter-by-level
+    type: task
+    title: Filter from the command line
+    body: |
+      Create `filter_logs.py`. It takes the level as its first command-line argument and prints every line of `logs/app.log` with that level, unchanged and in order.
+
+      For example, `python3 filter_logs.py WARN` prints the warnings.
+    hint:
+      - "The sys module holds what the user typed after the script name, in a list."
+      - "sys.argv[0] is the script itself, so the first argument is the next item."
+      - "Compare the level word of each line to that argument, and print the line without adding a second newline."
+    success: Filtered. Your script now takes input from the command line like any other tool.
+
+  - id: archive-old-logs
+    type: task
+    title: Archive big logs
+    body: |
+      Create `archive_logs.py`. When run, it looks at the `.log` files in `logs/`. Every file **larger than 1000 bytes** is compressed to `logs/archive/<name>.gz` and then removed from `logs/`. Smaller files stay where they are.
+
+      Create the `archive` folder from the script if it does not exist. Try it on your own `logs/` folder, then restore the files with `bash setup.sh` if you want to run it again.
+    hint:
+      - "os.listdir and os.path.getsize tell you what is in a folder and how big each file is."
+      - "The gzip module can write a compressed file; shutil.copyfileobj copies one open file into another."
+      - "Remove the original only after the compressed copy is written."
+    success: Archived. You used the standard library to manage files safely.
+
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      You read a log line by line, parsed the field you needed, produced JSON, accepted an argument and moved files, all with the standard library.
+
+      Next steps: wrap a script like these in a scheduled job, or call an HTTP API with `urllib.request` and feed the answer into the same kind of summary.

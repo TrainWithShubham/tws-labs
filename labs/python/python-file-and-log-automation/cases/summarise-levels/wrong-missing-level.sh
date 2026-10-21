@@ -1,0 +1,1 @@
+printf 'import json\ncounts = {}\nfor line in open('\''logs/app.log'\''):\n    level = line.split()[2]\n    if level == '\''INFO'\'':\n        continue\n    counts[level] = counts.get(level, 0) + 1\njson.dump(counts, open('\''report.json'\'', '\''w'\''))\n' > summarise.py

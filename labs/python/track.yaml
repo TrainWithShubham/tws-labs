@@ -1,0 +1,5 @@
+order: 5
+title: Python for DevOps
+description: Automate the work you would otherwise do by hand - read logs, summarise them, take arguments and manage files with short Python scripts.
+labs:
+  - python-file-and-log-automation
