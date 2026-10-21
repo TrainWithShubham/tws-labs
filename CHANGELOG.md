@@ -23,6 +23,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **`scripts/aws-lab-sweep.sh` no longer reports a clean account when an AWS call failed.** A failed listing now stops it with the reason.
 - **`scripts/aws-lab-creds.sh --duration` matches the learner role.** The role issues sessions of up to 4 hours; the script and docs allowed 12 and then failed with a misleading message.
 - **`AWS=1 ./start_local_labs.sh` works with the legacy `docker-compose`** (the image pre-build skipped the compose fallback).
+- **The AWS learner role could be used to gain account admin.** `deploy/learner-role.yaml` let it create roles and policies under `/tws-labs/` with any content, then assume them. No lab needs this, so those permissions are gone (it keeps read-only IAM). Update the CloudFormation stack to apply it; see Upgrade notes.
 - **A crafted lab link could run script on the completion screen.** The finish page built resource links without escaping them. They are escaped now, and a link containing a quote, angle bracket or space is refused when the lab is loaded.
 - **Links with underscores or stars in the URL rendered wrongly.** `[docs](https://example.com/_static_/a.html)` had its URL turned into emphasis markup; the URL is now kept as written.
 - **One odd request could stop the whole server.** A request target such as `//` made the handler throw and the process exit, ending every learner's session. Any target now gets an answer.
@@ -34,6 +35,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ### Upgrade notes
 - Self-hosters: `git pull && ./start_local_labs.sh` rebuilds the image once (about 55 MB larger). Nothing in `deploy/` changes.
+- Using the AWS labs? Update your `tws-labs-learner` CloudFormation stack with the new `deploy/learner-role.yaml` (*Update stack -> Replace current template*): the role loses its IAM write permissions. Existing stacks keep the old, broader role until you do.
 - Running the local profile natively (`LAB_PROFILE=local npm start`)? It now binds `127.0.0.1`; set `HOST=0.0.0.0` if you really want other machines to reach it (a shell is on offer, so rarely).
 
 ## [1.2.0] - 2026-10-15
