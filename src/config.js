@@ -21,6 +21,9 @@ function loadConfig(env = process.env) {
     profile,
     isLocal,
     port: env.PORT || 8080,
+    // A native `npm start` of the local profile answers only on loopback (a shell is on offer). The image sets HOST=0.0.0.0 because Docker's
+    // port mapping needs it; docker-compose publishes the port on 127.0.0.1 only. Hosted listens on every interface behind the load balancer.
+    host: env.HOST || (isLocal ? '127.0.0.1' : '0.0.0.0'),
     labsDir: env.LABS_DIR || require('path').join(__dirname, '..', 'labs'),
     sandboxDir: env.SANDBOX_DIR || require('path').join(require('os').tmpdir(), 'tws-labs-sandbox'),
     watch: env.LABS_WATCH === '1',

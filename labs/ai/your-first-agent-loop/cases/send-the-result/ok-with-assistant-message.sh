@@ -1,0 +1,1 @@
+curl -s -X POST "http://127.0.0.1:$(cat port.txt)/chat" -d '{"messages":[{"role":"user","content":"how many lines are in notes.txt?"},{"role":"assistant","tool_call":{"name":"count_lines"}},{"role":"tool","id":"call_1","content":"7"}]}' > final.json
