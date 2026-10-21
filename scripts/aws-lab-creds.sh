@@ -3,7 +3,7 @@
 #   eval "$(scripts/aws-lab-creds.sh arn:aws:iam::<your-account-id>:role/tws-labs-learner)"
 #   AWS=1 ./start_local_labs.sh
 # Run it on YOUR machine (it needs the AWS CLI and your normal credentials). It prints three `export` lines on stdout and
-# nothing else there; messages go to stderr. The credentials expire after one hour by default (--duration SECONDS, 900-43200).
+# nothing else there; messages go to stderr. The credentials expire after one hour by default (--duration SECONDS, 900-14400: the role's own maximum is 4 hours).
 set -euo pipefail
 
 say() { printf '%s\n' "$*" >&2; }
@@ -15,7 +15,7 @@ shift
 DURATION=3600
 if [ "${1:-}" = "--duration" ]; then
   DURATION="${2:-}"
-  [[ "$DURATION" =~ ^[0-9]+$ ]] && [ "$DURATION" -ge 900 ] && [ "$DURATION" -le 43200 ] || die "--duration must be a whole number of seconds from 900 to 43200"
+  [[ "$DURATION" =~ ^[0-9]+$ ]] && [ "$DURATION" -ge 900 ] && [ "$DURATION" -le 14400 ] || die "--duration must be a whole number of seconds from 900 to 14400 (the learner role allows sessions of up to 4 hours)"
 fi
 
 [[ "$ROLE" =~ ^arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$ ]] || die "That does not look like an IAM role ARN (arn:aws:iam::<12-digit account id>:role/<name>)."

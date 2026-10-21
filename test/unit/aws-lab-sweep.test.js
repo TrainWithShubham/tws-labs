@@ -57,3 +57,13 @@ t('it refuses root credentials, missing credentials and unknown options, and del
   assert.notEqual(sweep(withState([]), [], { FAKE_AWS_DOWN: '1' }).status, 0);
   assert.notEqual(sweep(withState([]), ['--everything']).status, 0);
 });
+
+t('a failed listing stops the sweep instead of reporting a clean account', () => {
+  for (const op of ['list-buckets', 'describe-volumes']) {
+    const e = withState(['tws-labs-123456789012-cli'], ['vol-1']);
+    const r = sweep(e, [], { FAKE_AWS_FAIL_OP: op });
+    assert.notEqual(r.status, 0, `${op} failing must fail the sweep`);
+    assert.ok(!/nothing to clean up/i.test(r.out), 'must not claim the account is clean');
+    assert.match(r.err, /cannot tell what is left/i);
+  }
+});

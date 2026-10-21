@@ -32,9 +32,11 @@ t('prints export lines for one-hour credentials, and only those lines on stdout'
   assert.ok(!r.err.includes('secret/Key'), 'the secret is never written to stderr');
 });
 
-t('a different duration can be asked for, within what AWS allows (900 to 43200 seconds)', () => {
+t('a different duration can be asked for, within what the learner role allows (900 to 14400 seconds)', () => {
   assert.match(run([ROLE, '--duration', '7200']).awsCalls[0], /--duration-seconds 7200/);
   assert.notEqual(run([ROLE, '--duration', '10']).status, 0);
+  assert.equal(run([ROLE, '--duration', '14400']).status, 0);
+  assert.notEqual(run([ROLE, '--duration', '14401']).status, 0, 'longer than the role can issue');
   assert.notEqual(run([ROLE, '--duration', '99999']).status, 0);
   assert.notEqual(run([ROLE, '--duration', 'abc']).status, 0);
 });

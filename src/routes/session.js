@@ -75,6 +75,7 @@ module.exports = function sessionRoutes(router, d) {
       if (!session.shellPid) return json(res, 200, { pass: false, message: 'Terminal is still connecting.' });
       const r = await sandbox.runCheck(step.checkFile, {
         home: session.home, uid: session.uid, shellPid: session.shellPid, historyFile: historyOf(token), env: labEnv(lab, cfg),
+        timeoutMs: lab.requires === 'aws' ? 30000 : undefined,
       });
       usage.check({ track: session.meta.track, lab: session.meta.lab, step: stepId, pass: r.pass, ip: session.ip, code: session.meta.code });
       json(res, 200, { pass: r.pass, message: r.pass ? '' : r.message });

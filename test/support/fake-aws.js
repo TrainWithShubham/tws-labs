@@ -31,6 +31,7 @@ const out = (value) => {
 
 if (process.env.FAKE_AWS_DOWN === '1') die('NoCredentials', 'Unable to locate credentials');
 const [svc, op] = argv;
+if (process.env.FAKE_AWS_FAIL_OP && process.env.FAKE_AWS_FAIL_OP === op) die('AccessDenied', 'User is not authorized to perform this operation');   // a call that fails while the identity call works
 const s = load();
 const bucket = opt('--bucket');
 if (svc === 'sts' && op === 'get-caller-identity') out({ UserId: 'AROAEXAMPLE:tws-labs', Account: ACCOUNT, Arn: ARN });

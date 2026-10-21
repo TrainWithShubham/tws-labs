@@ -24,13 +24,22 @@ REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
 [ -n "$REGION" ] || die "Set AWS_REGION first, so the sweep knows where to look."
 say "Account $ACCOUNT, region $REGION"
 
+# A failed listing must stop the sweep: treating it as "nothing there" would report a clean account while billable resources remain.
+listed() {
+  local out
+  out="$("$@" 2>&1)" || die "An AWS call failed, so the sweep cannot tell what is left (${out%%$'\n'*}). Check your credentials, region and permissions (docs/aws-labs.md)."
+  printf '%s\n' "$out"
+}
+# Assigned first, not read in the `for` line: a failure inside $(...) there would not stop the script.
+BUCKET_LIST="$(listed aws s3api list-buckets --query 'Buckets[].Name' --output text)"
+VOLUME_LIST="$(listed aws ec2 describe-volumes --filters Name=tag-key,Values=tws-labs --query 'Volumes[].VolumeId' --output text)"
 BUCKETS=()
-for b in $(aws s3api list-buckets --query 'Buckets[].Name' --output text 2>/dev/null); do
+for b in $BUCKET_LIST; do
   case "$b" in tws-labs-*) BUCKETS+=("$b") ;; esac
 done
 VOLUMES=()
-for v in $(aws ec2 describe-volumes --filters Name=tag-key,Values=tws-labs --query 'Volumes[].VolumeId' --output text 2>/dev/null); do
-  VOLUMES+=("$v")
+for v in $VOLUME_LIST; do
+  case "$v" in vol-*) VOLUMES+=("$v") ;; esac
 done
 
 if [ "${#BUCKETS[@]}" -eq 0 ] && [ "${#VOLUMES[@]}" -eq 0 ]; then say "Nothing to clean up."; exit 0; fi
