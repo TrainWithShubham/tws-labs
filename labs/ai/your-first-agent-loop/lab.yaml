@@ -1,0 +1,134 @@
+title: Your first agent loop
+level: beginner
+minutes: 15
+summary: Learn what a language model, a tool call and an agent loop are by building one.
+steps:
+  - id: what-is-an-llm
+    type: lesson
+    title: What a language model does
+    body: |
+      A **large language model (LLM)** turns text into text. You send it a conversation, it sends back the most likely next message.
+
+      Two facts shape everything built on top of one. It has **no memory**: every request must carry the whole conversation so far. And it can only produce text: it cannot read your files or run commands.
+
+      In this lab the "model" is a **scripted stand-in** on your machine. It answers the same way every time, so your code can be graded fairly. It teaches the plumbing every agent needs, not what a real model is like. Its port is in `port.txt`.
+
+  - id: call-the-model
+    type: task
+    title: Send a message
+    body: |
+      The stand-in listens on `127.0.0.1` at the port in `port.txt`. Send `POST /chat` with this JSON body, and save its answer to `reply.json`:
+
+      ```json
+      {"messages": [{"role": "user", "content": "how many lines are in notes.txt?"}]}
+      ```
+
+      Use `curl` and read the reply.
+    hint:
+      - "curl sends a POST body with -X POST and -d, and the shell can read the port with $(cat port.txt)."
+      - "The address has the form http://127.0.0.1:PORT/chat."
+      - "Redirect the output into reply.json, then cat it."
+    success: "Sent. The reply is JSON, and the model did not answer: it asked for a tool."
+
+  - id: tools
+    type: lesson
+    title: Tools - the model asks, you run
+    body: |
+      A model cannot count the lines of your file. What it can do is **ask**: the reply you saved is a **tool call**, a request to run the tool `count_lines` with an argument (a path).
+
+      Nothing runs until **your code** does it. You run the tool, then send the result back as a new message with the role `tool`. The model reads it and answers.
+
+      The tool call has three parts you will use: `id`, `name` and `arguments`.
+
+  - id: read-the-tool-call
+    type: task
+    title: Read the tool call
+    body: |
+      Create `read_call.py`. It reads `reply.json` in the current folder and prints two lines: the tool's `name`, then the `path` inside its `arguments`.
+    hint:
+      - "Python's json module turns the file into a dictionary you can index."
+      - "The path is one level deeper than the name: it lives inside arguments."
+      - "print() ends each value with a newline, so two prints make two lines."
+    success: Read. A tool call is just data you can parse.
+
+  - id: write-the-tool
+    type: task
+    title: Write the tool
+    body: |
+      Create `tool.py`. Run as `python3 tool.py FILE`, it prints how many lines the file has, and nothing else. That is the tool the model asked for.
+    hint:
+      - "sys.argv holds what was typed after the script name."
+      - "A file's lines are what you get when you split its text at the line breaks."
+      - "Check it on notes.txt: you made that file, so you know the answer."
+    success: The tool works. Now the model needs its answer.
+
+  - id: send-the-result
+    type: task
+    title: Send the result back
+    body: |
+      The model has no memory, so the second request carries the **whole conversation**: your question, then the tool's result. Send this to `/chat`, with the real count from your tool, and save the answer to `final.json`:
+
+      ```json
+      {"messages": [
+        {"role": "user", "content": "how many lines are in notes.txt?"},
+        {"role": "tool", "id": "call_1", "content": "<the count>"}
+      ]}
+      ```
+    hint:
+      - "Reuse your first request and add a second message to the list."
+      - "The shell can put your tool's output into the body with $(python3 tool.py notes.txt)."
+      - "The answer goes to final.json, and should now be text, not a tool call."
+    success: "Answered. That is one full round: ask, run the tool, send the result."
+
+  - id: the-loop
+    type: lesson
+    title: The agent loop
+    body: |
+      One round answered one question. Real questions need several tool calls, and you do not know how many in advance. So an **agent** repeats:
+
+      1. Send the conversation to the model.
+      2. If it asks for a tool: run it, add the call and the result to the conversation, go to 1.
+      3. If it answers with text: stop.
+
+      That cycle is the **agent loop**. Everything else about agents is about making it reliable.
+
+  - id: agent-loop
+    type: task
+    title: Build the loop
+    body: |
+      Create `agent.py`. Run as `python3 agent.py "QUESTION"`, it reads the port from `port.txt`, runs the loop, and prints the model's final text.
+
+      Try it on: `how many lines are in notes.txt and todo.txt?` Two files means two tool calls.
+    hint:
+      - "A loop that runs until the model replies with text, not a fixed number of times."
+      - "Each round adds the model's tool call and your tool result to the same list of messages."
+      - "You already wrote the request, the parsing and the tool: this task is gluing them in a loop."
+    success: Looped. Your agent ran as many rounds as the model needed.
+
+  - id: guardrails
+    type: task
+    title: Add guardrails
+    body: |
+      Real models send broken tool calls and sometimes never finish. Extend `agent.py`:
+
+      - If a tool call is malformed or the tool fails, send a `tool` message whose content starts with `error` and carry on.
+      - Stop after **10 rounds** at most, print `gave up`, and exit with a failure status.
+
+      Your agent is graded against a model that garbles its first call and against one that never answers.
+    hint:
+      - "A try/except around parsing and running the tool lets you turn a failure into a message."
+      - "The model reads error messages too: tell it what went wrong and it tries again."
+      - "A for loop with a range is a limit you cannot forget; sys.exit(1) reports failure."
+    success: Guarded. Limits and error handling are what separate a demo from an agent you can leave running.
+
+  - id: wrap-up
+    type: lesson
+    title: What you built, and what is next
+    body: |
+      You wrote the **loop**, the **tool**, and the **guardrails**. Words you can now use precisely:
+
+      - **LLM**: text in, text out, no memory. **Context**: the conversation you resend.
+      - **Token**: the small chunk of text a model reads and bills for.
+      - **Tool call**: the model's request to run something. **Agent**: a loop that runs tools until it has an answer.
+
+      A real model differs in two ways: its replies vary, and it can be wrong. Pointing this same loop at one means changing the address and adding a key. What it cannot teach you is how to write good prompts: that needs a real model.

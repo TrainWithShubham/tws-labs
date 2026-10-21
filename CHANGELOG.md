@@ -9,6 +9,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **AI agents: your first agent loop** (a new AI-agents track, and the first AI lab): learn what a language model, a tool call and an agent loop are by building one in Python against a scripted stand-in model that runs on your machine, so it needs no GPU, network or key. The lab says plainly what a stand-in can and cannot teach.
 - **Terraform learning track**: a new hands-on track of five labs (*Your First Terraform Project*, *Providers and Resources*, *Variables, Outputs and References*, *State and Remote Backends*, and the integrated *Terraform in Action* practice lab), teaching declarative HCL syntax, provider configuration, resource definitions, input variables, outputs, resource references, state inspection, and native S3 remote locking. Contributed by Prakhar Srivastava, [@Heyyprakhar1](https://github.com/Heyyprakhar1), #71.
 - **Git and GitHub: stashing uncommitted work** (`git stash`, `git stash list`, `git stash pop`): save in-progress changes, ship a hotfix on `main`, then restore them. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #69.
 - **GitHub Actions: multi-environment CI/CD with reusable workflows** (`workflow_call` inputs and secrets, calling a workflow with `uses:` and `with:`, staging to production with `needs:`). Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #70.
