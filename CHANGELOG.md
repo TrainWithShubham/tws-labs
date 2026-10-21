@@ -8,6 +8,15 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-21
+
+### Highlights
+- **Eleven new labs.** A Terraform track of five, the first Python lab and the first AI lab, plus stashing, reusable workflows, incident triage and merge conflicts. Nine of them were written by the community: see the credits below.
+- **The AI line starts, with no GPU and no key.** *Your first agent loop* teaches what a language model, a tool call and an agent loop are by building one against a scripted stand-in model that runs on your machine, and says plainly what a stand-in can and cannot teach.
+- **Python is now in the image** (standard library only, about 55 MB, budget 540 MB), so labs can teach scripting.
+- **A hardening pass from a whole-repo review.** One odd request could stop the server, a stalled browser tab could exhaust its memory, another page on `localhost` could open a shell, a crafted lab link could run script, and the AWS learner role could be used to gain account admin. All fixed; see Fixed and the Upgrade notes.
+- **Commands you complete with Tab or recall with the arrow keys now count** in tasks that check what you ran.
+
 ### Added
 - **AI agents: your first agent loop** (a new AI-agents track, and the first AI lab): learn what a language model, a tool call and an agent loop are by building one in Python against a scripted stand-in model that runs on your machine, so it needs no GPU, network or key. The lab says plainly what a stand-in can and cannot teach.
 - **Terraform learning track**: a new hands-on track of five labs (*Your First Terraform Project*, *Providers and Resources*, *Variables, Outputs and References*, *State and Remote Backends*, and the integrated *Terraform in Action* practice lab), teaching declarative HCL syntax, provider configuration, resource definitions, input variables, outputs, resource references, state inspection, and native S3 remote locking. Contributed by Prakhar Srivastava, [@Heyyprakhar1](https://github.com/Heyyprakhar1), #71.
