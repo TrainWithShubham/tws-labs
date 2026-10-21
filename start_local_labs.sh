@@ -72,7 +72,9 @@ fi
 
 say "Building and starting TWS Labs (the first run takes a few minutes)..."
 # The AWS image is built on top of the normal one, so build that first.
-if [ -n "${AWS:-}" ]; then docker compose -f docker-compose.yml build labs; fi
+if [ -n "${AWS:-}" ]; then   # through compose(), so a machine with only the legacy docker-compose works too
+  AWS_FILES=("${FILES[@]}"); FILES=(-f docker-compose.yml); compose build labs; FILES=("${AWS_FILES[@]}")
+fi
 compose up --build -d
 
 stop() { echo; say "Stopping TWS Labs..."; compose down >/dev/null 2>&1 || true; exit 0; }

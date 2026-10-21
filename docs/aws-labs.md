@@ -28,7 +28,7 @@ AWS=1 ./start_local_labs.sh
 ```
 
 Open the lab (they are marked on the track page). The credentials expire after an hour; run the first line again for another hour
-(`--duration 7200` for longer, up to 12 hours). The container receives your `AWS_*` variables **only for these labs**, and nothing else from your environment.
+(`--duration 7200` for longer, up to 4 hours: the learner role's maximum session). The container receives your `AWS_*` variables **only for these labs**, and nothing else from your environment.
 
 Prefer long-lived access keys? They work too (export `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`), but short-lived credentials are safer: a key that is
 copied or leaked stops working on its own.

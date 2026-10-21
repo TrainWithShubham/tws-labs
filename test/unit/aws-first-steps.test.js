@@ -113,5 +113,7 @@ t('cleanup: passes only once the bucket is gone', () => {
   e.setState({ buckets: { [BUCKET]: { tags: [], versioning: '' } }, volumes: [] });
   assert.equal(checkOf(e, 'cleanup').pass, false);
   e.setState({ buckets: {}, volumes: [] });
+  assert.equal(checkOf(e, 'cleanup').pass, false, 'a bucket that never existed (nothing was created or deleted) is not a cleanup');
+  e.typed(`aws s3api delete-bucket --bucket ${BUCKET}`);
   assert.equal(checkOf(e, 'cleanup').pass, true);
 });

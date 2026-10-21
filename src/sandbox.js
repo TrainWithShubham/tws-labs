@@ -75,7 +75,8 @@ function createSandbox({ labsDir }) {
 
   // Check contract: `bash checks/<step>.sh`, cwd = learner home, exit 0 = pass.
   // The first stdout line (if any) is shown to the learner as the failure message.
-  function runCheck(scriptPath, { home, uid, shellPid, historyFile, env = {} }) {
+  // A check gets 5 seconds. Account labs ask the real AWS API (CLI start-up, several calls, retries for eventual consistency), so the caller gives them longer.
+  function runCheck(scriptPath, { home, uid, shellPid, historyFile, env = {}, timeoutMs = 5000 }) {
     return new Promise((resolve) => {
       const [file, args] = asUser(uid, home, 'bash', [scriptPath]);
       const child = spawn(file, args, {
@@ -85,11 +86,12 @@ function createSandbox({ labsDir }) {
       });
       let out = '';
       child.stdout.on('data', (c) => { if (out.length < 2000) out += c; });
-      const timer = setTimeout(() => child.kill('SIGKILL'), 5000);
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutMs);
       child.on('error', () => { clearTimeout(timer); resolve({ pass: false, message: 'check could not run' }); });
       child.on('close', (code) => {
         clearTimeout(timer);
-        resolve({ pass: code === 0, message: out.split('\n')[0].trim() });
+        resolve({ pass: code === 0 && !timedOut, message: timedOut ? 'The check took too long to finish. Press Check again in a moment.' : out.split('\n')[0].trim() });
       });
     });
   }

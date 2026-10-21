@@ -16,6 +16,13 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Git and GitHub: resolving merge conflicts** (read conflict markers, resolve `app.conf`, stage it, complete the merge): the conflict a teammate's branch leaves behind, fixed by hand. Contributed by Rakesh Patra, [@Rakesh-Patra](https://github.com/Rakesh-Patra), #68.
 - **Python for DevOps: automating with Python** (the first lab of a new Python track; the topic goes live on the AI line): read a log and count by level, summarise it as JSON, take a command-line argument, and archive big files with `gzip`. Every script is graded by running it against a log it has not seen.
 
+### Fixed
+- **AWS labs: Check no longer fails silently on a slow connection.** Account-lab checks get 30 seconds instead of 5, and a check that does run out of time now says so instead of showing an empty message.
+- **AWS labs: the cleanup check needs a real cleanup.** It passed when the bucket had never existed (for example after skipping ahead). It now also requires that you deleted it, and says so if AWS cannot confirm either way (a permissions problem is no longer read as "gone").
+- **`scripts/aws-lab-sweep.sh` no longer reports a clean account when an AWS call failed.** A failed listing now stops it with the reason.
+- **`scripts/aws-lab-creds.sh --duration` matches the learner role.** The role issues sessions of up to 4 hours; the script and docs allowed 12 and then failed with a misleading message.
+- **`AWS=1 ./start_local_labs.sh` works with the legacy `docker-compose`** (the image pre-build skipped the compose fallback).
+
 ### Changed
 - **Python 3 is now in the lab image** (Debian's `python3`, about 55 MB, standard library only: no `pip`), so labs can teach scripting for operations. The image budget in `image-size-budget.json` rises from 520 MB to 540 MB for it (the CI image is 520 MB with it; about 20 MB of headroom is kept on purpose). `PYTHONDONTWRITEBYTECODE` is set so learners' folders do not fill with `__pycache__`.
 
