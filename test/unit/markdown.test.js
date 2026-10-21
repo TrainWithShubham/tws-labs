@@ -50,3 +50,14 @@ test('emphasis can never inject markup', () => {
   assert.ok(!html.includes('<script>') && !html.includes('<img'));
   assert.match(html, /<em>&lt;script&gt;/);
 });
+
+test('a link whose URL contains underscores or stars keeps the URL intact', () => {
+  const html = renderMarkdown('See [docs](https://example.com/_static_/a_b_.html) and [more](https://example.com/*x*/y).');
+  assert.match(html, /<a href="https:\/\/example\.com\/_static_\/a_b_\.html"[^>]*>docs<\/a>/);
+  assert.match(html, /<a href="https:\/\/example\.com\/\*x\*\/y"[^>]*>more<\/a>/);
+  assert.ok(!/<a href="[^"]*<em>/.test(html), 'no markup inside an href');
+});
+
+test('emphasis inside link text still works', () => {
+  assert.match(renderMarkdown('[the *real* docs](https://example.com)'), /<a href="https:\/\/example\.com"[^>]*>the <em>real<\/em> docs<\/a>/);
+});

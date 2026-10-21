@@ -84,7 +84,10 @@ function createApp(opts = {}) {
   const server = http.createServer((req, res) => {
     // Local profile: refuse any non-loopback Host outright (DNS rebinding).
     if (!hostOk(req, cfg)) return send(res, 421, 'text/plain', 'This app only answers on localhost.');
-    const url = new URL(req.url, 'http://localhost');
+    // Only the path matters, and `new URL('//', base)` throws (a protocol-relative target is not a path): parse it against the origin
+    // as a string so no request target can crash the handler for every learner.
+    let url;
+    try { url = new URL('http://localhost' + (String(req.url).startsWith('/') ? req.url : '/')); } catch { return send(res, 400, 'text/plain', 'Bad request.'); }
     if (!router.handle(req, res, url)) send(res, 404, 'text/html', page('labs', 'Not found', pages.notFoundBody()));
   });
 
@@ -96,7 +99,7 @@ function createApp(opts = {}) {
 
 if (require.main === module) {
   const { server, cfg } = createApp();
-  server.listen(cfg.port, () => console.log(`TWS Labs listening on ${cfg.port}, profile=${cfg.profile}, seats=${cfg.maxSessions}/replica, labs=${cfg.labsDir}`));
+  server.listen(cfg.port, cfg.host, () => console.log(`TWS Labs listening on ${cfg.host}:${cfg.port}, profile=${cfg.profile}, seats=${cfg.maxSessions}/replica, labs=${cfg.labsDir}`));
 }
 
 module.exports = { createApp, guardOk, hostOk, hostnameOf };

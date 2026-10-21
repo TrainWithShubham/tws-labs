@@ -1,0 +1,5 @@
+order: 6
+title: AI agents
+description: Build agents the way they are built for real - messages, tool calls and a loop - against a scripted stand-in model that needs no GPU or key.
+labs:
+  - your-first-agent-loop
