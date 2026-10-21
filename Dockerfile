@@ -18,7 +18,7 @@ FROM node:22-bookworm-slim
 RUN sed -i '\|path-exclude /usr/share/man/\*|d' /etc/dpkg/dpkg.cfg.d/docker \
  && apt-get update && apt-get install -y --no-install-recommends \
       bash coreutils procps git nano vim tree curl less file ca-certificates tini gosu \
-      jq dnsutils iproute2 netcat-openbsd openssl man-db manpages \
+      jq dnsutils iproute2 netcat-openbsd openssl man-db manpages python3 \
  && apt-get install -y --no-install-recommends --reinstall \
       coreutils bash grep sed findutils gzip tar util-linux diffutils \
  && rm -rf /var/lib/apt/lists/* \
@@ -34,7 +34,7 @@ COPY scripts ./scripts
 COPY labs ./labs
 # Check scripts must stay readable (they run as the learner); the answers must not.
 RUN find labs -type d -name solutions -exec chmod 700 {} +
-ENV PORT=8080 SANDBOX_DIR=/sandbox LAB_UID=10000
+ENV PORT=8080 SANDBOX_DIR=/sandbox LAB_UID=10000 PYTHONDONTWRITEBYTECODE=1
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

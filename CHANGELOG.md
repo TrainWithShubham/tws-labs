@@ -15,6 +15,12 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Linux Fundamentals: production incident triage**: find and stop a runaway process, truncate a runaway log without breaking its open file, lock down a world-writable credentials file, then start the service. Contributed by Preetham Pereira, [@cloudwithpreetham](https://github.com/cloudwithpreetham), #67.
 - **Git and GitHub: resolving merge conflicts** (read conflict markers, resolve `app.conf`, stage it, complete the merge): the conflict a teammate's branch leaves behind, fixed by hand. Contributed by Rakesh Patra, [@Rakesh-Patra](https://github.com/Rakesh-Patra), #68.
 
+### Changed
+- **Python 3 is now in the lab image** (Debian's `python3`, about 55 MB, standard library only: no `pip`), so labs can teach scripting for operations. The image budget in `image-size-budget.json` rises from 520 MB to 580 MB for it. `PYTHONDONTWRITEBYTECODE` is set so learners' folders do not fill with `__pycache__`.
+
+### Upgrade notes
+- Self-hosters: `git pull && ./start_local_labs.sh` rebuilds the image once (about 55 MB larger). Nothing in `deploy/` changes.
+
 ## [1.2.0] - 2026-10-15
 
 ### Highlights
