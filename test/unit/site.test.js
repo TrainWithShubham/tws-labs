@@ -27,4 +27,5 @@ test('site.yaml: https-only links, validated videos, a missing file is fine, a b
 test('httpsUrl accepts only https', () => {
   assert.equal(httpsUrl('https://a.b/c'), 'https://a.b/c');
   for (const u of ['http://a.b', 'javascript:alert(1)', 'ftp://a', '', undefined, '//a.b']) assert.equal(httpsUrl(u), null, String(u));
+  for (const u of ['https://a.com/x"><img src=x onerror=alert(1)>', "https://a.com/x'y", 'https://a.com/x y', 'https://a.com/`x`']) assert.equal(httpsUrl(u), null, u);   // would break out of an href
 });

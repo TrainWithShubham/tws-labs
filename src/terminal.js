@@ -60,7 +60,7 @@ function attachTerminal(server, d) {
       idleTimer = setTimeout(() => ws.close(4000, 'idle timeout'), cfg.idleMs);
     };
 
-    shell.onData((d) => { if (ws.readyState === WebSocket.OPEN) ws.send(d); });
+    pipeWithBackpressure(shell, ws);
     // `exit` / Ctrl-D ends the shell; without this the browser sits on a dead terminal holding a seat.
     shell.onExit(() => { if (ws.readyState === WebSocket.OPEN) ws.close(1000, 'shell exited'); });
     // Without a listener an 'error' event (malformed/oversized frame) is an uncaught exception for everyone.
@@ -94,4 +94,24 @@ function attachTerminal(server, d) {
   return { wss, type: (token, text) => { const sh = shells.get(token); if (sh) { try { sh.write(text); return true; } catch { /* gone */ } } return false; } };
 }
 
-module.exports = { attachTerminal };
+// Forward pty output to the browser. A client that reads slowly (a throttled background tab, a stalled network) must not make the server buffer
+// whatever `yes` produces: past HIGH bytes still waiting to go out, stop reading the pty (the shell then blocks on its own write, as it would on a
+// real terminal) and carry on once the browser has caught up to LOW.
+const HIGH = 1024 * 1024;
+const LOW = 256 * 1024;
+function pipeWithBackpressure(shell, ws, { high = HIGH, low = LOW } = {}) {
+  let pending = 0;
+  let paused = false;
+  shell.onData((data) => {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    const size = Buffer.byteLength(data);
+    pending += size;
+    ws.send(data, () => {
+      pending -= size;
+      if (paused && pending <= low) { paused = false; try { shell.resume(); } catch { /* gone */ } }
+    });
+    if (!paused && pending > high) { paused = true; try { shell.pause(); } catch { /* gone */ } }
+  });
+}
+
+module.exports = { attachTerminal, pipeWithBackpressure };

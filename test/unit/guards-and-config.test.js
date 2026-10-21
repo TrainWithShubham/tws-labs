@@ -76,3 +76,17 @@ test('LAB_IDLE_SEC and LAB_HARD_CAP_SEC are seconds-level overrides for tests; t
   assert.equal(loadConfig({ LAB_HARD_CAP_SEC: '0' }).hardCapMs, 15 * 60 * 1000, 'zero or junk is ignored');
   assert.equal(loadConfig({ LAB_IDLE_SEC: 'soon' }).idleMs, 5 * 60 * 1000);
 });
+
+test('local Origin must be this server\'s own, port included: another localhost port is a different origin', () => {
+  const l = (origin) => guardOk(req({ host: 'localhost:8080', origin }), local, { needOrigin: true });
+  assert.ok(l('http://localhost:8080'));
+  assert.ok(!l('http://localhost:3000'), 'a dev server on another port must not get a shell');
+  assert.ok(!l('http://127.0.0.1:8080'), 'same port, different host name, is a different origin');
+});
+
+test('a native local run listens on loopback only; hosted and an explicit HOST are respected', () => {
+  const { loadConfig } = require('../../src/config');
+  assert.equal(loadConfig({ LAB_PROFILE: 'local' }).host, '127.0.0.1');
+  assert.equal(loadConfig({ LAB_PROFILE: 'local', HOST: '0.0.0.0' }).host, '0.0.0.0');
+  assert.equal(loadConfig({}).host, '0.0.0.0');
+});

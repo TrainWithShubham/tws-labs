@@ -198,12 +198,12 @@
     var html = '<p class="done-mark">Mission complete.</p><p>You finished <strong>' + esc(DATA.title) + '</strong>. Your progress is saved in this browser.</p>';
     if (DATA.resources.length) {
       html += '<ul class="resource-list">' + DATA.resources.map(function (r) {
-        return '<li><a href="' + r.url + '" target="_blank" rel="noopener noreferrer">' + esc(r.title) + '</a><span>' + esc(r.desc) + '</span></li>';
+        return '<li><a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.title) + '</a><span>' + esc(r.desc) + '</span></li>';
       }).join('') + '</ul>';
     }
     html += '<div class="done-actions">' +
-      (DATA.next ? '<a class="btn-primary" href="' + DATA.next.href + '">Next: ' + esc(DATA.next.title) + ' <span aria-hidden="true">&rarr;</span></a>' : '') +
-      '<a class="btn-quiet" href="' + DATA.trackUrl + '">Back to the track</a></div>';
+      (DATA.next ? '<a class="btn-primary" href="' + esc(DATA.next.href) + '">Next: ' + esc(DATA.next.title) + ' <span aria-hidden="true">&rarr;</span></a>' : '') +
+      '<a class="btn-quiet" href="' + esc(DATA.trackUrl) + '">Back to the track</a></div>';
     STEPS.forEach(function (st) { done[st.id] = true; });
     current = STEPS.length - 1; renderDots();
     $('journey').style.setProperty('--p', '100%');

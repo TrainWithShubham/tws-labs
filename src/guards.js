@@ -3,8 +3,8 @@ const crypto = require('crypto');
 // --- Request guards -------------------------------------------------------------
 // This app hands out a real shell, so a web page the visitor happens to have open
 // must not be able to drive it.
-//  local  : Host and Origin must be loopback names (stops DNS rebinding and CSRF
-//           against localhost:8080).
+//  local  : Host and Origin must be loopback names and the Origin must be this server's own, port included (stops DNS rebinding and CSRF
+//           against localhost:8080, even from another localhost port).
 //  hosted : Origin must equal Host (same-origin); Host is whatever the ALB serves.
 // State-changing requests (POST, WebSocket) must carry an Origin; browsers always send one.
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -22,7 +22,9 @@ function guardOk(req, cfg, { needOrigin }) {
   if (!origin) return !needOrigin;
   let originHost;
   try { originHost = new URL(origin).host.toLowerCase(); } catch { return false; }
-  return cfg.isLocal ? LOOPBACK.has(hostnameOf(originHost)) : originHost === String(req.headers.host || '').toLowerCase();
+  // Both profiles: the Origin must be this server's own. On the local profile it must also be a loopback name, so a page or dev server on
+  // another localhost port (a different origin) cannot open a shell here.
+  return originHost === String(req.headers.host || '').toLowerCase() && (!cfg.isLocal || LOOPBACK.has(hostnameOf(originHost)));
 }
 
 // Hosted only: every lab needs one of the configured invite tokens (the local app never asks). Compared as

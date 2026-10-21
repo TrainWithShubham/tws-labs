@@ -1,0 +1,1 @@
+python3 -c "import json,urllib.request as u; b=json.dumps({'messages':[{'role':'user','content':'how many lines are in notes.txt?'}]}).encode(); print(u.urlopen('http://127.0.0.1:'+open('port.txt').read().strip()+'/chat', b).read().decode())" > reply.json

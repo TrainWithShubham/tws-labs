@@ -340,3 +340,21 @@ test('every shipped lab loads cleanly and the EB lab has all 11 steps', async ()
     assert.equal(eb.links[0].url.startsWith('https://docs.aws.amazon.com/'), true);
   } finally { app.stop(); }
 });
+
+test('a request target that is not a path (//, /\\, no leading slash) gets an answer and does not kill the server', async () => {
+  const app = await start({ profile: 'local' });
+  try {
+    const net = require('node:net');
+    for (const target of ['//', '///x', '/\\', '*', 'http://[::1']) {
+      const status = await new Promise((resolve, reject) => {
+        const sock = net.connect(app.port, '127.0.0.1', () => sock.write(`GET ${target} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n`));
+        let out = '';
+        sock.on('data', (d) => { out += d; });
+        sock.on('end', () => resolve(out.split(' ')[1]));
+        sock.on('error', reject);
+      });
+      assert.ok(['200', '400', '404'].includes(status), `${JSON.stringify(target)} -> ${status}`);
+    }
+    assert.equal((await get(app, '/healthz')).status, 200, 'still serving afterwards');
+  } finally { app.stop(); }
+});
