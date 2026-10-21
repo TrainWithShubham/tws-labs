@@ -15,7 +15,7 @@ Most labs run entirely inside the container and need nothing. A few Cloud labs (
    - `BudgetEmail`: where the **$5 monthly budget alarm** (at 80%) is sent,
    - `MonthlyBudgetUsd`: leave at 5.
 
-   The role `tws-labs-learner` can only touch S3 buckets named `tws-labs-*`, create **tiny (2 GiB or less) tagged EBS volumes** and change only volumes carrying the `tws-labs` tag, manage IAM roles and policies under the `/tws-labs/` path (attaching only lab policies), and read (describe) the rest. No bucket policies or ACLs, no instances, no network changes.
+   The role `tws-labs-learner` can only touch S3 buckets named `tws-labs-*`, create **tiny (2 GiB or less) tagged EBS volumes** and change only volumes carrying the `tws-labs` tag, and read (describe) the rest. It cannot create or change IAM roles or policies (a role it could create would not be limited by anything above), and there are no bucket policies or ACLs, no instances and no network changes.
 3. **Copy the role ARN** from the stack's *Outputs* tab.
 
 ## Each time you practice

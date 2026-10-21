@@ -16,11 +16,15 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Git and GitHub: resolving merge conflicts** (read conflict markers, resolve `app.conf`, stage it, complete the merge): the conflict a teammate's branch leaves behind, fixed by hand. Contributed by Rakesh Patra, [@Rakesh-Patra](https://github.com/Rakesh-Patra), #68.
 - **Python for DevOps: automating with Python** (the first lab of a new Python track; the topic goes live on the AI line): read a log and count by level, summarise it as JSON, take a command-line argument, and archive big files with `gzip`. Every script is graded by running it against a log it has not seen.
 
+### Fixed
+- **The AWS learner role could be used to gain account admin.** `deploy/learner-role.yaml` let it create roles and policies under `/tws-labs/` with any content, then assume them. No lab needs this, so those permissions are gone (it keeps read-only IAM). Update the CloudFormation stack to apply it; see Upgrade notes.
+
 ### Changed
 - **Python 3 is now in the lab image** (Debian's `python3`, about 55 MB, standard library only: no `pip`), so labs can teach scripting for operations. The image budget in `image-size-budget.json` rises from 520 MB to 540 MB for it (the CI image is 520 MB with it; about 20 MB of headroom is kept on purpose). `PYTHONDONTWRITEBYTECODE` is set so learners' folders do not fill with `__pycache__`.
 
 ### Upgrade notes
 - Self-hosters: `git pull && ./start_local_labs.sh` rebuilds the image once (about 55 MB larger). Nothing in `deploy/` changes.
+- Using the AWS labs? Update your `tws-labs-learner` CloudFormation stack with the new `deploy/learner-role.yaml` (*Update stack -> Replace current template*): the role loses its IAM write permissions. Existing stacks keep the old, broader role until you do.
 
 ## [1.2.0] - 2026-10-15
 

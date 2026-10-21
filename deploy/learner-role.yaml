@@ -68,6 +68,9 @@ Resources:
                 Effect: Allow
                 Action: s3:ListAllMyBuckets
                 Resource: '*'
+              # Read-only IAM (Get*, List*) is included below; there is deliberately NO permission to create or change roles or policies: a
+              # role this role could create (even under a path) could carry any permissions, which would defeat everything above. A future IAM lab
+              # needs a permissions boundary on whatever it lets a learner create.
               # EC2: read everything; create only tiny tagged volumes; change only volumes that carry the tws-labs tag.
               - Sid: Describe
                 Effect: Allow
@@ -104,33 +107,6 @@ Resources:
                 Condition:
                   'Null':
                     ec2:ResourceTag/tws-labs: 'false'
-              # IAM: roles and policies under the /tws-labs/ path only, and only lab policies can be attached.
-              - Sid: LabRoles
-                Effect: Allow
-                Action:
-                  - iam:CreateRole
-                  - iam:DeleteRole
-                  - iam:TagRole
-                  - iam:PutRolePolicy
-                  - iam:DeleteRolePolicy
-                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/tws-labs/*
-              - Sid: LabPolicies
-                Effect: Allow
-                Action:
-                  - iam:CreatePolicy
-                  - iam:DeletePolicy
-                  - iam:CreatePolicyVersion
-                  - iam:DeletePolicyVersion
-                Resource: !Sub arn:aws:iam::${AWS::AccountId}:policy/tws-labs/*
-              - Sid: AttachOnlyLabPolicies
-                Effect: Allow
-                Action:
-                  - iam:AttachRolePolicy
-                  - iam:DetachRolePolicy
-                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/tws-labs/*
-                Condition:
-                  ArnLike:
-                    iam:PolicyARN: !Sub arn:aws:iam::${AWS::AccountId}:policy/tws-labs/*
 
   MonthlyBudget:
     Type: AWS::Budgets::Budget
