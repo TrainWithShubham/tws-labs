@@ -2,6 +2,7 @@
 
 `[x]` = proven by a real run (test, image, or script). `[ ] (live)` = can only be proven against the deployed
 Elastic Beanstalk environment — run `deploy/smoke-test.py <hostname>` after the next deploy and tick these.
+**2026-10-20: the hosted environment was torn down and `deploy.yml` disabled** to stop the daily cost, so every `(live)` item below needs a redeploy (`gh workflow enable deploy.yml`) before it can be re-proven.
 Last full verification: the restructure to one engine + one catalog (see git log), run in the production image.
 
 ## Pages and navigation

@@ -244,6 +244,7 @@ Application Versions in Cluster Mode take an `ImageConfiguration` with **exactly
   overhead. EKS control-plane fee dominates the estimate.
 - **ACM certificate, CloudWatch at this scale:** effectively $0, aside from any CloudWatch log
   storage left ownerless past the test (set retention or delete log groups after teardown).
+- **Measured (Cost Explorer, 1-20 Oct 2026, us-west-2):** about $153 gross for one always-on Cluster Mode environment, roughly $9.9/day, so a deployed demo costs far more than the hour-long estimate above. Terminating the environment is not enough: check for a leftover `beanstalk-cluster-*` stack (EKS control plane, about $2.40/day) and delete it too.
 - This is an **estimate to validate, not a bill** — see the hands-on runbook in the
   `beanstalk-grows` demo for how the real Cost Explorer number was measured. Reverify these
   headline figures against `aws.amazon.com/eks/pricing` and

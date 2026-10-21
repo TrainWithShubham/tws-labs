@@ -151,6 +151,11 @@ Labs written by people outside the core team. Thank you.
 | Text processing with awk and sed (Linux Fundamentals) | [@srdangat](https://github.com/srdangat) | [#32](https://github.com/TrainWithShubham/tws-labs/pull/32) |
 | Exposing Pods with Services (Kubernetes) | [@srdangat](https://github.com/srdangat) | [#42](https://github.com/TrainWithShubham/tws-labs/pull/42) |
 | Process management (Linux Fundamentals) | [@techwithiishaq](https://github.com/techwithiishaq) | [#45](https://github.com/TrainWithShubham/tws-labs/pull/45) |
+| Git stash (Git and GitHub) | [@srdangat](https://github.com/srdangat) | [#69](https://github.com/TrainWithShubham/tws-labs/pull/69) |
+| Reusable workflows (CI/CD with GitHub Actions) | [@srdangat](https://github.com/srdangat) | [#70](https://github.com/TrainWithShubham/tws-labs/pull/70) |
+| Production incident triage (Linux Fundamentals) | [@cloudwithpreetham](https://github.com/cloudwithpreetham) | [#67](https://github.com/TrainWithShubham/tws-labs/pull/67) |
+| Resolving merge conflicts (Git and GitHub) | [@Rakesh-Patra](https://github.com/Rakesh-Patra) | [#68](https://github.com/TrainWithShubham/tws-labs/pull/68) |
+| Terraform track, five labs (Terraform) | [@Heyyprakhar1](https://github.com/Heyyprakhar1) | [#71](https://github.com/TrainWithShubham/tws-labs/pull/71) |
 
 ## Contributing and security
 
