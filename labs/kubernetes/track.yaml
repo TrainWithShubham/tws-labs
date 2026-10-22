@@ -6,6 +6,7 @@ labs:
   - services
   - configs-and-secrets
   - fix-the-manifest
+  - persistent-storage
 video:
   title: Kubernetes In One Shot
   url: https://youtu.be/W04brGNgxN4
