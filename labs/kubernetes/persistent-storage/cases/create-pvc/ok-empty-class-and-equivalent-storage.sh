@@ -1,0 +1,1 @@
+printf 'apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: app-storage\nspec:\n  storageClassName: ""\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 1024Mi\n' > app/pvc.yaml

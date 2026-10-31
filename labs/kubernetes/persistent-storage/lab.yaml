@@ -1,0 +1,123 @@
+title: Persistent Storage
+level: intermediate
+minutes: 14
+summary: Configure a PV, PVC, and volume mount for Kubernetes storage.
+links:
+  - title: Persistent Volumes
+    url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+resources:
+  - title: Persistent Volumes
+    url: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+    desc: How Kubernetes provisions, binds, uses, and reclaims persistent storage.
+  - title: Volumes
+    url: https://kubernetes.io/docs/concepts/storage/volumes/
+    desc: How Pods provide storage to containers and mount it at filesystem paths.
+  - title: Storage Classes
+    url: https://kubernetes.io/docs/concepts/storage/storage-classes/
+    desc: How StorageClasses enable dynamic provisioning of persistent storage.
+steps:
+  - id: intro
+    type: lesson
+    title: The Kubernetes storage lifecycle
+    body: |
+      A container's writable filesystem is lost when the Pod is replaced. A persistent volume can outlive the Pod.
+
+      This offline lab grades YAML manifests. It creates no cluster resources.
+
+      The PV and PVC lifecycle has four stages:
+      1. **Provisioning:** An administrator creates a PV, or a provisioner dynamically creates one in response to a PVC, using a StorageClass.
+      2. **Binding:** A PersistentVolumeClaim (PVC) binds to a compatible PV.
+      3. **Using:** Pods declare the PVC in `volumes`; containers mount it with `volumeMounts`.
+      4. **Reclaiming:** What happens to backing storage after the PVC is deleted.
+
+      A teammate has also left a claim in `app/reports-pvc.yaml`. You will come back to it at the end.
+  - id: define-pv
+    type: task
+    title: Define a PersistentVolume
+    body: |
+      In static provisioning, an administrator defines a PersistentVolume (PV) for claims to use.
+
+      Create `app/pv.yaml` defining a `PersistentVolume` named `local-pv`:
+      - `apiVersion: v1`
+      - `kind: PersistentVolume`
+      - Under `spec`, set `storageClassName: ""` to define a PV without a StorageClass.
+      - Under `spec.capacity`, set `storage: 1Gi`
+      - Under `spec.accessModes`, set `[ReadWriteOnce]`
+      - Set `persistentVolumeReclaimPolicy: Retain` to preserve storage for manual recovery after claim deletion.
+      - Under `spec.hostPath`, set `path: /mnt/data`
+
+      `hostPath` uses one node's filesystem. Data does not automatically follow a Pod to another node, so use CSI-backed storage in production.
+    hint:
+      - "PersistentVolume is a cluster-level v1 resource provisioned by cluster admins."
+      - "Configure storageClassName, capacity, accessModes, reclaim policy, and hostPath under spec."
+    success: The PV manifest defines 1Gi of host-backed storage with a Retain reclaim policy.
+  - id: create-pvc
+    type: task
+    title: Request storage with a PVC
+    body: |
+      A PersistentVolumeClaim (PVC) requests storage independently of how that storage is provided. For binding, the PV must provide enough capacity, support the requested access mode, and match the PVC's StorageClass.
+
+      Create `app/pvc.yaml` declaring a `PersistentVolumeClaim` named `app-storage`:
+      - `apiVersion: v1`
+      - `kind: PersistentVolumeClaim`
+      - Under `spec`, set `storageClassName: ""` to request a statically provisioned PV without a StorageClass.
+      - Under `spec.accessModes`, request `ReadWriteOnce` (read-write access from one node; multiple Pods on that node may use it).
+      - Under `spec.resources.requests`, set `storage: 1Gi`
+    hint:
+      - "PersistentVolumeClaim is a core v1 object that requests cluster storage."
+      - "Set storageClassName to an empty string, place accessModes in a list, and define capacity inside resources.requests."
+    success: The PVC requests 1Gi of storage without selecting a StorageClass.
+  - id: attach-volume
+    type: task
+    title: Attach the claim to the Deployment
+    body: |
+      A Pod uses the claim by declaring it as a volume in the Deployment's Pod template.
+
+      Edit `app/deployment.yaml` and add a `volumes` list under `spec.template.spec` with an entry that:
+      - Uses `name: data-volume`.
+      - References the PVC with `persistentVolumeClaim.claimName: app-storage`.
+    hint:
+      - "In spec.template.spec, add volumes as a list beside containers."
+      - "The volume entry needs a name and a persistentVolumeClaim block with claimName."
+    success: The Pod template now references app-storage as data-volume.
+  - id: mount-volume
+    type: task
+    title: Mount the volume in the container
+    body: |
+      Declaring a Pod volume makes it available to its containers. A volume mount chooses the directory where a container can access it.
+
+      In `app/deployment.yaml`, add a `volumeMounts` list to the `app` container:
+      - Set `name: data-volume` to match the declared Pod volume.
+      - Set `mountPath: /data` (the directory path inside the container)
+    hint:
+      - "volumeMounts belongs inside the app container spec, next to image."
+      - "Each volume mount needs the volume's name and a mountPath."
+    success: The app container mounts data-volume at /data.
+  - id: fix-binding
+    type: task
+    title: Fix a claim that will not bind
+    body: |
+      The most common storage problem is a claim stuck in `Pending` because no PV matches it. Your teammate's claim in `app/reports-pvc.yaml` would never bind to `local-pv`.
+
+      A claim binds to a PV only when all of these hold:
+      - The StorageClass is the same (both are `""` here).
+      - The PV's capacity is at least what the claim requests.
+      - The PV offers every access mode the claim asks for.
+
+      Compare `app/reports-pvc.yaml` with `app/pv.yaml` (try `cat` on both), then edit the claim so it can bind to `local-pv`. Keep the claim's name, and leave the PV as it is: the claim is what is wrong.
+    hint:
+      - "Put the two files side by side and compare accessModes and storage."
+      - "The claim asks for more storage than the PV has, and for an access mode the PV does not offer."
+      - "Request ReadWriteOnce and no more than 1Gi."
+    success: The claim now fits local-pv, so it can bind.
+  - id: wrap-up
+    type: lesson
+    title: What to use in production
+    body: |
+      You wrote Kubernetes manifests that configure storage for application data:
+
+      - **Claims and volumes:** A PVC requests capacity and access modes, then binds to one compatible PV.
+      - **Access modes:** `ReadWriteOnce` allows read-write mounting by one node, shared by Pods on it.
+      - **Dynamic provisioning:** A StorageClass specifies a provisioner, often CSI-based, that dynamically creates storage and a PV for a PVC.
+      - **Reclaim policies:** `Retain` preserves storage but requires manual reclamation before reuse. `Delete` removes backing storage when supported.
+      - **A claim stuck in Pending:** its class, size or access mode fits no PV. Compare the two first.
