@@ -9,7 +9,8 @@ on:
 jobs:
   test:
     name: Tests (native Linux)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, whose shell prints command-not-found suggestions into the pty and breaks the play-through tests.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
