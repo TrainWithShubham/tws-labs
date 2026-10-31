@@ -1,6 +1,6 @@
-# Codifies the same $5/month cost guardrail created by hand earlier in this
-# project (see demos/tws-labs/cluster-mode/README.md's cost guardrail section). Bring the
-# existing budget under management with `terraform import` rather than
+# Codifies the cost guardrail created by hand earlier in this project. The limit is
+# var.budget_limit_usd (default $50). The alerts only send email; nothing here stops the
+# environment. Bring the existing budget under management with `terraform import` rather than
 # creating a duplicate (see README.md's bootstrap section).
 
 resource "aws_budgets_budget" "climb_demo" {
