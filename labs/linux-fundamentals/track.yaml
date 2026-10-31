@@ -11,6 +11,7 @@ labs:
   - awk-and-sed
   - process-management-basics
   - incident-response
+  - shell-functions-and-arguments
 video:
   title: Linux For DevOps In One Shot
   url: https://www.youtube.com/watch?v=e01GGTKmtpc

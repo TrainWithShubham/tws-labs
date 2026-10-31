@@ -1,0 +1,1 @@
+printf '%s\n' 'import json' 'import sys' '' 'cfg = json.load(open(sys.argv[1]))' 'for key in ["app", "defaults"]:' '    if key not in cfg:' '        print("error: missing key: " + key, file=sys.stderr)' 'print("ok")' > validate_config.py

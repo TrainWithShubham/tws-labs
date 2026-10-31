@@ -8,6 +8,7 @@ labs:
   - gitignore
   - stash
   - resolving-merge-conflicts
+  - rebase-and-cherry-pick
 video:
   title: Git & GitHub Crash Course 2025
   url: https://www.youtube.com/watch?v=vA5TTz6BXhY

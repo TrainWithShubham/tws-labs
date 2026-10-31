@@ -1,0 +1,10 @@
+. "$LAB_LIB"
+G="$LAB_HOME/proj"
+in_repo proj rev-parse --verify -q search >/dev/null || fail "The search branch is missing."
+[ "$(in_repo proj rev-list --count main..search)" = 1 ] || fail "search should have exactly one commit of its own (it has $(in_repo proj rev-list --count main..search))."
+[ "$(in_repo proj rev-list --merges --count main..search)" = 0 ] || fail "search should not contain a merge commit."
+sub=$(in_repo proj log search -1 --format=%s)
+printf '%s\n' "$sub" | grep -qi 'wip' && fail "The squashed commit still says WIP. Give it a real message."
+[ -n "$sub" ] || fail "The squashed commit needs a message."
+[ "$(in_repo proj show search:search.txt 2>/dev/null)" = "$(printf 'box\nindex\nresults')" ] || fail "search.txt should still hold all three lines (box, index, results)."
+[ -z "$(in_repo proj status --porcelain)" ] || fail "You have uncommitted changes. Commit them."

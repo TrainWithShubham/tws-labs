@@ -1,0 +1,104 @@
+title: Your first Helm chart
+level: beginner
+minutes: 15
+summary: Write Chart.yaml, values.yaml and a templated Deployment, then override a value in a second file.
+links:
+  - title: Helm chart basics
+    url: https://helm.sh/docs/topics/charts/
+resources:
+  - title: Values files
+    url: https://helm.sh/docs/chart_template_guide/values_files/
+    desc: How defaults, -f files and --set are merged.
+  - title: Template functions and pipelines
+    url: https://helm.sh/docs/chart_template_guide/functions_and_pipelines/
+    desc: default, quote and the pipe operator.
+steps:
+  - id: intro
+    type: lesson
+    title: A chart is files plus templates
+    body: |
+      A Helm 3 chart is a folder: `Chart.yaml` (identity), `values.yaml` (defaults) and `templates/` (Kubernetes YAML with `{{ }}` holes).
+      `helm install shop ./shop` fills the holes from the values and the release name.
+
+      **Honest note:** there is no `helm` binary in this lab. It grades your chart files by reading them, and templates are not valid YAML, so those are checked as text.
+      Where `helm template` would show something, the task says what.
+  - id: chart-yaml
+    type: task
+    title: Write Chart.yaml
+    body: |
+      Create the folder `shop/` and a `shop/Chart.yaml` with:
+
+      - `apiVersion: v2`
+      - `name: shop`
+      - `version`: the chart's own version, SemVer (use `0.1.0`)
+      - `appVersion`: the version of the app inside, as a string (use `"1.27.0"`)
+    hint:
+      - "version is the chart's version; appVersion is the app's. They change independently."
+      - "Helm 3 charts use apiVersion v2. appVersion must be a string, so quote it."
+    success: Chart.yaml identifies the chart and keeps version and appVersion apart.
+  - id: values-yaml
+    type: task
+    title: Write the default values
+    body: |
+      Create `shop/values.yaml` with these defaults:
+
+      - `replicaCount: 2`
+      - `image.repository: nginx` and `image.tag: "1.27.0"`
+      - `service.port: 80`
+
+      Nested keys mean nested YAML (an `image:` map with `repository` and `tag` inside).
+    hint:
+      - "Values are plain YAML. image and service are maps."
+      - "Indent repository and tag under image, and port under service."
+    success: The chart has defaults a user can override.
+  - id: deployment-template
+    type: task
+    title: Template the Deployment
+    body: |
+      Create the folder `shop/templates/` and in it `deployment.yaml`: a Deployment (`apps/v1`) where
+
+      - `metadata.name` is `{{ .Release.Name }}`
+      - `replicas:` comes from `.Values.replicaCount`
+      - the container `image:` joins `.Values.image.repository` and `.Values.image.tag`
+      - at least one value goes through a pipe: `| default ...` or `| quote`
+
+      Every `.Values.x.y` you use must exist in `values.yaml`.
+      `helm template demo ./shop` would print this with the holes filled.
+    hint:
+      - "A hole looks like {{ .Values.replicaCount }}; the release name is under .Release."
+      - "A pipe sends a value into a function, for example a fallback with default."
+      - "If a key you reference is missing from values.yaml, add it there or fix the spelling (it is case-sensitive)."
+    success: The template reads its values from values.yaml, and every reference resolves.
+  - id: prod-values
+    type: task
+    title: Override values in a second file
+    body: |
+      Create `values-prod.yaml` in your home folder (outside the chart) that overrides only:
+
+      - `replicaCount` to `3`
+      - `image.tag` to a different version, e.g. `"1.28.0"`
+
+      Every key you override must already exist in `shop/values.yaml`: a typo adds a new key that no template reads.
+      You would apply it with `helm install shop ./shop -f values-prod.yaml`.
+    hint:
+      - "Repeat only the keys you change, with the same nesting as values.yaml."
+      - "image.tag lives under image, so the file needs an image: map."
+    success: A small override file that keeps the defaults for everything else.
+  - id: merged-values
+    type: task
+    title: Predict the merged values
+    body: |
+      Helm merges maps key by key: your `-f` file wins where it has a key, the chart defaults fill the rest.
+      Create `merged.yaml` holding the complete result of `values.yaml` plus `values-prod.yaml`,
+      what `helm get values shop --all` would show for that release.
+    hint:
+      - "Start from values.yaml and replace only what values-prod.yaml sets."
+      - "image.repository is not in the override, so it must still appear."
+    success: Merged correctly. Maps merge deeply, so untouched keys survive.
+  - id: wrap-up
+    type: lesson
+    title: What a real Helm run adds
+    body: |
+      With Helm installed, `helm lint ./shop` checks the chart, `helm template demo ./shop -f values-prod.yaml` prints the rendered YAML, and `helm install` sends it to a cluster.
+
+      Rules worth remembering: later `-f` files beat earlier ones, `--set` beats files, maps merge, lists are replaced whole, and bumping `version` is how you release a chart change.

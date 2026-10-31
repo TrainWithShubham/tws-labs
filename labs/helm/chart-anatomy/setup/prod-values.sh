@@ -1,0 +1,4 @@
+mkdir -p "$LAB_HOME/shop/templates"
+[ -f "$LAB_HOME/shop/Chart.yaml" ] || printf 'apiVersion: v2\nname: shop\ntype: application\nversion: 0.1.0\nappVersion: "1.27.0"\n' > "$LAB_HOME/shop/Chart.yaml"
+[ -f "$LAB_HOME/shop/values.yaml" ] || printf 'replicaCount: 2\n\nimage:\n  repository: nginx\n  tag: "1.27.0"\n\nservice:\n  port: 80\n' > "$LAB_HOME/shop/values.yaml"
+[ -f "$LAB_HOME/shop/templates/deployment.yaml" ] || printf '%s\n' 'apiVersion: apps/v1' 'kind: Deployment' 'metadata:' '  name: {{ .Release.Name }}' 'spec:' '  replicas: {{ .Values.replicaCount }}' '  selector:' '    matchLabels:' '      app: {{ .Release.Name }}' '  template:' '    metadata:' '      labels:' '        app: {{ .Release.Name }}' '    spec:' '      containers:' '        - name: web' '          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"' > "$LAB_HOME/shop/templates/deployment.yaml"

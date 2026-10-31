@@ -1,0 +1,4 @@
+title: GitOps
+description: Keep Git as the source of truth for a cluster - an Argo CD Application, automated sync, and repairing drift.
+labs:
+  - argocd-application

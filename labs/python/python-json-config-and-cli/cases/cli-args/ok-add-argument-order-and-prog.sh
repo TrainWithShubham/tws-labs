@@ -1,0 +1,1 @@
+printf '%s\n' 'import argparse' '' 'parser = argparse.ArgumentParser(prog="cfg")' 'parser.add_argument("--env", default="dev", choices=("dev", "staging", "prod"))' 'parser.add_argument("config")' 'ns = parser.parse_args()' 'print(f"file={ns.config} env={ns.env}")' > config_cli.py

@@ -1,0 +1,1 @@
+printf '%s\n' '  syncPolicy:' '    syncOptions:' '      - ServerSideApply=true' '      - CreateNamespace=true' '    automated:' '      selfHeal: true' '      prune: true' '      allowEmpty: false' >> guestbook-app.yaml

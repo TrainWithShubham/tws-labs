@@ -1,0 +1,94 @@
+title: Your first GitOps Application
+level: beginner
+minutes: 15
+summary: Write an Argo CD Application manifest, then repair one that cannot sync or heal itself.
+links:
+  - title: Argo CD declarative setup
+    url: https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/
+resources:
+  - title: Automated sync policy
+    url: https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/
+    desc: What automated sync, prune and self-heal do.
+  - title: Sync options
+    url: https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/
+    desc: CreateNamespace and the other per-app switches.
+steps:
+  - id: intro
+    type: lesson
+    title: Git is the source of truth
+    body: |
+      GitOps: the desired state of your cluster lives in Git, and a controller makes the cluster match it. In Argo CD that pairing is an **Application**: *this repo path* goes to *that cluster namespace*.
+
+      **Honest note:** there is no cluster and no `argocd` binary here. This lab grades your Application YAML by reading it, so it proves the manifest is right, not that a sync succeeded.
+  - id: app-source
+    type: task
+    title: Name the Application and its source
+    body: |
+      Create `guestbook-app.yaml` for an Argo CD `Application` (API group `argoproj.io/v1alpha1`):
+
+      - `metadata.name: guestbook` and `metadata.namespace: argocd` (Applications live in Argo CD's own namespace)
+      - `spec.project: default`
+      - `spec.source`: `repoURL: https://github.com/argoproj/argocd-example-apps.git`, `path: guestbook`, `targetRevision: HEAD`
+    hint:
+      - "Applications are custom resources: apiVersion argoproj.io/v1alpha1, kind Application."
+      - "The source says where in Git to read. It sits under spec, with repoURL, path and targetRevision."
+    success: Argo CD now knows which Git path this Application tracks.
+  - id: app-destination
+    type: task
+    title: Choose where it deploys
+    body: |
+      Add `spec.destination` to `guestbook-app.yaml`:
+
+      - `server: https://kubernetes.default.svc` (the cluster Argo CD itself runs in)
+      - `namespace: guestbook`
+    hint:
+      - "destination is a sibling of source, under spec."
+      - "It takes a cluster (server) and a namespace."
+    success: The target cluster and namespace are set.
+  - id: sync-policy
+    type: task
+    title: Turn on automated sync
+    body: |
+      Add `spec.syncPolicy` to `guestbook-app.yaml`:
+
+      - `automated` with `prune: true` and `selfHeal: true`
+      - `syncOptions` containing `CreateNamespace=true`
+
+      **prune** deletes cluster resources that were removed from Git. **selfHeal** reverts manual changes (a `kubectl scale`) back to what Git says.
+    hint:
+      - "syncPolicy sits under spec. automated is a map; syncOptions is a list of strings."
+      - "prune and selfHeal are booleans, not quoted strings."
+    success: Git changes and Git deletions are applied, and manual drift is reverted.
+  - id: fix-registration
+    type: task
+    title: Fix an Application that never appears
+    body: |
+      `checkout-app.yaml` is a second Application, but `kubectl apply` complains:
+
+      ```
+      no matches for kind "Application" in version "argoproj.io/v1beta1"
+      ```
+
+      and the Argo CD controller ignores it because it is not in Argo CD's own namespace. Fix those two lines.
+    hint:
+      - "Look at the apiVersion first: the Application CRD has an alpha version."
+      - "metadata.namespace should be the namespace Argo CD is installed in."
+    success: The manifest is a valid Application in the right namespace.
+  - id: fix-drift
+    type: task
+    title: Stop drift and orphans
+    body: |
+      Two incidents hit `checkout`: someone ran `kubectl scale` by hand and the replica count stayed wrong, and a Deployment deleted from Git is still running.
+
+      Edit `syncPolicy` in `checkout-app.yaml` so both are handled, keeping the existing `syncOptions`.
+    hint:
+      - "Manual edits are reverted by one automated setting, orphaned resources are deleted by another."
+      - "Under automated, set prune and selfHeal to true."
+    success: Git is the source of truth again, in both directions.
+  - id: wrap-up
+    type: lesson
+    title: What a real cluster adds
+    body: |
+      With Argo CD running, `kubectl apply -n argocd -f guestbook-app.yaml` registers the app, then `argocd app get guestbook` or the UI shows **Synced** and **Healthy** (or **OutOfSync**).
+
+      Turn on prune with care: a path emptied by mistake would delete live resources. Argo CD refuses an empty source unless `allowEmpty: true`.

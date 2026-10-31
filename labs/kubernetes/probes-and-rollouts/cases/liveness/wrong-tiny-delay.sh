@@ -1,0 +1,1 @@
+sed -i 's|^              containerPort: 80$|&\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 80\n            initialDelaySeconds: 1\n            periodSeconds: 10|' app/deployment.yaml

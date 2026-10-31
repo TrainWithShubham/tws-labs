@@ -1,0 +1,1 @@
+printf '%s\n' 'import argparse' '' 'parser = argparse.ArgumentParser()' 'parser.add_argument("config")' 'parser.add_argument("--env", choices=["dev", "staging", "prod"], required=True)' 'args = parser.parse_args()' 'print("file=%s env=%s" % (args.config, args.env))' > config_cli.py

@@ -1,0 +1,2 @@
+#!/bin/bash
+printf '%s\n' 'apiVersion: argoproj.io/v1beta1' 'kind: Application' 'metadata:' '  name: checkout' '  namespace: default' 'spec:' '  project: default' '  source:' '    repoURL: https://github.com/example-org/checkout-config.git' '    path: overlays/staging' '    targetRevision: main' '  destination:' '    server: https://kubernetes.default.svc' '    namespace: checkout' '  syncPolicy:' '    automated:' '      prune: false' '      selfHeal: false' '    syncOptions:' '      - CreateNamespace=true' > checkout-app.yaml

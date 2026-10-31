@@ -1,0 +1,108 @@
+title: Probes and rolling updates
+level: intermediate
+minutes: 14
+summary: Add readiness, liveness and startup probes, then tune a rolling update and resource limits.
+links:
+  - title: Configure probes
+    url: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+resources:
+  - title: Liveness, readiness and startup probes
+    url: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    desc: Probe types, timing fields and what each probe does to a Pod.
+  - title: "Deployments: rolling update"
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment
+    desc: maxSurge, maxUnavailable and how a rollout proceeds.
+  - title: Resource management for containers
+    url: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    desc: Requests, limits and their units.
+steps:
+  - id: intro
+    type: lesson
+    title: Running is not the same as healthy
+    body: |
+      This lab grades `app/deployment.yaml` offline. There is no cluster and no `kubectl`, so nothing is applied: the checks parse your YAML.
+
+      A container can be running and still broken. **Probes** let the kubelet ask. Next you will add three, then control how a rollout replaces Pods and how much CPU and memory they may use.
+  - id: readiness-lesson
+    type: lesson
+    title: Readiness, liveness, startup
+    body: |
+      **Readiness**: can this Pod take traffic now? If it fails, the Pod is removed from Service endpoints but not restarted. Rollouts wait for it.
+
+      **Liveness**: is the process stuck? If it fails, the kubelet restarts the container. Keep it cheap and never tie it to a database.
+
+      **Startup**: runs first. Until it succeeds, the other two are held off, which protects slow starters from being killed.
+  - id: readiness
+    type: task
+    title: Add a readiness probe
+    body: |
+      In `app/deployment.yaml`, give the `web` container a `readinessProbe` that does an HTTP GET on path `/ready` at the container's port (80, or its name `http`).
+
+      Check every 5 seconds: set `periodSeconds: 5`.
+    hint:
+      - "Probes belong to the container, next to image and ports, not to the Pod spec."
+      - "The probe has an httpGet block (path, port) and timing fields beside it."
+      - "periodSeconds sits at the same level as httpGet."
+    success: The Deployment now waits for /ready before sending traffic to a Pod.
+  - id: liveness
+    type: task
+    title: Add a liveness probe
+    body: |
+      Add a `livenessProbe` to the same container: HTTP GET `/healthz` on port 80 (or `http`).
+
+      Give it room to start: `initialDelaySeconds: 15` and `periodSeconds: 10`. A liveness probe that fires too early restarts a healthy app in a loop.
+    hint:
+      - "Same shape as the readiness probe, different path."
+      - "Without an initial delay the first probe runs immediately after the container starts."
+    success: A stuck container will now be restarted, and a slow one gets time to boot.
+  - id: startup
+    type: task
+    title: Protect a slow starter
+    body: |
+      This app can take a minute to boot. Add a `startupProbe`: HTTP GET `/healthz` on port 80 (or `http`).
+
+      The kubelet gives up after `failureThreshold` x `periodSeconds` seconds. Allow **at least 60 seconds**, for example `periodSeconds: 5` with `failureThreshold: 30`.
+    hint:
+      - "The startup probe is another block on the container, like the other two."
+      - "Multiply the two fields: that product is the time budget."
+    success: The app now has a generous start-up window before liveness takes over.
+  - id: rollout-lesson
+    type: lesson
+    title: How a rolling update moves
+    body: |
+      A rolling update brings up new Pods and retires old ones in steps. `maxSurge` is how many extra Pods may exist above `replicas`; `maxUnavailable` is how many may be missing. Both default to 25%.
+
+      The two can't both be 0 (no way to move). `maxUnavailable: 0` with `maxSurge: 1` never drops capacity: a new Pod must become Ready before an old one goes.
+  - id: rollout-strategy
+    type: task
+    title: Roll out without losing capacity
+    body: |
+      Under the Deployment's `spec`, add a `strategy` of type `RollingUpdate` that never removes a Pod before its replacement is Ready: `maxUnavailable` 0 and a `maxSurge` above zero (use 1).
+    hint:
+      - "strategy is a sibling of replicas and selector; rollingUpdate is nested inside it."
+      - "Zero unavailable means the surge must be at least one, or the rollout cannot move."
+    success: Updates now add a new Pod first and only then retire an old one.
+  - id: resources
+    type: task
+    title: Set requests and limits
+    body: |
+      On the `web` container add `resources` with:
+
+      - requests: `cpu: 100m`, `memory: 128Mi`
+      - limits: `cpu: 500m`, `memory: 256Mi`
+
+      Requests are what the scheduler reserves; limits are the ceiling.
+    hint:
+      - "resources has two children, requests and limits, each a map of cpu and memory."
+      - "Units matter: memory in Mi is mebibytes, and a lowercase m means milli, not mega."
+    success: The scheduler now knows what the Pod needs, and the node knows its ceiling.
+  - id: wrap-up
+    type: lesson
+    title: Checklist for a safe Deployment
+    body: |
+      - Readiness decides who gets traffic; liveness decides who gets restarted.
+      - Add a startup probe, or a delay, for slow starters.
+      - Pick maxSurge and maxUnavailable on purpose.
+      - Always set memory and CPU requests; set limits you can justify.
+
+      Probes only help if the endpoint tells the truth, so test it for real.
