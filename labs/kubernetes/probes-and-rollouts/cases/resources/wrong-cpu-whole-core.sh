@@ -1,0 +1,1 @@
+sed -i 's|^              containerPort: 80$|&\n          resources:\n            requests:\n              cpu: 100\n              memory: 128Mi\n            limits:\n              cpu: 500\n              memory: 256Mi|' app/deployment.yaml

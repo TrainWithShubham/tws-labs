@@ -1,0 +1,1 @@
+printf '%s\n' '# the guestbook app' 'kind: Application' 'apiVersion: argoproj.io/v1alpha1' 'metadata:' '  namespace: argocd' '  labels:' '    team: demo' '  name: guestbook' 'spec:' '  source:' '    targetRevision: v1.0.0' '    path: guestbook' '    repoURL: https://github.com/argoproj/argocd-example-apps.git' '  project: default' > guestbook-app.yaml

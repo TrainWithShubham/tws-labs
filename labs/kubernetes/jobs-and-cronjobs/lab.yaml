@@ -1,0 +1,117 @@
+title: Jobs and CronJobs
+level: beginner
+minutes: 12
+summary: Write a Job that runs to completion, then a CronJob that creates one on a schedule.
+links:
+  - title: Kubernetes Jobs
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/job/
+resources:
+  - title: Jobs
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/job/
+    desc: Completions, parallelism, retries and restart policy in the official documentation.
+  - title: CronJob
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+    desc: Schedule syntax, concurrency policy and history limits.
+steps:
+  - id: intro
+    type: lesson
+    title: Work that finishes
+    body: |
+      There is no cluster in this lab: you write YAML in `batch/` and the checks read it.
+
+      A Deployment keeps Pods running forever. A **Job** runs Pods until a set number of them succeed, then stops: migrations, reports, cleanups. A **CronJob** creates a Job on a schedule.
+
+      Both use `apiVersion: batch/v1`, and the Pod template inside must say what happens when a container exits.
+  - id: write-job
+    type: task
+    title: Write a Job
+    body: |
+      Create `batch/job.yaml`: a Job named `report` (`apiVersion: batch/v1`, `kind: Job`).
+
+      Under `spec.template.spec` add one container named `report` with image `busybox:1.36` and a command, and set a `restartPolicy` that a Job allows.
+    hint:
+      - "The Pod spec of a Job is at spec.template.spec, like a Deployment's template."
+      - "A Job's restartPolicy can only be OnFailure or Never."
+    success: Correct. That is a valid Job with an allowed restart policy.
+  - id: scale-lesson
+    type: lesson
+    title: Completions, parallelism, retries
+    body: |
+      - `completions`: how many Pods must succeed (default 1).
+      - `parallelism`: how many may run at once (default 1).
+      - `backoffLimit`: how many failed retries before the Job is marked failed (default 6).
+
+      These are numbers under `spec`, next to `template`. With `completions: 6` and `parallelism: 2` the Job runs in three waves of two.
+  - id: completions-parallelism
+    type: task
+    title: Run six tasks, two at a time
+    body: |
+      In `batch/job.yaml`, under `spec`, set `completions: 6`, `parallelism: 2` and `backoffLimit: 3`.
+    hint:
+      - "These three fields sit directly under spec, at the same level as template."
+      - "Values are plain numbers, without quotes."
+    success: Correct. Six completions, two at a time, three retries.
+  - id: restart-lesson
+    type: lesson
+    title: Why Always is invalid
+    body: |
+      A Pod normally has `restartPolicy: Always`, which restarts a container even after it exits cleanly. A Job wants the opposite: stop when the work succeeds.
+
+      So a Job only accepts `OnFailure` (restart the container in the same Pod) or `Never` (start a new Pod on failure). The value is case-sensitive.
+  - id: fix-restart-policy
+    type: task
+    title: Fix a rejected Job
+    body: |
+      `batch/cleanup-job.yaml` would be rejected by the API server. Fix it so it is a valid Job, keeping its name and container.
+    hint:
+      - "Look at the restartPolicy under spec.template.spec."
+      - "Which two values does a Job allow?"
+    success: Correct. A Job restarts only on failure, or not at all.
+  - id: cron-lesson
+    type: lesson
+    title: Cron schedules
+    body: |
+      A CronJob's `schedule` has five fields: minute, hour, day of month, month, day of week.
+
+      - `*` is every value, `a,b` a list, `a-b` a range, `*/n` every nth.
+      - Days of week run 0 to 6 from Sunday; 1-5 is Monday to Friday.
+      - Quote the value in YAML, because it starts with `*`.
+
+      `*/15 * * * *` and `0,15,30,45 * * * *` mean the same.
+  - id: write-cronjob
+    type: task
+    title: Write a CronJob
+    body: |
+      Create `batch/cronjob.yaml`: a CronJob named `nightly-report` (`batch/v1`) that runs every 15 minutes.
+
+      Put the Job inside `spec.jobTemplate`: a container with a name and image, and a restartPolicy a Job allows.
+    hint:
+      - "The Pod spec sits at spec.jobTemplate.spec.template.spec."
+      - "A schedule is five space-separated fields; every 15 minutes is a step in the minute field."
+    success: Correct. The CronJob wraps a valid Job and fires every 15 minutes.
+  - id: fix-schedule
+    type: task
+    title: Repair a broken schedule
+    body: |
+      `batch/backup-cronjob.yaml` has an invalid `schedule`. It should run at 02:30 from Monday to Friday. Fix the schedule.
+    hint:
+      - "Count the fields: the schedule is missing one."
+      - "The fields are minute, hour, day of month, month, day of week."
+    success: Correct. A valid five-field schedule for 02:30 on weekdays.
+  - id: history-policy
+    type: task
+    title: Set concurrency and history
+    body: |
+      In `batch/cronjob.yaml`, directly under `spec`, set `concurrencyPolicy: Forbid` (skip a run while the previous Job is still going), `successfulJobsHistoryLimit: 2` and `failedJobsHistoryLimit: 1`.
+    hint:
+      - "These are fields of the CronJob spec, next to schedule and jobTemplate."
+      - "concurrencyPolicy accepts Allow, Forbid or Replace, with a capital first letter."
+    success: Correct. No overlapping runs, and only a few finished Jobs are kept.
+  - id: wrap-up
+    type: lesson
+    title: Jobs recap
+    body: |
+      - A Job runs Pods to completion; `restartPolicy` must be `OnFailure` or `Never`.
+      - `completions`, `parallelism` and `backoffLimit` shape how the work runs and retries.
+      - A CronJob creates Jobs from `jobTemplate` on a five-field `schedule`.
+      - `concurrencyPolicy` and the history limits keep runs from piling up.

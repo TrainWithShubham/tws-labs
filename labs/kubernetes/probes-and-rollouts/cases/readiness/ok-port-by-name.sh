@@ -1,0 +1,1 @@
+sed -i 's|^              containerPort: 80$|&\n          readinessProbe:\n            httpGet:\n              path: /ready\n              port: http\n            periodSeconds: 10\n            failureThreshold: 3|' app/deployment.yaml

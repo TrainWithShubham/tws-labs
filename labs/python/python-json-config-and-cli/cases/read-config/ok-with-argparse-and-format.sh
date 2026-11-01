@@ -1,0 +1,1 @@
+printf '%s\n' 'import argparse' 'import json' '' 'p = argparse.ArgumentParser()' 'p.add_argument("path")' 'a = p.parse_args()' 'cfg = json.load(open(a.path))' 'n = len(cfg["defaults"])' 'print(f"{cfg['\''app'\'']}: {n} default settings")' > read_config.py

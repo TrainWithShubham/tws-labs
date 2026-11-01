@@ -1,0 +1,112 @@
+title: Shell functions and arguments
+level: beginner
+minutes: 15
+summary: Write bash scripts with functions, arguments, default values, usage messages and exit codes.
+steps:
+  - id: intro
+    type: lesson
+    title: Scripts that take input
+    body: |
+      A real script is called with different inputs, so it reads **positional parameters**: `$1` is the first argument, `$#` is how many there are, and `"$@"` is all of them, each kept whole.
+
+      A **function** groups commands under a name:
+
+      ```
+      say() { echo "Hi, $1"; }
+      say Ada
+      ```
+
+      Inside a function, `$1` is the function's own first argument, not the script's. Always quote `"$1"` so a value with spaces stays one word.
+
+      Every task is graded by **running your script** with inputs you have not seen. Run scripts with `bash name.sh args`.
+  - id: banner
+    type: task
+    title: A function that prints a banner
+    body: |
+      Create `banner.sh` with a function named `banner` that prints `== <text> ==` for the text it is given. The script calls it with its own first argument, so `bash banner.sh release` prints `== release ==`.
+    hint:
+      - "Define the function first, then call it on a later line."
+      - "Inside the function, $1 is what the function was called with. Call it as: banner \"$1\""
+      - "name() { echo \"== $1 ==\"; }  then  banner \"$1\"  on its own line."
+    success: Correct. Your function turns its argument into a banner.
+  - id: arguments
+    type: task
+    title: Count and list the arguments
+    body: |
+      Create `args.sh` that first prints `count=<number of arguments>`, then prints each argument on its own line as `- <argument>`. An argument with spaces in it stays one line.
+
+      ```
+      $ bash args.sh one "two words"
+      count=2
+      - one
+      - two words
+      ```
+    hint:
+      - "Two special parameters do the work: one counts the arguments, one holds all of them."
+      - "Loop with a for over the quoted all-arguments parameter, so spaces survive."
+      - "echo \"count=$#\"  then  for a in \"$@\"; do echo \"- $a\"; done"
+    success: Correct. You counted the arguments and kept each one whole.
+  - id: defaults-lesson
+    type: lesson
+    title: Default values
+    body: |
+      `${NAME:-fallback}` expands to `$NAME`, or to `fallback` when `$NAME` is unset **or empty**.
+
+      ```
+      who="${1:-friend}"
+      ```
+
+      With the colon, an empty argument (`bash s.sh ""`) also gets the fallback. Without it (`${1-friend}`) only a missing argument does. It works for environment variables too: `${GREETING:-Hello}`.
+  - id: defaults
+    type: task
+    title: Fall back to defaults
+    body: |
+      Create `welcome.sh` that prints `<greeting>, <name>!`. The name is the first argument, default `friend`. The greeting is the environment variable `GREETING`, default `Hello`.
+
+      `bash welcome.sh` prints `Hello, friend!` and `GREETING=Hi bash welcome.sh Bob` prints `Hi, Bob!`. An empty name also falls back to `friend`.
+    hint:
+      - "Parameter expansion can supply a value when a variable is missing."
+      - "The form is ${VAR:-default}. The colon also covers an empty value."
+      - "name=\"${1:-friend}\" and greeting=\"${GREETING:-Hello}\", then echo them."
+    success: Correct. Missing and empty input both fall back.
+  - id: usage
+    type: task
+    title: Check the argument count
+    body: |
+      Create `copy.sh` that copies the file in its first argument to the path in its second. When it is not given exactly two arguments, it prints a line starting with `Usage:` and exits with a non-zero status without copying anything.
+    hint:
+      - "Compare the argument count with the number you need, before doing the real work."
+      - "Use if [ \"$#\" -ne 2 ]; then ... fi, and print the usage line to stderr with >&2."
+      - "Inside the if: echo \"Usage: copy.sh SOURCE DEST\" >&2  and  exit 1.  After it: cp -- \"$1\" \"$2\""
+    success: Correct. A wrong call is refused with a usage line.
+  - id: exit-lesson
+    type: lesson
+    title: Exit codes
+    body: |
+      Every command ends with a status: `0` means success, anything else means failure. `$?` holds the last one, and `if` tests it.
+
+      - A function ends with `return N` and the caller reads `$?`.
+      - A script ends with `exit N`, and its caller (a shell, cron, CI) reads that number.
+
+      `[ -s file ]` succeeds when the file exists and is not empty, so `if has_content "$f"; then` works when `has_content` wraps it.
+  - id: exit-codes
+    type: task
+    title: Report with an exit code
+    body: |
+      Create `nonempty.sh` that takes a path. If the file exists and is not empty, print `ok` and exit 0. Otherwise print `empty or missing` and exit with status `3`.
+    hint:
+      - "A function can return a status that the caller tests in an if."
+      - "[ -s \"$1\" ] is true for a non-empty file; the script's own exit decides what its caller sees."
+      - "has_content() { [ -s \"$1\" ]; }  then  if has_content \"$1\"; then echo ok; exit 0; fi  and finally echo and exit 3."
+    success: Correct. Your script now speaks in exit codes.
+  - id: wrap-up
+    type: lesson
+    title: What you built
+    body: |
+      - **Functions** with `name() { ...; }`, using their own `$1`
+      - **`$#` and `"$@"`** to count and loop over arguments safely
+      - **`${VAR:-default}`** for missing or empty input
+      - **A usage check** that refuses a bad call before doing work
+      - **`exit N` and `return N`** so callers can tell success from failure
+
+      Next, try `set -u` to catch unset variables, and `getopts` for `-v`-style options.

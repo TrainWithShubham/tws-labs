@@ -43,7 +43,8 @@
           "status": "live",
           "relevance": 80,
           "labs": [
-            "linux-fundamentals/shell-scripting-basics"
+            "linux-fundamentals/shell-scripting-basics",
+            "linux-fundamentals/shell-functions-and-arguments"
           ],
           "subtopics": [
             "Variables, arguments, conditions, loops",
@@ -300,16 +301,19 @@
         {
           "id": "helm",
           "title": "Helm",
-          "status": "later",
+          "status": "live",
           "relevance": 90,
           "subtopics": [
             "Charts, values, releases"
+          ],
+          "labs": [
+            "helm/chart-anatomy"
           ]
         },
         {
           "id": "gitops",
           "title": "GitOps with ArgoCD",
-          "status": "next",
+          "status": "live",
           "relevance": 80,
           "subtopics": [
             "GitOps patterns",
@@ -318,7 +322,10 @@
           "video": {
             "title": "ArgoCD In One Shot",
             "url": "https://youtu.be/B0bTEeM34DU"
-          }
+          },
+          "labs": [
+            "gitops/argocd-application"
+          ]
         }
       ],
       "capstones": [
@@ -354,7 +361,8 @@
             "url": "https://www.youtube.com/live/9ErAlY2Ifw0"
           },
           "labs": [
-            "python/python-file-and-log-automation"
+            "python/python-file-and-log-automation",
+            "python/python-json-config-and-cli"
           ]
         },
         {

@@ -1,0 +1,80 @@
+title: Rebase and cherry-pick
+level: intermediate
+minutes: 15
+summary: Replay a branch onto a newer main, copy one commit across branches, and squash WIP commits.
+steps:
+  - id: intro
+    type: lesson
+    title: Rewriting history on purpose
+    body: |
+      Merging joins two histories with a merge commit. **`git rebase main`** instead replays your branch's commits on top of the current `main`, so history stays a straight line. The replayed commits are new commits with new hashes.
+
+      **`git cherry-pick <commit>`** copies one commit onto the branch you are on.
+
+      Rebase only commits you have not shared. Never type a message in an editor in this lab: always pass `-m`.
+
+      A repository `proj` is waiting in your home directory, and you start on the `feature` branch. Use `git log --oneline --graph --all` to look at it.
+  - id: rebase-feature
+    type: task
+    title: Rebase feature onto main
+    body: |
+      `main` has moved on since `feature` was started. In `proj`, rebase `feature` onto `main` so it contains main's newest commit and still has its two login commits, with no merge commit.
+    hint:
+      - "You are on feature. Replay its commits on top of the other branch."
+      - "git rebase takes the branch to build on as its argument."
+      - "Run git rebase main while on feature."
+    success: Correct. Feature now sits on top of main in a straight line.
+  - id: fast-forward-main
+    type: task
+    title: Deliver feature with a fast-forward
+    body: |
+      Switch to `main` and bring in `feature` so that `main` ends exactly at feature's last commit and the history has no merge commit.
+    hint:
+      - "After a rebase, main can simply move forward to feature."
+      - "git merge can move the branch pointer without creating a merge commit."
+      - "git switch main, then git merge --ff-only feature."
+    success: Correct. Main moved forward, and the history is still linear.
+  - id: pick-lesson
+    type: lesson
+    title: Copying a single commit
+    body: |
+      Branch `hotfix` holds three commits, but only one of them, `Fix crash on empty cart`, must go to the `release` branch. Merging `hotfix` would bring all three.
+
+      Find the commit with `git log --oneline hotfix`, switch to the target branch, then run `git cherry-pick <hash>`. Git applies that commit's diff as a new commit with the same message.
+  - id: cherry-pick-fix
+    type: task
+    title: Cherry-pick the crash fix
+    body: |
+      Switch to `release` and copy only the commit `Fix crash on empty cart` from `hotfix` onto it. The other `hotfix` commits must not come along.
+    hint:
+      - "Look up the commit on hotfix first."
+      - "Switch to release, then cherry-pick by the commit hash you found."
+      - "git log --oneline hotfix shows the hash; then git cherry-pick <hash> on release."
+    success: Correct. Only the crash fix landed on release.
+  - id: squash-lesson
+    type: lesson
+    title: Squash before sharing
+    body: |
+      Branch `search` has three commits: a real one followed by two called `WIP`. Before sharing, you would rather show one clean commit.
+
+      `git reset --soft <commit>` moves the branch back but keeps all the changes staged. A single `git commit -m "..."` then records them as one commit. `git merge-base main search` prints the commit where `search` split from `main`.
+  - id: squash-wip
+    type: task
+    title: Squash the search commits
+    body: |
+      On `search`, turn its three commits into a single commit with the message `Add search`. The files must be unchanged, and the branch stays on top of where it started.
+    hint:
+      - "Move the branch back without losing the changes."
+      - "Use a soft reset to the point where search began, then commit once."
+      - "git reset --soft HEAD~3, then git commit -m \"Add search\"."
+    success: Correct. Three commits became one clean commit.
+  - id: wrap-up
+    type: lesson
+    title: Recap
+    body: |
+      - **`git rebase main`** replays your commits onto main for a linear history.
+      - **`git merge --ff-only`** delivers it without a merge commit.
+      - **`git cherry-pick`** copies one commit to another branch.
+      - **`git reset --soft` + `git commit`** squashes commits without an editor.
+
+      If a rebase stops on a conflict, fix the files, `git add` them and run `git rebase --continue`, or run `git rebase --abort` to go back.

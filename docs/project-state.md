@@ -1,4 +1,4 @@
-# Project state (as of 1.3.0, 2026-10-21)
+# Project state (as of 1.3.0 plus unreleased labs, 2026-10-31)
 
 A hand-off note: what exists, how it is proven, what is decided, and what is left. Update it when you release.
 
@@ -33,3 +33,6 @@ Gotchas learned the hard way:
 - **Not fixed, hosted/EB only** (from the 2026-10-21 whole-repo review): the OIDC trust policy always includes the name-only subject (`deploy/infra/iam.tf`), the ALB closes idle WebSockets after 60 s (no pings), no per-session limit on `/lab/check`, and `cases/*/ok-*.sh` stay readable in the image.
 - **Grading Terraform**: labs check parsed HCL with `hcl_strip`/`hcl_block`/`hcl_attr` in `labs/lib.sh` (comments dropped, values read inside the right block), not greps.
 - **Backlog for the platform**: a web-preview tab and editor tab, embeds, completion certificates, an org kit for private lab folders (each needs its own plan and security review).
+
+## Catalog growth (unreleased)
+The catalog grew by ten labs after 1.3.0: Kubernetes storage (#82) and four more Kubernetes labs, new Helm and GitOps tracks, Git rebase and cherry-pick, shell functions and arguments, and Python JSON config and CLI. The plan for what comes next is in `docs/lab-plan.md`. #25 and #29 were closed on 2026-10-31 after ten days without a reply (the ideas stay welcome; #28 stays open).

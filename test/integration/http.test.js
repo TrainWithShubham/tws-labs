@@ -52,11 +52,11 @@ test('home: a calm map - live topics link to labs, next topics are plain, later 
     assert.match(html, /<svg viewBox="0 0 560 428" role="img" aria-label="Three orbits/);
     assert.deepEqual([...html.matchAll(/<div class="col line-(\w+) reveal">/g)].map((m) => m[1]), ['devops', 'cloud', 'ai']);
     // live topics are links: one lab -> straight to it, several labs -> the track page
-    for (const href of ['/t/linux-fundamentals', '/lab/linux-fundamentals/shell-scripting-basics', '/t/git-basics', '/t/docker', '/t/networking', '/t/github-actions', '/lab/aws/elastic-beanstalk-cluster-mode']) assert.ok(html.includes(`<a href="${href}"`), href);
+    for (const href of ['/t/linux-fundamentals', '/t/git-basics', '/t/docker', '/t/networking', '/t/github-actions', '/lab/aws/elastic-beanstalk-cluster-mode']) assert.ok(html.includes(`<a href="${href}"`), href);
     // next topics are not links; later topics are not on the home page at all
     const dim = [...html.matchAll(/<li data-status="(next|building)" class="dim">(.*?)<\/li>/g)];
-    assert.ok(dim.length >= 4 && dim.every((m) => !m[2].includes('<a ')));
-    for (const hidden of ['Ansible', 'Jenkins', 'OpenTelemetry', 'Helm', 'AIOps']) assert.ok(!html.includes(hidden), `${hidden} stays on the roadmap page`);
+    assert.ok(dim.length >= 3 && dim.every((m) => !m[2].includes('<a ')));
+    for (const hidden of ['Ansible', 'Jenkins', 'OpenTelemetry', 'AIOps']) assert.ok(!html.includes(hidden), `${hidden} stays on the roadmap page`);
     for (const col of html.split('<div class="col ').slice(1)) assert.ok((col.match(/<li data-status=/g) || []).length <= 7, 'each route keeps to seven stations');
     assert.match(html, /6 more on the roadmap/);
     const devopsLine = loadRoadmap(loadCatalog(LABS)).domains.find((d) => d.id === 'devops').topics.filter((t) => t.status !== 'later').length;
@@ -155,9 +155,10 @@ test('the lab page carries its line, a breadcrumb, the progress route with the r
     assert.match(html, /<span class="jrocket" aria-hidden="true"><svg class="rk /);
     const data = JSON.parse(html.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
     assert.deepEqual(data.next, { href: '/lab/linux-fundamentals/files', title: 'Creating and managing files' });
-    const actions = loadCatalog(LABS).tracks.find((t) => t.id === 'github-actions').labs;
-    const lastId = actions[actions.length - 1].id; // derived, so adding a lab to the track needs no test edit
-    const last = JSON.parse((await get(app, '/lab/github-actions/' + lastId)).body.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
+    const tracks = loadCatalog(LABS).tracks;
+    const endTrack = tracks[tracks.length - 1]; // the end of the catalog: derived, so adding a lab or track needs no test edit
+    const lastId = endTrack.labs[endTrack.labs.length - 1].id;
+    const last = JSON.parse((await get(app, '/lab/' + endTrack.id + '/' + lastId)).body.match(/id="lab-data" type="application\/json">(.*?)<\/script>/s)[1]);
     assert.equal(last.next, null, 'nothing follows the last lab');
     assert.match((await get(app, '/lab/aws/elastic-beanstalk-cluster-mode')).body, /class="lab-shell line-cloud"/);
   } finally { app.stop(); }

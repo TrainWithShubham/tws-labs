@@ -1,0 +1,1 @@
+[ -f "$LAB_HOME/guestbook-app.yaml" ] || printf '%s\n' 'apiVersion: argoproj.io/v1alpha1' 'kind: Application' 'metadata:' '  name: guestbook' '  namespace: argocd' 'spec:' '  project: default' '  source:' '    repoURL: https://github.com/argoproj/argocd-example-apps.git' '    path: guestbook' '    targetRevision: HEAD' > "$LAB_HOME/guestbook-app.yaml"

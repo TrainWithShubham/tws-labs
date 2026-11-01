@@ -1,0 +1,96 @@
+title: Labels, selectors and ReplicaSets
+level: beginner
+minutes: 12
+summary: Label Pods, write selectors that really match, and see what a ReplicaSet keeps running.
+links:
+  - title: Labels and selectors
+    url: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+resources:
+  - title: ReplicaSet
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+    desc: How a ReplicaSet counts, adopts and replaces Pods.
+  - title: Labels and selectors
+    url: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+    desc: Equality-based and set-based selectors, and the label syntax rules.
+steps:
+  - id: intro
+    type: lesson
+    title: Objects find each other by label
+    body: |
+      This lab grades YAML files offline. There is no cluster and no `kubectl` here, so nothing is applied: you edit the manifests in `app/` and the checks read them.
+
+      A **label** is a key/value tag on an object. A **selector** picks objects by their tags. Services, Deployments and ReplicaSets all find Pods this way, never by name. Many "it deployed but nothing happens" bugs are a selector that matches nothing.
+  - id: label-pod
+    type: task
+    title: Label a Pod
+    body: |
+      `app/pod.yaml` is a Pod with no labels, so nothing can select it.
+
+      Under `metadata`, add the labels `app: web` and `env: prod`.
+    hint:
+      - "Labels live in the Pod's metadata, next to its name."
+      - "It is a map: a labels key whose children are key: value pairs."
+    success: The Pod now carries app=web and env=prod, so a selector can find it.
+  - id: fix-mismatch
+    type: task
+    title: Find the selector mismatch
+    body: |
+      Applying `app/deployment.yaml` fails with:
+
+      ```
+      selector does not match template labels
+      ```
+
+      A Deployment only manages Pods whose labels satisfy `spec.selector.matchLabels`. Make them agree. The Service and the rest of the system look for `app: web`, so the Pods must carry exactly that label.
+    hint:
+      - "Compare matchLabels under selector with the labels under template.metadata."
+      - "The two app values differ. The Pods are the ones that must say app: web."
+      - "Extra labels on the template are fine; the selector only has to be a subset of them."
+    success: The Deployment can now find the Pods it creates.
+  - id: service-selector
+    type: task
+    title: Point a Service at the Pods
+    body: |
+      `app/service.yaml` has ports but no `selector`, so it routes to nothing.
+
+      Add a `spec.selector` that picks the Deployment's Pods (the template label is `app: web`; the template also has `tier: frontend`).
+    hint:
+      - "A Service selector is a plain map of labels under spec, not a matchLabels block."
+      - "Use a label the Pod template really carries, with the same spelling."
+    success: The Service now selects the web Pods.
+  - id: replicaset-lesson
+    type: lesson
+    title: What a ReplicaSet keeps running
+    body: |
+      A **ReplicaSet** keeps N Pods that match its selector running. It counts by label, not by who created the Pod. Matching Pods with no other owner are adopted, and extras above N are deleted.
+
+      A Deployment manages ReplicaSets for you and swaps them on updates, so you rarely write one by hand. `app/replicaset.yaml` is here only to show the mechanics.
+  - id: scale-replicaset
+    type: task
+    title: Keep three Pods running
+    body: |
+      `app/replicaset.yaml` keeps one `worker` Pod. Change it to keep **three**, without breaking the match between its selector and template labels.
+    hint:
+      - "The desired count is a field directly under spec."
+      - "It must be a number, not a quoted string."
+    success: The ReplicaSet will now keep three worker Pods alive.
+  - id: stray-pod
+    type: task
+    title: Set a Pod free
+    body: |
+      `app/stray-pod.yaml` is a debug Pod that carries `app: worker`. With `app/replicaset.yaml` applied, the ReplicaSet would adopt it and count it as a replica, then delete one real worker.
+
+      Edit the debug Pod so the ReplicaSet no longer selects it. Keep the Pod a Pod.
+    hint:
+      - "Look at which label the ReplicaSet selector uses."
+      - "Change or remove that one label on the Pod; renaming the Pod does nothing."
+    success: The debug Pod is no longer matched by the ReplicaSet.
+  - id: wrap-up
+    type: lesson
+    title: A routine for selectors
+    body: |
+      1. Read the selector, then read the labels it should match.
+      2. Spelling and case count: `web` and `Web` differ.
+      3. Selector and template must agree, or the Deployment is rejected.
+      4. A Service with a wrong selector applies fine and routes to nothing.
+      5. Matching Pods can be adopted by a ReplicaSet, so label debug Pods carefully.

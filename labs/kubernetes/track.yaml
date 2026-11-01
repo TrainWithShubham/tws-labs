@@ -1,12 +1,16 @@
 order: 3
 title: Kubernetes
-description: Master Kubernetes manifest craft - Pods, Deployments, Services, ConfigMaps and Secrets, and fixing manifests that do not work.
+description: Master Kubernetes manifest craft - Pods, Deployments, labels and selectors, Services, Ingress, probes and rollouts, Jobs, ConfigMaps and Secrets, storage, and fixing manifests that do not work.
 labs:
   - pod-anatomy
   - services
   - configs-and-secrets
   - fix-the-manifest
   - persistent-storage
+  - labels-and-selectors
+  - probes-and-rollouts
+  - ingress
+  - jobs-and-cronjobs
 video:
   title: Kubernetes In One Shot
   url: https://youtu.be/W04brGNgxN4

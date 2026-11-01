@@ -1,0 +1,107 @@
+title: Routing traffic with Ingress
+level: intermediate
+minutes: 12
+summary: Write an Ingress with host and path rules, a TLS section, and backends that match real Services.
+links:
+  - title: Kubernetes Ingress
+    url: https://kubernetes.io/docs/concepts/services-networking/ingress/
+resources:
+  - title: Ingress concepts
+    url: https://kubernetes.io/docs/concepts/services-networking/ingress/
+    desc: Rules, path types, TLS and Ingress classes in the official documentation.
+  - title: Ingress API reference
+    url: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/ingress-v1/
+    desc: Every field of the networking.k8s.io/v1 Ingress object.
+steps:
+  - id: intro
+    type: lesson
+    title: One entry point for many Services
+    body: |
+      There is no cluster in this lab: you write YAML and the checks read it. An Ingress only does something in a real cluster that runs an **ingress controller**, which watches Ingress objects and routes the traffic.
+
+      An Ingress maps a **host** and a **path** to a Service, so one address can serve many apps. In `app/` you already have two Services to point at: `web` (port 80) and `api` (port 8080). Create `app/ingress.yaml` next.
+  - id: basic-ingress
+    type: task
+    title: Write the first rule
+    body: |
+      Create `app/ingress.yaml` with `apiVersion: networking.k8s.io/v1` and `kind: Ingress`, named `shop`.
+
+      Set `spec.ingressClassName: public`. Add one rule for host `shop.example.com`: path `/` with `pathType: Prefix`, sent to Service `web` on port 80.
+    hint:
+      - "A rule lives under spec.rules; the paths sit under http.paths."
+      - "A backend is backend.service with a name and a port, and the port has a number."
+      - "Open app/web-service.yaml to confirm the Service name and port."
+    success: Correct. Host, path and backend are wired to the web Service.
+  - id: path-types
+    type: lesson
+    title: Prefix and Exact
+    body: |
+      Every path needs a `pathType`.
+
+      - `Prefix` matches by path segments: `/api` matches `/api` and `/api/users`, but not `/apiary`.
+      - `Exact` matches only that URL: `/status` does not match `/status/`.
+      - When several paths match, an `Exact` match beats `Prefix`, and among `Prefix` matches the longest path wins.
+  - id: api-path
+    type: task
+    title: Route /api to the API
+    body: |
+      In `app/ingress.yaml`, keep the `/` rule and add a second path under the same host: `/api` with `pathType: Prefix`, sent to Service `api`.
+
+      Use the port that `app/api-service.yaml` exposes.
+    hint:
+      - "Add another item to the same paths list, next to the / path."
+      - "The api Service does not listen on 80; read app/api-service.yaml."
+    success: Correct. Requests under /api now reach the api Service.
+  - id: exact-path
+    type: task
+    title: Add an exact path
+    body: |
+      Add a third path under the same host: `/status` with `pathType: Exact`, sent to Service `api` on its port.
+    hint:
+      - "Exact is one of the three allowed pathType values."
+      - "Same backend shape as the /api path, different path and pathType."
+    success: Correct. Only the exact URL /status takes this rule.
+  - id: tls-lesson
+    type: lesson
+    title: TLS in an Ingress
+    body: |
+      The `spec.tls` list names the hosts that use HTTPS and a **Secret** holding the certificate (`tls.crt`) and key (`tls.key`). The Secret must be in the same namespace as the Ingress, and its type is `kubernetes.io/tls`.
+
+      `app/tls-secret.yaml` is a Secret with placeholder data. Reference it by its name; the Ingress never contains the certificate itself.
+  - id: tls
+    type: task
+    title: Serve shop.example.com over TLS
+    body: |
+      Add a `tls` list under `spec` in `app/ingress.yaml`. One entry should list `shop.example.com` under `hosts` and set `secretName` to the name of the Secret in `app/tls-secret.yaml`.
+    hint:
+      - "tls is a list at the same level as ingressClassName and rules."
+      - "Each entry has hosts (a list) and secretName (a string)."
+      - "Read metadata.name in app/tls-secret.yaml."
+    success: Correct. The host now terminates TLS with that Secret.
+  - id: debug-lesson
+    type: lesson
+    title: A backend that does not exist
+    body: |
+      The Ingress API accepts a backend that names a missing Service or a port the Service does not expose. The controller then answers with an error such as 503, and the YAML still looks fine.
+
+      Always compare each backend with the Services: the name must match, and the port must be a port the Service lists (by number, or by name).
+  - id: fix-backend
+    type: task
+    title: Repair the blog Ingress
+    body: |
+      `app/blog-ingress.yaml` routes `/` to the web Service and `/api` to the API, but two backends point at things that do not exist.
+
+      Compare it with `app/web-service.yaml` and `app/api-service.yaml` and fix it. Keep both paths and leave the Service files alone.
+    hint:
+      - "Check each backend name against metadata.name in the Service files."
+      - "Then check each backend port against the ports the Service lists."
+      - "One backend has a mistyped name, the other asks for a port its Service does not expose."
+    success: Correct. Every backend now matches a Service name and port.
+  - id: wrap-up
+    type: lesson
+    title: Ingress recap
+    body: |
+      - An Ingress routes by host and path to Services; a controller does the work in a real cluster.
+      - `ingressClassName` picks the controller, `pathType` is required, `Prefix` matches segments and `Exact` the whole URL.
+      - Backends are `service.name` plus a port number or name that must exist on the Service.
+      - `spec.tls` points at a `kubernetes.io/tls` Secret in the same namespace.

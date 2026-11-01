@@ -1,0 +1,1 @@
+sed -i 's|^              containerPort: 80$|&\n          startupProbe:\n            httpGet:\n              path: /healthz\n              port: 80\n            periodSeconds: 5\n            failureThreshold: 6|' app/deployment.yaml

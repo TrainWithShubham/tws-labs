@@ -1,0 +1,7 @@
+. "$LAB_LIB"
+G="$LAB_HOME/proj"
+[ ! -d "$G/.git/rebase-merge" ] && [ ! -d "$G/.git/rebase-apply" ] || fail "A rebase is still in progress."
+[ "$(in_repo proj rev-parse main)" = "$(in_repo proj rev-parse feature)" ] || fail "main should end exactly at feature's last commit."
+[ "$(in_repo proj rev-list --merges --count main)" = 0 ] || fail "main has a merge commit. A fast-forward needs none."
+in_repo proj cat-file -e main:login.txt 2>/dev/null || fail "main does not contain the login work yet."
+in_repo proj log main -1 --format=%H --grep='^Add changelog$' | grep -q . || fail "main lost its changelog commit."

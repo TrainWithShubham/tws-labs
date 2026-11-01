@@ -10,6 +10,13 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ### Added
 - **Kubernetes: persistent storage** (PersistentVolumes, PersistentVolumeClaims, volume attachment, container mount paths, and why a claim stays `Pending`): configure durable storage for stateful workloads without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #82.
+- **Kubernetes** (now more labs on the track): *Labels, selectors and ReplicaSets* (find the selector that does not match, adopt a stray Pod), *Probes and rolling updates* (readiness, liveness and startup probes, `maxUnavailable` and `maxSurge`, requests and limits), *Routing traffic with Ingress* (host and path rules, path types, TLS, a backend that points at nothing) and *Jobs and CronJobs* (completions and parallelism, a Job's restart policy, cron schedules, history limits).
+- **Helm** (a new track): *Your first Helm chart*: `Chart.yaml`, `values.yaml`, a templated Deployment and a per-environment values file, graded by reading the chart files (the image has no `helm` binary, and the lab says so).
+- **GitOps** (a new track): *Your first GitOps Application*: an Argo CD `Application` with source, destination and an automated sync policy (prune and self-heal), then a drifted manifest to repair. Graded offline on the manifest.
+- **Git and GitHub: rebase and cherry-pick**: replay a feature branch onto an updated `main`, copy one fix to a release branch, and squash work-in-progress commits, all graded on real git state.
+- **Linux Fundamentals: shell functions and arguments**: a function, positional parameters, `${VAR:-default}`, a usage message and exit codes, graded by running your script on inputs it has not seen.
+- **Python for DevOps: JSON config and a CLI**: load and validate a JSON config, parse arguments with `argparse`, merge per-environment overrides and write the result, graded by running your script against configs it has not seen.
+- `docs/lab-plan.md`: where the catalog is thin, the next labs, and platform ideas that need a decision.
 
 ## [1.3.0] - 2026-10-21
 

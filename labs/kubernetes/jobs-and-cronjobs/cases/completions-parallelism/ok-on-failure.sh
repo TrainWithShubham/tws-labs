@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: batch/v1' 'kind: Job' 'metadata:' '  name: report' 'spec:' '  completions: 6' '  parallelism: 2' '  backoffLimit: 3' '  template:' '    spec:' '      containers:' '        - name: report' '          image: busybox:1.36' '          command: ["sh", "-c", "echo working"]' '      restartPolicy: OnFailure' > batch/job.yaml

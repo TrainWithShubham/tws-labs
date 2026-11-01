@@ -1,0 +1,93 @@
+title: "Python: JSON config and a CLI"
+level: beginner
+minutes: 13
+summary: Load and validate a JSON config, add an argparse CLI, merge environment overrides, write the result.
+steps:
+  - id: intro
+    type: lesson
+    title: Config files and small tools
+    body: |
+      Real tools read a **config file**, check it, and take options on the command line. In `~/configs/app.json` you have shared `defaults` and per-environment `environments` overrides:
+
+      ```
+      {"app": "shop", "defaults": {...}, "environments": {"dev": {...}, "prod": {...}}}
+      ```
+
+      `json.load(open(path))` turns a file into a dictionary. `argparse` builds a proper command line with `--help`. `sys.exit("message")` prints to standard error and exits with status 1.
+
+      *Each script is graded by running it on configs you have not seen, so read the path you are given. Standard library only.*
+
+  - id: read-config
+    type: task
+    title: Read a config
+    body: |
+      Create `read_config.py`. It takes a config path as its first argument and prints one line: the `app` name, a colon, and how many settings are in `defaults`.
+
+      For `~/configs/app.json` it prints `shop: 4 default settings`.
+    hint:
+      - "sys.argv[1] is the first argument; json.load reads a file object into a dictionary."
+      - "len() of the defaults dictionary is the number of settings."
+      - "Format the line as app, colon, a space, the count, then the words default settings."
+    success: Read. A JSON file is now a dictionary your code can use.
+
+  - id: missing-keys
+    type: task
+    title: Fail clearly on a bad config
+    body: |
+      Create `validate_config.py`. It takes a config path. The keys `app` and `defaults` are required.
+
+      If both are there, print `ok`. If one is missing, print an error that names it **to standard error** and exit with a non-zero status. A file that is not valid JSON or does not exist must also exit non-zero with a clear message, never a traceback.
+
+      Try it on `configs/broken.json`, then check `echo $?`.
+    hint:
+      - "`if key not in cfg` tells you a key is missing; sys.exit(text) prints the text to stderr and exits 1."
+      - "Wrap open and json.load in try/except for OSError and ValueError."
+      - "Loop over the two required names and exit on the first missing one, naming it in the message."
+    success: Validated. Bad input now stops with a clear message and a failing exit code.
+
+  - id: cli-args
+    type: task
+    title: Add a real command line
+    body: |
+      Create `config_cli.py` using **argparse**. It takes a positional config path and an optional `--env` with the choices `dev`, `staging` and `prod`, defaulting to `dev`.
+
+      It prints `file=<path> env=<env>`. `--help` must work, and an unknown environment must be refused by the parser.
+    hint:
+      - "argparse.ArgumentParser() then add_argument calls, then parse_args()."
+      - "add_argument('--env', choices=[...], default='dev') handles the option; a name without dashes is positional."
+      - "The parsed values are attributes: args.config and args.env."
+    success: A proper CLI. argparse gave you help text and validation for free.
+
+  - id: merge-env
+    type: task
+    title: Merge environment overrides
+    body: |
+      Create `build_config.py`. It takes the config path and `--env` (`dev`, `staging` or `prod`, default `dev`), validates the required keys as before (error on stderr, exit 1), then prints the settings for that environment as **pretty-printed JSON with sorted keys**.
+
+      The settings are `defaults` with the values from `environments[env]` laid over them. An override replaces the whole value. An environment with no entry just gets the defaults.
+    hint:
+      - "A dictionary can be copied and updated, or built as {**a, **b}; the later one wins."
+      - "cfg.get('environments', {}).get(env, {}) copes with a missing section or environment."
+      - "json.dumps(settings, indent=2, sort_keys=True) does the printing."
+    success: Merged. Overrides win over defaults and the output is stable.
+
+  - id: write-result
+    type: task
+    title: Write the result to a file
+    body: |
+      Change `build_config.py` so the merged settings go to `resolved.json` in the current directory (pretty-printed, sorted keys) instead of the screen. It may print a short note such as `wrote resolved.json`.
+
+      A bad config must not leave a `resolved.json` behind: validate first, write last.
+    hint:
+      - "open('resolved.json', 'w') and json.dump(settings, f, indent=2, sort_keys=True)."
+      - "Do all the loading and checking before the file is opened for writing."
+      - "sys.exit during validation happens before the open call, so nothing is created."
+    success: Saved. The script validates, merges and writes without leaving half-done output.
+
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      You loaded and validated a config, reported failures with a clear message and exit code, built a command line with `argparse`, merged environment overrides and wrote stable JSON, all with the standard library.
+
+      Next steps: add a `--output` option, merge nested dictionaries recursively, or validate value types (a port must be an integer).

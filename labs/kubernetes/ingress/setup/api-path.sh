@@ -1,0 +1,2 @@
+mkdir -p app
+[ -f app/ingress.yaml ] || printf '%s\n' 'apiVersion: networking.k8s.io/v1' 'kind: Ingress' 'metadata:' '  name: shop' 'spec:' '  ingressClassName: public' '  rules:' '    - host: shop.example.com' '      http:' '        paths:' '          - path: /' '            pathType: Prefix' '            backend:' '              service:' '                name: web' '                port:' '                  number: 80' > app/ingress.yaml

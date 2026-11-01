@@ -1,0 +1,1 @@
+printf '%s\n' 'import json' 'import sys' '' 'try:' '    cfg = json.load(open(sys.argv[1]))' 'except (OSError, ValueError):' '    sys.exit("error: cannot read config")' 'if "app" not in cfg or "defaults" not in cfg:' '    sys.exit("error: bad config")' 'print("ok")' > validate_config.py

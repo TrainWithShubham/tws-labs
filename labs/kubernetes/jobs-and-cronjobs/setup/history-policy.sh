@@ -1,0 +1,2 @@
+mkdir -p batch
+[ -f batch/cronjob.yaml ] || printf '%s\n' 'apiVersion: batch/v1' 'kind: CronJob' 'metadata:' '  name: nightly-report' 'spec:' '  schedule: "*/15 * * * *"' '  jobTemplate:' '    spec:' '      template:' '        spec:' '          containers:' '            - name: nightly-report' '              image: busybox:1.36' '              command: ["sh", "-c", "echo working"]' '          restartPolicy: OnFailure' > batch/cronjob.yaml
