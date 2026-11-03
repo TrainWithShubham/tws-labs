@@ -7,11 +7,11 @@ labs:
   - permissions
   - pipes-and-search
   - shell-scripting-basics
-  - linux-in-action
   - awk-and-sed
   - process-management-basics
   - incident-response
   - shell-functions-and-arguments
+  - linux-in-action
 video:
   title: Linux For DevOps In One Shot
   url: https://www.youtube.com/watch?v=e01GGTKmtpc
