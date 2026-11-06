@@ -7,7 +7,7 @@ function assertBrandedPage(html, active, where = '') {
   assert.match(html, /<img class="logo-mark" src="\/logo\/tws-labs-logo\.png"/, `${where}: logo missing`);
   const nav = html.match(/<nav class="tabs"[^>]*>(.*?)<\/nav>/s);
   assert.ok(nav, `${where}: tabs missing`);
-  assert.deepEqual([...nav[1].matchAll(/>([A-Za-z]+)<\/a>/g)].map((m) => m[1]), ['Labs', 'Videos', 'Roadmap'], `${where}: tab set`);
+  assert.deepEqual([...nav[1].matchAll(/>([A-Za-z]+)<\/a>/g)].map((m) => m[1]), ['Labs', 'Challenges', 'Videos', 'Roadmap'], `${where}: tab set`);
   assert.deepEqual([...nav[1].matchAll(/is-active"[^>]*>([A-Za-z]+)</g)].map((m) => m[1]), [active], `${where}: active tab`);
   assert.match(html, /class="btn-yt" href="https:\/\/www\.youtube\.com\/[^"]*"[^>]*rel="noopener noreferrer"/, `${where}: Subscribe button`);
 }

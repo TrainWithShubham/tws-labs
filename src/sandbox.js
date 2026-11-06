@@ -58,6 +58,44 @@ function createSandbox({ labsDir }) {
     return { code: r.status === null ? 1 : r.status, out: (r.stdout || '') + (r.stderr || '') };
   }
 
+  // Explicit registry of challenges that require setup output isolation due to background supervisor daemons.
+  const ISOLATED_SETUP_CHALLENGES = new Set(['process-resource', 'LNX-CH-030', 'process-service-fundamentals', 'LNX-CH-005']);
+
+  function isChallengeOutputIsolated(challengeDir, opts = {}) {
+    if (opts.isolateOutput !== undefined) return Boolean(opts.isolateOutput);
+    const slug = path.basename(challengeDir);
+    return ISOLATED_SETUP_CHALLENGES.has(slug);
+  }
+
+  // Challenge setup.sh execution path: runs the challenge's initial setup.sh.
+  // Isolated to challenges: when a challenge script runs background processes holding open stdio
+  // (e.g. LNX-CH-030), output is redirected to a temporary log inside the session workspace
+  // to prevent spawnSync from blocking, and guaranteed cleaned up in finally.
+  function runChallengeSetup(challengeDir, home, uid, extraEnv = {}, opts = {}) {
+    const script = path.join(challengeDir, 'setup.sh');
+    if (!fs.existsSync(script)) return { code: 0, out: '' };
+
+    const needsRedirection = isChallengeOutputIsolated(challengeDir, opts);
+
+    if (!needsRedirection) {
+      return runSetup(challengeDir, home, uid, extraEnv);
+    }
+
+    const logFile = path.join(home, '.challenge-setup.log');
+    const [file, args] = asUser(uid, home, 'bash', ['-c', 'exec bash "$1" > "$2" 2>&1', '--', script, logFile]);
+    const r = spawnSync(file, args, { cwd: home, env: scriptEnv(home, extraEnv), timeout: opts.timeout || 15000 });
+    let out = '';
+    try {
+      if (fs.existsSync(logFile)) {
+        out = fs.readFileSync(logFile, 'utf8');
+      }
+    } catch { /* best effort read */ }
+    finally {
+      try { fs.rmSync(logFile, { force: true }); } catch { /* best effort cleanup */ }
+    }
+    return { code: r.status === null ? 1 : r.status, out };
+  }
+
   // A task's setup/<task>.sh, run in the learner's live sandbox (async: it must not block other learners). Same user, home and
   // environment as the lab's setup.sh; killed after 15 s.
   function runScript(scriptPath, { home, uid, env = {} }) {
@@ -96,7 +134,7 @@ function createSandbox({ labsDir }) {
     });
   }
 
-  return { asUser, scriptEnv, removeTree, prepareHome, prepareHistory, runSetup, runScript, runCheck };
+  return { asUser, scriptEnv, removeTree, prepareHome, prepareHistory, runSetup, runChallengeSetup, runScript, runCheck };
 }
 
 module.exports = { createSandbox };

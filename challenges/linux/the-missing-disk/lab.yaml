@@ -1,0 +1,67 @@
+title: The Missing Disk
+level: beginner
+minutes: 15
+summary: Identify unformatted storage devices, block hierarchies, partition tables, and filesystem identification.
+steps:
+  - id: briefing
+    type: lesson
+    title: Unformatted volume and disk discovery triage
+    body: |
+      An application node failed to start its database engine due to missing storage volume registration in `disks-incident/`.
+
+      The node was provisioned with multiple storage image files in `disks-incident/devices/`:
+      - `vol-primary.img` (formatted, label `app-os`)
+      - `vol-logs.img` (formatted, label `app-logs`)
+      - `vol-data.img` (allocated but unformatted raw storage block)
+
+      Use inspection tools to discover the unformatted device, format it with `ext4`, label it `app-storage`, register its generated UUID, and run `./disks-incident/verify-disks`.
+
+  - id: identify-devices
+    type: task
+    title: Discover the unformatted storage device
+    body: |
+      Inspect the storage image files in `disks-incident/devices/` using `file` or `blkid`.
+
+      Identify the unformatted device and record its filename in `disks-incident/reports/disk-discovery.env`:
+      ```
+      UNFORMATTED_DISK=vol-data.img
+      ```
+    hint:
+      - Run file disks-incident/devices/*.img or blkid disks-incident/devices/*.img.
+      - "Write UNFORMATTED_DISK=vol-data.img into disks-incident/reports/disk-discovery.env"
+    success: Correct. Unformatted storage device identified.
+
+  - id: format-filesystem
+    type: task
+    title: Format the storage volume with ext4
+    body: |
+      Format the unformatted volume `disks-incident/devices/vol-data.img` with an `ext4` filesystem and volume label `app-storage`.
+
+      Use `mkfs.ext4 -F -L app-storage disks-incident/devices/vol-data.img`.
+    hint:
+      - "Run: mkfs.ext4 -F -L app-storage disks-incident/devices/vol-data.img"
+    success: Correct. vol-data.img is formatted with ext4 and labeled app-storage.
+
+  - id: register-uuid
+    type: task
+    title: Register volume UUID in storage registry
+    body: |
+      Inspect the formatted volume using `blkid disks-incident/devices/vol-data.img` to extract its UUID.
+
+      Write the extracted UUID into `disks-incident/config/volume-registry.env`:
+      ```
+      VOLUME_UUID=<extracted-uuid>
+      ```
+    hint:
+      - Run blkid disks-incident/devices/vol-data.img.
+      - Edit disks-incident/config/volume-registry.env with the exact UUID.
+    success: Correct. Volume UUID registered in storage registry.
+
+  - id: verify-disks
+    type: task
+    title: Finalize storage verification
+    body: |
+      Execute `./disks-incident/verify-disks` to audit device filesystem headers, volume labels, and UUID registration.
+    hint:
+      - "Run: cd ~/disks-incident && ./verify-disks"
+    success: Congratulations! Missing disk discovered, formatted, and registered.

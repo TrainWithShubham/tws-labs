@@ -90,3 +90,49 @@ test('a native local run listens on loopback only; hosted and an explicit HOST a
   assert.equal(loadConfig({ LAB_PROFILE: 'local', HOST: '0.0.0.0' }).host, '0.0.0.0');
   assert.equal(loadConfig({}).host, '0.0.0.0');
 });
+
+test('invalid LAB_PROFILE throws actionable error at startup and fails closed', () => {
+  assert.throws(() => loadConfig({ LAB_PROFILE: 'invalid' }), /Invalid LAB_PROFILE "invalid"/);
+  assert.throws(() => loadConfig({ LAB_PROFILE: 'production' }), /Invalid LAB_PROFILE "production"/);
+  assert.throws(() => loadConfig({ LAB_PROFILE: 'staging' }), /Invalid LAB_PROFILE "staging"/);
+});
+
+test('hosted profile: ALLOWED_HOSTS restricts accepted Host and Origin headers', () => {
+  const customHosted = loadConfig({ ALLOWED_HOSTS: 'labs.example.com, learn.tws.com' });
+  assert.deepEqual(customHosted.allowedHosts, ['labs.example.com', 'learn.tws.com']);
+  assert.ok(guardOk(req({ host: 'labs.example.com' }), customHosted, { needOrigin: false }));
+  assert.ok(guardOk(req({ host: 'labs.example.com:443' }), customHosted, { needOrigin: false }));
+  assert.ok(guardOk(req({ host: 'learn.tws.com' }), customHosted, { needOrigin: false }));
+  assert.ok(!guardOk(req({ host: 'evil.com' }), customHosted, { needOrigin: false }));
+  assert.ok(!guardOk(req({ host: 'sub.labs.example.com' }), customHosted, { needOrigin: false }));
+  assert.ok(!guardOk(req({ host: undefined }), customHosted, { needOrigin: false }));
+
+  // Origin matching with allowedHosts
+  assert.ok(guardOk(req({ host: 'labs.example.com', origin: 'https://labs.example.com' }), customHosted, { needOrigin: true }));
+  assert.ok(!guardOk(req({ host: 'labs.example.com', origin: 'https://evil.com' }), customHosted, { needOrigin: true }));
+  assert.ok(!guardOk(req({ host: 'evil.com', origin: 'https://evil.com' }), customHosted, { needOrigin: true }));
+});
+
+test('access policies: local is always ungated; hosted is gated by default, configurable via LAB_GATED / PUBLIC_CHALLENGES', () => {
+  assert.equal(local.gated, false);
+  assert.equal(local.publicChallenges, true);
+  assert.equal(hosted.gated, true);
+  assert.equal(hosted.publicChallenges, false);
+
+  const publicChall = loadConfig({ PUBLIC_CHALLENGES: '1' });
+  assert.equal(publicChall.gated, true);
+  assert.equal(publicChall.publicChallenges, true);
+
+  const fullyOpen = loadConfig({ LAB_GATED: '0' });
+  assert.equal(fullyOpen.gated, false);
+  assert.equal(fullyOpen.publicChallenges, true);
+
+  const explicitGated = loadConfig({ LAB_GATED: '1' });
+  assert.equal(explicitGated.gated, true);
+  assert.equal(explicitGated.publicChallenges, false);
+});
+
+test('TRUST_PROXY can be configured explicitly', () => {
+  assert.equal(loadConfig({ TRUST_PROXY: '0' }).trustProxy, false);
+  assert.equal(loadConfig({ LAB_PROFILE: 'local', TRUST_PROXY: '1' }).trustProxy, true);
+});

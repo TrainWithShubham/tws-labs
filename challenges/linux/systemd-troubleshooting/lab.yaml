@@ -1,0 +1,82 @@
+title: Linux Service Failure & Systemd Troubleshooting
+level: intermediate
+minutes: 15
+summary: Controlled simulation: diagnose failed unit, inspect journal, fix config, and audit recovery.
+steps:
+  - id: briefing
+    type: lesson
+    title: Service failure incident triage
+    body: |
+      At 09:15 UTC, alert monitors flagged that `report-api.service` failed to start following a configuration update.
+
+      **Simulation Context**:
+      This is a controlled userland simulation modeling systemd service management inside `~/lnx-ch-040/incident`. No host systemd services, root privileges, background daemons, or host sockets are used. Work from `~/lnx-ch-040/incident` using `./bin/systemctl` and `./bin/journalctl`.
+
+      Triage findings in `reports/incident.status`:
+      - `report-api.service` entered a failed state.
+      - Restart policy is unconfigured (`Restart=no`).
+
+      Triage the failure, inspect journal logs, fix the configuration, reload systemd, restart the service, and audit recovery.
+
+  - id: triage-service
+    type: task
+    title: Identify failed service status and exit code
+    body: |
+      Inspect simulated service status from `~/lnx-ch-040/incident` using `./bin/systemctl --failed` or `./bin/systemctl status report-api.service`.
+
+      Identify the failed service name (`FAILED_SERVICE`), its active state (`ACTIVE_STATE`), sub-state (`SUB_STATE`), and process exit status (`EXIT_STATUS`).
+
+      Record these findings into `reports/service-triage.env` inside `~/lnx-ch-040/incident` using standard shell assignments (`KEY=VALUE` without spaces around `=`).
+    hint:
+      - "Run cd ~/lnx-ch-040/incident && ./bin/systemctl --failed to identify failed units."
+      - "Run ./bin/systemctl status report-api.service to inspect Active state and Exit code."
+      - "Write to ~/lnx-ch-040/incident/reports/service-triage.env: FAILED_SERVICE=report-api.service, ACTIVE_STATE=failed, SUB_STATE=failed, EXIT_STATUS=1/FAILURE."
+    success: Correct. Failed service identified and triage report recorded.
+
+  - id: inspect-journal
+    type: task
+    title: Inspect journal logs for startup failure
+    body: |
+      Inspect service logs using `./bin/journalctl -u report-api.service` from inside `~/lnx-ch-040/incident`.
+
+      Locate the fatal error where the simulated application rejected its assigned port. Identify the error signature (`ERROR_SIGNATURE`), configuration file path (`CONFIG_SOURCE`), rejected port number (`REJECTED_PORT`), and root cause (`ROOT_CAUSE`).
+
+      Write these findings into `reports/journal-triage.env` inside `~/lnx-ch-040/incident` using standard assignments.
+    hint:
+      - "Run cd ~/lnx-ch-040/incident && ./bin/journalctl -u report-api.service -n 20 to view logs."
+      - "Find the FATAL line rejecting port 80 and noting the unprivileged port restriction."
+      - "Write to ~/lnx-ch-040/incident/reports/journal-triage.env: ERROR_SIGNATURE=ERR_PRIVILEGED_PORT, CONFIG_SOURCE=config/report-api.env, REJECTED_PORT=80, ROOT_CAUSE=UNPRIVILEGED_PORT_VIOLATION."
+    success: Correct. Service startup failure and root cause diagnosed from journal logs.
+
+  - id: repair-unit
+    type: task
+    title: Remediate unit directives and environment
+    body: |
+      Remediate the service configuration inside `~/lnx-ch-040/incident`:
+
+      1. In `config/report-api.env`: change `PORT=80` to unprivileged port `PORT=8080`.
+      2. In `systemd/system/report-api.service`: update unit policy from `Restart=no` to `Restart=on-failure`.
+
+      Keep all other environment variables and unit directives intact.
+    hint:
+      - "Edit ~/lnx-ch-040/incident/config/report-api.env and change PORT=80 to PORT=8080."
+      - "Edit ~/lnx-ch-040/incident/systemd/system/report-api.service and change Restart=no to Restart=on-failure."
+      - "Ensure no extra spaces surround the '=' signs in config/report-api.env."
+    success: Correct. Service unit directives and environment configuration repaired.
+
+  - id: verify-service
+    type: task
+    title: Reload daemon, restart service, and audit
+    body: |
+      Apply the configuration and verify service recovery inside `~/lnx-ch-040/incident`:
+
+      1. Reload simulated systemd: `./bin/systemctl daemon-reload`
+      2. Restart the service: `./bin/systemctl restart report-api.service`
+      3. Run the recovery audit: `./bin/service-audit`
+
+      The audit verifies unit fingerprints, environment variables, and active service state.
+    hint:
+      - "Reload systemd configuration: cd ~/lnx-ch-040/incident && ./bin/systemctl daemon-reload"
+      - "Restart the service: ./bin/systemctl restart report-api.service"
+      - "Run verification audit: ./bin/service-audit"
+    success: Congratulations! Service failure triaged, unit and environment repaired, daemon reloaded, and recovery audited.

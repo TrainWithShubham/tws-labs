@@ -1,0 +1,70 @@
+title: Broken Deployment & Dependency Triage
+level: intermediate
+minutes: 15
+summary: Diagnose and repair broken symlinks, bad config, missing permissions, and a stale deploy lock.
+steps:
+  - id: briefing
+    type: lesson
+    title: Pipeline failure triage
+    body: |
+      At 03:22 UTC, an automated deployment runner aborted while staging a production payment service.
+
+      The failure left `deploy/` in an inconsistent, non-runnable state:
+      - The primary executable link `bin/app-cli` is a dangling symlink pointing to an obsolete path.
+      - The service configuration `config/app.env` contains syntax errors that break environment parsing.
+      - The pre-flight deployment hook `hooks/pre-deploy.sh` lost its execute permissions.
+      - A stale error lockfile `.deploy.lock` blocks all further automated deployment actions.
+
+      Inspect `deploy/reports/deploy.log` to triage the failure sequence, repair each component, clear the lock, and verify the deployment.
+
+  - id: fix-symlink
+    type: task
+    title: Repair the broken CLI dispatcher symlink
+    body: |
+      Inspect `deploy/reports/deploy.log`. The primary application binary `deploy/bin/app-cli` is a broken symlink pointing to an obsolete path.
+
+      Re-link `deploy/bin/app-cli` so that it points to the valid release binary `app-cli-v2` located inside the same `deploy/bin/` directory.
+    hint:
+      - Check where bin/app-cli currently points using ls -l deploy/bin/.
+      - Use ln -sf to update an existing symlink to a new target.
+      - "Run: ln -sf app-cli-v2 deploy/bin/app-cli"
+    success: Correct. The CLI dispatcher symlink resolves to app-cli-v2.
+
+  - id: fix-config
+    type: task
+    title: Correct configuration syntax errors
+    body: |
+      Pre-flight checks failed because `deploy/config/app.env` contains syntax errors.
+
+      Fix the unclosed quote on `APP_ENV` and remove any whitespace around the `=` operator on `APP_PORT`. Ensure all four required keys (`APP_NAME`, `APP_ENV`, `APP_PORT`, `DB_TIMEOUT`) are cleanly defined with their expected values.
+    hint:
+      - Inspect deploy/config/app.env. Shell variable assignments forbid spaces around the = sign.
+      - Ensure all opened quotes are closed, or remove unnecessary quotes around single-word values.
+      - "Edit deploy/config/app.env so that APP_ENV=production and APP_PORT=8080 without spaces."
+    success: Correct. config/app.env satisfies the strict environment schema.
+
+  - id: fix-permissions
+    type: task
+    title: Make pre-deployment hook executable
+    body: |
+      The pre-flight hook `deploy/hooks/pre-deploy.sh` is missing executable permissions.
+
+      Restore execute permissions (`u+x` or `0755`) so that the deployment engine can execute it.
+    hint:
+      - Check current permissions on the file with ls -l deploy/hooks/pre-deploy.sh.
+      - Use chmod to grant execute permissions.
+      - "Run: chmod +x deploy/hooks/pre-deploy.sh"
+    success: Correct. hooks/pre-deploy.sh is executable.
+
+  - id: verify-deployment
+    type: task
+    title: Clear stale lock and verify recovery
+    body: |
+      With the symlink, configuration, and hook repaired, remove the stale crash lock `deploy/.deploy.lock`.
+
+      Then execute `./verify-deployment` from within `deploy/` to finalize validation and generate the verification marker.
+    hint:
+      - "Delete the stale lockfile: rm deploy/.deploy.lock."
+      - Execute ./verify-deployment from inside the deploy/ directory.
+      - "Run: cd ~/deploy && rm -f .deploy.lock && ./verify-deployment"
+    success: Congratulations! Stalled deployment diagnosed, repaired, and verified.

@@ -20,6 +20,9 @@ const { attachTerminal } = require('./terminal');
 const systemRoutes = require('./routes/system');
 const siteRoutes = require('./routes/site');
 const sessionRoutes = require('./routes/session');
+const challengeRoutes = require('./routes/challenges');
+const { createChallengeLoader } = require('./challenge-loader');
+const { createExecutionRuntime } = require('./runtime');
 const pages = require('./pages');
 
 const XTERM_DIR = path.join(__dirname, '..', 'node_modules', '@xterm');
@@ -28,9 +31,9 @@ const BASHRC = path.join(__dirname, 'lab.bashrc');
 // A factory, not a singleton: each call builds a fully independent server (own
 // session store, own catalog), so tests can run as many isolated instances as they like.
 function createApp(opts = {}) {
-  const env = { ...process.env };
+  const env = { ...process.env, ...(opts.env || {}) };
   if (opts.profile) env.LAB_PROFILE = opts.profile;
-  const { profile, ...rest } = opts;
+  const { profile, env: _optEnv, ...rest } = opts;
   const cfg = { ...loadConfig(env), ...rest };
 
   const ui = createUi({ chip: cfg.chip, chipTitle: `pod ${os.hostname()}`, remoteFonts: cfg.remoteFonts, xtermDir: XTERM_DIR });
@@ -60,6 +63,7 @@ function createApp(opts = {}) {
   const ctxFor = (active) => ({ active, site: getSite() });
   const findLab = (t, l) => getCatalog().tracks.find((x) => x.id === t)?.labs.find((x) => x.id === l);
   const page = (active, title, body, scripts) => ui.page(ctxFor(active), title, body, scripts);
+  const challengeLoader = createChallengeLoader({ challengesDir: cfg.challengesDir, watch: cfg.watch });
 
   const idOf = (token) => token.slice(0, 8);
   const homeOf = (token) => path.join(cfg.sandboxDir, idOf(token));
@@ -71,15 +75,18 @@ function createApp(opts = {}) {
   // its own oom_score_adj (no capability needed), and children inherit it.
   const bootstrap = `echo 1000 > /proc/self/oom_score_adj 2>/dev/null; ulimit -u 256 2>/dev/null; ${cfg.ulimitVKb > 0 ? `ulimit -v ${cfg.ulimitVKb} 2>/dev/null; ` : ''}ulimit -f 40960 2>/dev/null; exec bash --rcfile ${BASHRC} -i`;
 
+  const runtime = opts.runtime || createExecutionRuntime(cfg, { sandbox, bootstrap });
+
   const router = createRouter();
   const deps = {
-    cfg, ui, store, pool, sandbox, stats, usage, ctxFor, page, getCatalog, getRoadmap, getSite, findLab,
-    idOf, homeOf, historyOf, bootstrap,
+    cfg, ui, store, pool, sandbox, runtime, stats, usage, ctxFor, page, getCatalog, getRoadmap, getSite, findLab,
+    idOf, homeOf, historyOf, bootstrap, challengeLoader,
   };
   systemRoutes(router, deps);
   router.use((req, res, p) => ui.serveAsset(req, res, p));
   siteRoutes(router, deps);
   sessionRoutes(router, deps);
+  challengeRoutes(router, deps);
 
   const server = http.createServer((req, res) => {
     // Local profile: refuse any non-loopback Host outright (DNS rebinding).
@@ -94,7 +101,7 @@ function createApp(opts = {}) {
   deps.terminal = attachTerminal(server, deps);
 
   server.on('close', () => stats.stop());
-  return { server, cfg, store, getCatalog };
+  return { server, cfg, store, getCatalog, challengeLoader, runtime };
 }
 
 if (require.main === module) {

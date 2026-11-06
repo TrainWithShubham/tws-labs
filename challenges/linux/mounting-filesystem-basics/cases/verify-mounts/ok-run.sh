@@ -1,0 +1,1 @@
+./mount-audit/verify-mounts

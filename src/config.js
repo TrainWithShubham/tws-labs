@@ -13,10 +13,26 @@ function intEnv(env, names, fallback) {
 
 function loadConfig(env = process.env) {
   // LAB_MODE / EB_MODE are the old names; only the value 'local' ever mattered.
-  const raw = env.LAB_PROFILE || env.LAB_MODE || env.EB_MODE || 'hosted';
-  const profile = raw === 'local' ? 'local' : 'hosted';
+  const raw = env.LAB_PROFILE || env.LAB_MODE || env.EB_MODE;
+  let profile = 'hosted';
+  if (raw !== undefined && raw !== '') {
+    const norm = String(raw).trim().toLowerCase();
+    if (norm === 'local') {
+      profile = 'local';
+    } else if (norm === 'hosted' || norm === 'cluster') {
+      profile = 'hosted';
+    } else {
+      throw new Error(`Invalid LAB_PROFILE "${raw}". Must be "local" or "hosted".`);
+    }
+  }
   const isLocal = profile === 'local';
   const uidBase = env.LAB_UID ? parseInt(env.LAB_UID, 10) : undefined;
+  const allowedHosts = String(env.ALLOWED_HOSTS || env.LAB_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const gated = isLocal ? false : (env.LAB_GATED !== undefined ? env.LAB_GATED !== '0' : (env.PUBLIC_ACCESS === '1' ? false : true));
+  const publicChallenges = isLocal ? true : (env.PUBLIC_CHALLENGES === '1' || env.PUBLIC_ACCESS === '1' || env.LAB_GATED === '0');
   return {
     profile,
     isLocal,
@@ -25,6 +41,7 @@ function loadConfig(env = process.env) {
     // port mapping needs it; docker-compose publishes the port on 127.0.0.1 only. Hosted listens on every interface behind the load balancer.
     host: env.HOST || (isLocal ? '127.0.0.1' : '0.0.0.0'),
     labsDir: env.LABS_DIR || require('path').join(__dirname, '..', 'labs'),
+    challengesDir: env.CHALLENGES_DIR || require('path').join(__dirname, '..', 'challenges'),
     sandboxDir: env.SANDBOX_DIR || require('path').join(require('os').tmpdir(), 'tws-labs-sandbox'),
     watch: env.LABS_WATCH === '1',
     // Seats are per replica. Autoscaling is CPU-driven and idle shells use almost
@@ -46,7 +63,10 @@ function loadConfig(env = process.env) {
     // Every learner shell gets its own unprivileged uid (uidBase + slot) so one
     // learner cannot read, signal or starve another. Undefined = not root / no drop.
     uidBase,
-    trustProxy: !isLocal,          // behind the ALB the rightmost X-Forwarded-For is the client
+    allowedHosts,
+    gated,
+    publicChallenges,
+    trustProxy: env.TRUST_PROXY !== undefined ? env.TRUST_PROXY === '1' : !isLocal,          // behind the ALB the rightmost X-Forwarded-For is the client
     chip: isLocal ? 'local' : 'cluster',
     remoteFonts: !isLocal,         // the local app renders fully offline
     // Invite tokens: on the hosted profile every lab needs one (the local app never asks).

@@ -11,7 +11,7 @@ test('esc escapes markup and quotes', () => {
 
 test('every page built by ui.page has the branded header, with the right active tab and env chip', () => {
   const ui = createUi({ chip: 'cluster', chipTitle: 'pod-1' });
-  const names = { labs: 'Labs', videos: 'Videos', roadmap: 'Roadmap' };
+  const names = { labs: 'Labs', challenges: 'Challenges', videos: 'Videos', roadmap: 'Roadmap' };
   for (const a of Object.keys(names)) {
     const html = ui.page({ active: a, site }, 'X', '<main></main>');
     assertBrandedPage(html, names[a], a);

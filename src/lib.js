@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const net = require('net');
 
 // --- Command line tracker ----------------------------------------------------
 // A browser terminal sends one WebSocket message per keystroke, so "did they run
@@ -90,7 +91,7 @@ function clientIp(req, { trustProxy = true } = {}) {
   const xff = trustProxy && req.headers && req.headers['x-forwarded-for'];
   if (xff) {
     const last = String(xff).split(',').pop().trim();
-    if (last) return last;
+    if (last && net.isIP(last)) return last;
   }
   return (req.socket && req.socket.remoteAddress) || 'unknown';
 }

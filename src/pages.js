@@ -124,6 +124,35 @@ function homeBody(catalog, roadmap, cfg) {
       <div class="reveal"><span class="n">02</span><h3>Graded on real state</h3><p>Check inspects your sandbox. However you got there, the state is what counts.</p><code>[ -x deploy.sh ] &#10003;</code></div>
       <div class="reveal"><span class="n">03</span><h3>Your machine or ours</h3><p>The same labs offline in Docker, or hosted.</p><code>$ ./start_local_labs.sh</code></div>
     </div>
+    <div class="modes">
+      <div class="mode-card reveal">
+        <span class="mode-badge">01 / GUIDED LABS</span>
+        <h3>Structured Learning</h3>
+        <p>Step-by-step terminal labs guiding you through DevOps, Cloud, and AI workflows. Work through guided milestones with instant automated grading on real machine state.</p>
+        <ul class="mode-points">
+          <li>Curated syllabus across Linux, Git, Docker, Kubernetes &amp; Cloud</li>
+          <li>Guided instructions and explanations at each milestone</li>
+          <li>Automated validation checking actual machine changes</li>
+        </ul>
+        <div class="mode-cta">
+          <a class="btn" href="${startHref}">Start first lab <span aria-hidden="true">&rarr;</span></a>
+          <a class="more" href="#map">Explore the map &rarr;</a>
+        </div>
+      </div>
+      <div class="mode-card reveal">
+        <span class="mode-badge">02 / LINUX CHALLENGES</span>
+        <h3>Scenario Troubleshooting</h3>
+        <p>Hands-on incident triage on broken Linux systems. Diagnose real-world outages &mdash; disk exhaustion, runaway processes, systemd boot failures, and DNS faults &mdash; with zero tutorial hand-holding.</p>
+        <ul class="mode-points">
+          <li>Simulated live outages and misconfigured services</li>
+          <li>Unguided diagnostics &mdash; graded purely on machine state</li>
+          <li>Graduated incident tiers from Beginner to Intermediate</li>
+        </ul>
+        <div class="mode-cta">
+          <a class="btn" href="/challenges/linux">Take the Challenge <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="section run" id="run" aria-labelledby="runh">

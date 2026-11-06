@@ -1,0 +1,8 @@
+INC_DIR="${LAB_HOME:-$HOME}/lnx-ch-050/incident"
+mkdir -p "$INC_DIR/reports"
+cat << 'EOF' > "$INC_DIR/reports/root-cause.env"
+FAILURE_TYPE="MISSING_ROUTE"
+MISSING_DESTINATION="10.0.2.0/24"
+REQUIRED_GATEWAY="10.0.1.1"
+OUTGOING_INTERFACE="eth0"
+EOF

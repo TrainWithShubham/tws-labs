@@ -1,0 +1,70 @@
+title: Linux Disk Pressure & Log Forensics
+level: intermediate
+minutes: 15
+summary: Triage simulated storage pressure, isolate error logs, safely reclaim space, and audit recovery.
+steps:
+  - id: briefing
+    type: lesson
+    title: Storage pressure incident triage
+    body: |
+      At 04:15 UTC, an automated telemetry ingest service crashed with `ENOSPC`.
+
+      Triage findings recorded in `incident/reports/incident.status`:
+      - `incident/var/cache/`: 2,500 orphaned `.tmp` files breach the cache inode quota.
+      - `incident/var/log/app.log`: Expanded to ~25 MB from a database connection loop.
+      - `incident/config/service.conf`: Verbose logging policy (`LOG_LEVEL=TRACE`).
+      - `incident/config/logrotate.conf`: Log rotation policy unconfigured.
+
+      Investigate the incident, purge the inode bloat, document the root cause, archive and truncate the active log in place, fix the policies, and audit recovery.
+
+  - id: clean-inodes
+    type: task
+    title: Purge orphaned spool cache files
+    body: |
+      Inspect `incident/var/cache/`. Thousands of abandoned session cache files (`sess_*.tmp`) have saturated the directory inode allocation.
+
+      Safely purge all `.tmp` cache files inside `incident/var/cache/` so that 50 or fewer files remain, while preserving the directory structure.
+    hint:
+      - Check file count in the directory using ls or find incident/var/cache -type f | wc -l.
+      - Use find with -delete to safely remove large batches without argument-list overflow.
+      - "Run: find ~/incident/var/cache -type f -name 'sess_*.tmp' -delete"
+    success: Correct. Orphaned spool cache files purged and directory inode quota restored.
+
+  - id: analyze-logs
+    type: task
+    title: Extract forensic incident signature
+    body: |
+      Inspect `incident/var/log/app.log`. The active log is flooded with repetitive error messages from a failing downstream dependency.
+
+      Identify the culprit endpoint, error signature, and root cause. Write the exact forensic summary to `incident/reports/root-cause.env` using standard shell assignments (`KEY=VALUE` without spaces around `=`) with keys `CULPRIT_ENDPOINT`, `ERROR_SIGNATURE`, and `ROOT_CAUSE`.
+    hint:
+      - "Inspect the recurring error loop using grep -E 'ERROR|FATAL' incident/var/log/app.log | head -n 30."
+      - "Look for the failing downstream host:port in the connection line, the error class name before the colon, and the cause= parameter in the timeout message."
+      - "Write the assignments into ~/incident/reports/root-cause.env: CULPRIT_ENDPOINT=postgres-primary:5432, ERROR_SIGNATURE=ConnectionRefused, ROOT_CAUSE=DOWNSTREAM_TIMEOUT."
+    success: Correct. Forensic incident signature identified and documented accurately.
+
+  - id: reclaim-space
+    type: task
+    title: Safely archive and truncate active log
+    body: |
+      `incident/var/log/app.log` occupies ~25 MB of disk space. Unlinking (`rm`) active logs breaks running loggers and destroys diagnostic records.
+
+      Compress the historical log into `incident/var/log/app.log.1.gz`, then safely truncate `incident/var/log/app.log` in place to 0 bytes without unlinking the file.
+    hint:
+      - Compress historical contents using gzip -c incident/var/log/app.log > incident/var/log/app.log.1.gz.
+      - "Truncate the file in place with truncate -s 0 incident/var/log/app.log or : > incident/var/log/app.log."
+      - "Run: gzip -c ~/incident/var/log/app.log > ~/incident/var/log/app.log.1.gz && truncate -s 0 ~/incident/var/log/app.log"
+    success: Correct. Active log truncated in place and historical records compressed.
+
+  - id: verify-storage
+    type: task
+    title: Remediate policies and audit storage
+    body: |
+      To prevent recurring storage pressure, update `incident/config/service.conf` to `LOG_LEVEL=WARN`.
+
+      The setup pre-provisions `incident/config/logrotate.conf` with the active log path header. Edit this configuration to include all five required directives inside the existing braces: `size 10M`, `rotate 5`, `compress`, `missingok`, and `notifempty`. Then run `./bin/storage-audit` from inside `~/incident`.
+    hint:
+      - "Update ~/incident/config/service.conf to set LOG_LEVEL=WARN using a text editor or sed -i 's/LOG_LEVEL=TRACE/LOG_LEVEL=WARN/'."
+      - "Open ~/incident/config/logrotate.conf and add each directive on its own line inside the existing { ... } block: size 10M, rotate 5, compress, missingok, notifempty."
+      - "Run: cd ~/incident && sed -i 's/LOG_LEVEL=TRACE/LOG_LEVEL=WARN/' config/service.conf && ./bin/storage-audit"
+    success: Congratulations! Storage pressure remediated, policies updated, and recovery verified.

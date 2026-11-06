@@ -1,0 +1,80 @@
+title: Linux Process & Resource Troubleshooting
+level: intermediate
+minutes: 15
+summary: Controlled simulation: triage process hierarchies, safely terminate culprits, and audit recovery.
+steps:
+  - id: briefing
+    type: lesson
+    title: Resource degradation incident triage
+    body: |
+      This controlled process-management simulation models high resource contention on a reporting pipeline. Worker processes intentionally consume negligible CPU and memory; the scenario creates no host exhaustion and is represented through process names, arguments, and process hierarchies.
+
+      Triage findings recorded in `incident/reports/incident.status`:
+      - Runaway worker (`--mode=runaway`) spawned an unmanaged child task.
+      - Healthy worker (`metrics-worker`) and supervisor run concurrently.
+      - `incident/config/worker.env`: Dangerous `WORKER_MODE=runaway`.
+
+      Practise process inspection, hierarchy analysis, safe targeted termination, configuration remediation, and recovery verification.
+
+  - id: triage-process
+    type: task
+    title: Identify rogue worker process PID
+    body: |
+      Inspect active processes using `ps`, `pgrep`, or `/proc`. Multiple `report-worker` instances are running under `incident/bin/report-supervisor`.
+
+      Identify the runaway worker process executing with `--mode=runaway`. Extract its process ID (`ROGUE_PID`), its parent process ID (`PARENT_PID`), and its target queue name (`ROGUE_QUEUE`).
+
+      Write these findings to `incident/reports/triage.env` using standard shell assignments (`KEY=VALUE` without spaces around `=`).
+    hint:
+      - "Inspect running processes using ps -eo pid,ppid,cmd | grep report-worker or pgrep -a -f report-worker."
+      - "Identify the PID executing with --mode=runaway, note its PPID, and check the --queue argument."
+      - "Write the values into ~/incident/reports/triage.env: ROGUE_PID=<pid>, PARENT_PID=<ppid>, ROGUE_QUEUE=reports (use actual PIDs from ps)."
+    success: Correct. Rogue worker process identified and diagnostic report recorded.
+
+  - id: inspect-hierarchy
+    type: task
+    title: Inspect process hierarchy and child workers
+    body: |
+      Investigate the rogue process hierarchy. The runaway worker spawned a sub-worker child process that remains attached to it.
+
+      Inspect the child's command line or process tree using `pstree -p`, `ps -f --ppid`, or `/proc/<PID>/task`.
+
+      Determine the child process PID (`CHILD_PID`), its batch ID (`BATCH_ID`, from `--batch-id=`), and the worker binary name (`WORKER_NAME`, `report-worker`). Append these assignments to `incident/reports/triage.env`.
+    hint:
+      - "Find child processes of the rogue PID using ps -o pid,stat,cmd --ppid <ROGUE_PID> or pstree -p <ROGUE_PID>."
+      - "Inspect the child command arguments to find --parent-batch=<id> (or --batch-id=<id>), and the worker executable name."
+      - "Append to ~/incident/reports/triage.env: CHILD_PID=<child_pid>, BATCH_ID=9021, WORKER_NAME=report-worker."
+    success: Correct. Process hierarchy, child worker, and metadata verified.
+
+  - id: terminate-rogue
+    type: task
+    title: Terminate rogue worker without killing siblings
+    body: |
+      The runaway worker (`--mode=runaway`) and its child process are stalling the queue in this simulation.
+
+      Safely terminate both the rogue worker and child using targeted signals:
+      - `kill <PID>`: sends `SIGTERM` (trappable by the target process).
+      - `kill -9 <PID>`: sends `SIGKILL` (cannot be trapped; kernel forces exit).
+
+      Do NOT terminate the supervisor (`report-supervisor`) or healthy worker (`--queue=metrics`).
+    hint:
+      - "Terminate both the rogue parent and child PIDs identified in triage using kill <ROGUE_PID> <CHILD_PID>."
+      - "Do not use broad commands like killall report-worker or pkill report-worker, which kill healthy siblings."
+      - "Run: kill -TERM <ROGUE_PID> <CHILD_PID> (graceful) or kill -KILL <ROGUE_PID> <CHILD_PID> (forced)."
+    success: Correct. Rogue worker and child process safely terminated while healthy workers remain active.
+
+  - id: verify-recovery
+    type: task
+    title: Remediate configuration and audit recovery
+    body: |
+      To prevent recurring instability, update `incident/config/worker.env`: set `WORKER_MODE=standard`, `BATCH_CONCURRENCY=2`, and `MAX_MEMORY_MB=512`.
+
+      Start a clean reporting worker by executing:
+      `./bin/report-worker --queue=reports --start` from inside `~/incident`.
+
+      Then run `./bin/audit-processes` from inside `~/incident` to verify service recovery.
+    hint:
+      - "Edit ~/incident/config/worker.env to set WORKER_MODE=standard, BATCH_CONCURRENCY=2, and MAX_MEMORY_MB=512."
+      - "Launch the clean worker with: cd ~/incident && ./bin/report-worker --queue=reports --start"
+      - "Audit the system: cd ~/incident && ./bin/audit-processes"
+    success: Congratulations! Process hierarchy triaged, culprit terminated, configuration remediated, and service recovery audited.

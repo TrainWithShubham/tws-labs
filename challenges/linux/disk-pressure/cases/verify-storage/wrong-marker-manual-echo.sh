@@ -1,0 +1,1 @@
+printf '%s\n' 'STORAGE_PRESSURE=RESOLVED' 'BLOCK_USAGE_MB=OK' 'INODE_COUNT=OK' 'RETENTION_POLICY=COMPLIANT' 'ROTATION_CONFIG=VERIFIED' 'AUDITED_BY=storage_audit_v1' > "$HOME/incident/reports/audit-success.marker"

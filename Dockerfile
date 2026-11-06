@@ -32,8 +32,10 @@ COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
 COPY labs ./labs
+COPY challenges ./challenges
 # Check scripts must stay readable (they run as the learner); the answers must not.
-RUN find labs -type d -name solutions -exec chmod 700 {} +
+RUN find labs -type d -name solutions -exec chmod 700 {} + \
+ && find challenges -type d -name solutions -exec chmod 700 {} +
 ENV PORT=8080 HOST=0.0.0.0 SANDBOX_DIR=/sandbox LAB_UID=10000 PYTHONDONTWRITEBYTECODE=1
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
