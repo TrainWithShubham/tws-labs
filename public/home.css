@@ -46,6 +46,19 @@
 .steps p { color: var(--muted); margin: 0 0 16px; max-width: 22em; font-size: .95rem; }
 .steps code { background: none; padding: 0; color: var(--faint); font-size: 12.5px; }
 
+/* two learning modes */
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--rule); }
+.mode-card { display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--rule); border-radius: 16px; background: rgba(255, 255, 255, .012); transition: border-color .25s ease, background .25s ease; }
+.mode-card:hover { border-color: var(--rule2); background: rgba(255, 255, 255, .02); }
+.mode-badge { font: 500 11px var(--mono); letter-spacing: .12em; color: var(--faint); margin-bottom: 12px; }
+.mode-card h3 { font: 400 1.45rem/1.25 var(--serif); letter-spacing: -.015em; color: var(--text); margin: 0 0 12px; }
+.mode-card > p { color: var(--muted); font-size: .95rem; line-height: 1.6; margin: 0 0 20px; }
+.mode-points { list-style: none; padding: 0; margin: 0 0 26px; display: flex; flex-direction: column; gap: 8px; }
+.mode-points li { position: relative; padding-left: 18px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.mode-points li::before { content: ''; position: absolute; left: 0; top: .55em; width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+.mode-card:hover .mode-points li::before { background: var(--text); }
+.mode-cta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 18px; margin-top: auto; padding-top: 8px; }
+
 /* run locally */
 .run-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; align-items: center; } .run-grid > * { min-width: 0; }
 .runbox { max-width: 100%; border: 1px solid var(--rule); border-radius: 16px; padding: 22px; background: rgba(255, 255, 255, .012); }
@@ -76,6 +89,8 @@ html.js .reveal:not(.in) { opacity: 0; transform: translateY(14px); }
   .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 48px; min-height: 0; } .hero-art { max-width: 520px; }
   .cols, .steps { grid-template-columns: 1fr; } .col, .col:nth-child(n+2), .col:last-child { padding: 28px 0 20px; border-right: 0; border-bottom: 1px solid var(--rule); }
   .steps > div { padding-right: 0; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+  .modes { grid-template-columns: 1fr; gap: 20px; margin-top: 36px; padding-top: 28px; }
+  .mode-card { padding: 22px 20px; }
   .run-grid { grid-template-columns: 1fr; gap: 28px; } .section { padding-top: 80px; }
 }
 @media (max-width: 600px) { .home section { padding-left: 18px; padding-right: 18px; } .runbox { padding: 16px; } .codeblock pre { padding: 46px 14px 14px; } }

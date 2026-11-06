@@ -1,0 +1,63 @@
+title: Users, Groups & Access Control
+level: beginner
+minutes: 12
+summary: Manage user accounts, primary and supplementary groups, group access rights, and password/group integrity.
+steps:
+  - id: briefing
+    type: lesson
+    title: Access control and group policy triage
+    body: |
+      An internal security audit of `access/` flagged policy and permission defects:
+      - The team project folder `access/projects/backend/` has mode `0755`, preventing group members from writing files.
+      - In `access/config/group-membership.conf`, service user `deploy-agent` is mistakenly assigned to `guest` instead of `engineers`.
+      - The sudo policy `access/sudoers.d/deploy-agent` gives unrestricted `ALL` command privileges rather than scoped execution.
+
+      Triage each configuration defect, fix the group permissions, update the membership mapping, and run `./access/verify-access`.
+
+  - id: fix-group-perms
+    type: task
+    title: Grant group write permissions to team directory
+    body: |
+      The team directory `access/projects/backend` currently has mode `0755`. Members of the group cannot collaborate or create files.
+
+      Update `access/projects/backend` to mode `0775` (granting read, write, and execute permissions to the group).
+    hint:
+      - "Run: chmod 0775 access/projects/backend"
+    success: Correct. access/projects/backend has group write permissions.
+
+  - id: assign-user-group
+    type: task
+    title: Correct user group assignment in configuration
+    body: |
+      Inspect `access/config/group-membership.conf`. User `deploy-agent` is assigned to `guest`.
+
+      Update `access/config/group-membership.conf` so that `deploy-agent` is assigned to `engineers`:
+      ```
+      deploy-agent:engineers
+      ```
+    hint:
+      - Edit access/config/group-membership.conf and change deploy-agent:guest to deploy-agent:engineers.
+    success: Correct. deploy-agent is assigned to engineers.
+
+  - id: restrict-sudo-policy
+    type: task
+    title: Restrict sudo policy privileges
+    body: |
+      `access/sudoers.d/deploy-agent` currently grants unrestricted sudo permissions (`ALL=(ALL) NOPASSWD: ALL`).
+
+      Restrict the policy so `deploy-agent` can only execute the specific service restart command:
+      ```
+      deploy-agent ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart app
+      ```
+    hint:
+      - Edit access/sudoers.d/deploy-agent and replace ALL with /usr/bin/systemctl restart app.
+    success: Correct. sudo rule restricted to scoped command execution.
+
+  - id: verify-access
+    type: task
+    title: Verify access control compliance
+    body: |
+      Execute `./access/verify-access` to validate group permissions, membership assignment, and sudo rules.
+    hint:
+      - "Run: cd ~/access && ./verify-access"
+    success: Congratulations! Access control audit and policy verification completed.

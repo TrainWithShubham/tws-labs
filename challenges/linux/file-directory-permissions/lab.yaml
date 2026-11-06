@@ -1,0 +1,60 @@
+title: File & Directory Permissions
+level: beginner
+minutes: 12
+summary: Diagnose and fix permission denied errors, file mode bits, ownership, and access inheritance.
+steps:
+  - id: briefing
+    type: lesson
+    title: Maintenance job permission triage
+    body: |
+      An automated maintenance job failed with "Permission denied".
+
+      An audit of `deploy/` revealed three permission misconfigurations:
+      - The backup script `deploy/scripts/backup.sh` is missing execute permissions.
+      - The database credentials file `deploy/config/db-credentials.env` is world-readable (`0666`).
+      - The cache directory `deploy/cache/` has mode `0644`, preventing directory traversal.
+
+      Fix these permission issues, then run `./deploy/verify-permissions` to validate the environment.
+
+  - id: fix-exec-bit
+    type: task
+    title: Make backup script executable
+    body: |
+      The maintenance runner reported: `deploy/scripts/backup.sh: Permission denied`.
+
+      Grant execute permissions (`chmod +x` or `0755`) to `deploy/scripts/backup.sh`.
+    hint:
+      - Check current permissions using ls -l deploy/scripts/backup.sh.
+      - Use chmod +x deploy/scripts/backup.sh to make it executable.
+    success: Correct. deploy/scripts/backup.sh is executable.
+
+  - id: secure-credentials
+    type: task
+    title: Restrict database credentials permissions
+    body: |
+      `deploy/config/db-credentials.env` contains sensitive database secrets but was created with mode `0666` (world-readable and world-writable).
+
+      Harden the file so that only the owner has read and write permissions (mode `0600`).
+    hint:
+      - "Run: chmod 0600 deploy/config/db-credentials.env"
+    success: Correct. db-credentials.env is restricted to mode 0600.
+
+  - id: fix-dir-traversal
+    type: task
+    title: Restore directory traversal permissions on cache
+    body: |
+      Applications cannot read `deploy/cache/ready.flag` because directory `deploy/cache` has mode `0644`. In Linux, a directory requires the execute bit (`+x`) to allow traversal into it.
+
+      Set permissions on `deploy/cache` to `0755` so that the directory can be accessed.
+    hint:
+      - "Run: chmod 0755 deploy/cache"
+    success: Correct. deploy/cache is traversable.
+
+  - id: verify-permissions
+    type: task
+    title: Verify permission compliance
+    body: |
+      Execute `./deploy/verify-permissions` to run the permission verification audit and record the compliance marker.
+    hint:
+      - "Run: cd ~/deploy && ./verify-permissions"
+    success: Congratulations! All permission defects diagnosed and repaired.

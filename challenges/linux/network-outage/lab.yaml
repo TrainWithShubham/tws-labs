@@ -1,0 +1,109 @@
+title: "Network Outage: The Missing Route"
+level: intermediate
+minutes: 15
+summary: Diagnose simulated network outage, trace packets, resolve missing route, and audit connectivity.
+steps:
+  - id: incident-brief
+    type: lesson
+    title: "Incident dispatch: API service unreachable"
+    body: |
+      At 10:15 UTC, payments API health checks triggered a severity-1 outage. The web client (`client-01`) cannot reach the payment backend at `api.internal.corp:8080`.
+
+      The operations ticket suspects DNS failure or backend server crash.
+
+      **Simulation Context**:
+      This challenge is a controlled userland network simulation inside `~/lnx-ch-050/incident`. No host network interfaces, routes, firewall rules, or sockets are modified. Work from `~/lnx-ch-050/incident` using `./bin/netmap`, `./bin/ip`, `./bin/ping`, `./bin/traceroute`, `./bin/getent`, and `./bin/ss`.
+
+      Inspect the topology, trace the packets, locate the missing route, repair client routing, and verify recovery.
+
+  - id: network-discovery
+    type: task
+    title: Discover network topology and test DNS
+    body: |
+      Inspect the simulated network from `~/lnx-ch-050/incident` using `./bin/netmap` and `./bin/ip addr`.
+
+      Verify DNS resolution using `./bin/getent hosts api.internal.corp`. Test reachability to the DNS server using `./bin/ping -c 2 10.0.2.53`.
+
+      Record your discovery findings in `reports/discovery.env` inside `~/lnx-ch-050/incident` using `KEY=VALUE` assignments:
+      - `CLIENT_IP`: Local client IP address on eth0
+      - `DNS_SERVER`: Configured DNS resolver address
+      - `RESOLVED_IP`: Target IP address resolved for api.internal.corp
+      - `DNS_STATUS`: Status of DNS resolution (RESOLVED or FAILED)
+    hint:
+      - "Run cd ~/lnx-ch-050/incident && ./bin/netmap to inspect the four-node topology."
+      - "Run ./bin/ip addr to find client-01 IP, and ./bin/getent hosts api.internal.corp to resolve the target."
+      - "Write to reports/discovery.env: CLIENT_IP=10.0.1.10, DNS_SERVER=10.0.2.53, RESOLVED_IP=10.0.2.100, DNS_STATUS=RESOLVED."
+    success: Correct. Network topology and functional DNS resolution confirmed.
+
+  - id: packet-tracing
+    type: task
+    title: Trace packet route to application server
+    body: |
+      Investigate reachability to the application server `10.0.2.100` from `~/lnx-ch-050/incident`.
+
+      Run `./bin/ping -c 2 10.0.2.100` and trace the packet path using `./bin/traceroute 10.0.2.100`. Notice that while the DNS server at `10.0.2.53` is reachable, traffic to `10.0.2.100` fails immediately.
+
+      Record your diagnostic findings in `reports/packet-trace.env`:
+      - `TARGET_IP`: Destination IP address (10.0.2.100)
+      - `PING_RESULT`: Result of the ping attempt (REACHABLE or UNREACHABLE)
+      - `ERROR_MESSAGE`: Exact kernel error string returned by ping
+      - `LAST_HOP`: Last responding hop address or NONE
+    hint:
+      - "Run ./bin/ping -c 2 10.0.2.100 from ~/lnx-ch-050/incident."
+      - "Run ./bin/traceroute 10.0.2.100 to observe that packets cannot leave the client."
+      - "Write to reports/packet-trace.env: TARGET_IP=10.0.2.100, PING_RESULT=UNREACHABLE, ERROR_MESSAGE=Network is unreachable, LAST_HOP=NONE."
+    success: Correct. Immediate routing drop and unreachable packet path diagnosed.
+
+  - id: root-cause-analysis
+    type: task
+    title: Diagnose missing routing table entry
+    body: |
+      Inspect client routing using `./bin/ip route` from `~/lnx-ch-050/incident`.
+
+      Compare the existing routes against the destination subnet `10.0.2.0/24`. Notice the table only has a local route (`10.0.1.0/24`) and a host route to DNS (`10.0.2.53/32 via 10.0.1.1`), but lacks a route for the rest of `10.0.2.0/24`.
+
+      Document the root cause in `reports/root-cause.env`:
+      - `FAILURE_TYPE`: Primary failure classification (MISSING_ROUTE)
+      - `MISSING_DESTINATION`: Unreachable target subnet (10.0.2.0/24)
+      - `REQUIRED_GATEWAY`: Gateway address required to forward traffic
+      - `OUTGOING_INTERFACE`: Local client interface for the gateway
+    hint:
+      - "Run ./bin/ip route to view active routing table entries."
+      - "Notice there is a specific /32 route to DNS (10.0.2.53), but no default route or route to 10.0.2.0/24."
+      - "Write to reports/root-cause.env: FAILURE_TYPE=MISSING_ROUTE, MISSING_DESTINATION=10.0.2.0/24, REQUIRED_GATEWAY=10.0.1.1, OUTGOING_INTERFACE=eth0."
+    success: Correct. Root cause identified as missing gateway route to the services subnet.
+
+  - id: network-recovery
+    type: task
+    title: Install the missing route to the gateway
+    body: |
+      Repair client routing from `~/lnx-ch-050/incident` so packets can reach the services subnet.
+
+      Install either a default route:
+      `./bin/ip route add default via 10.0.1.1 dev eth0`
+      or a subnet route:
+      `./bin/ip route add 10.0.2.0/24 via 10.0.1.1 dev eth0`
+
+      Verify with `./bin/ip route` that the new route is registered. Once installed, test ping with `./bin/ping -c 2 10.0.2.100` to confirm packets now flow through gateway `10.0.1.1`.
+    hint:
+      - "Run cd ~/lnx-ch-050/incident && ./bin/ip route add default via 10.0.1.1 dev eth0."
+      - "Alternatively run ./bin/ip route add 10.0.2.0/24 via 10.0.1.1 dev eth0."
+      - "Verify the route appears in ./bin/ip route."
+    success: Correct. Missing route installed and active in client routing table.
+
+  - id: connectivity-verification
+    type: task
+    title: Verify full end-to-end network recovery
+    body: |
+      Verify full recovery and audit connectivity from `~/lnx-ch-050/incident`:
+
+      1. View topology status: `./bin/netmap` (all nodes should display REACHABLE).
+      2. Trace packets: `./bin/traceroute api.internal.corp` (verify 2 hops via 10.0.1.1).
+      3. Run the automated network auditor: `./bin/network-audit`
+
+      The auditor independently validates route tables, ICMP reachability, DNS lookups, and simulated HTTP health responses on port 8080.
+    hint:
+      - "Run ./bin/netmap to inspect the live reachability status of all nodes."
+      - "Run ./bin/traceroute api.internal.corp to confirm packets traverse gateway 10.0.1.1 to 10.0.2.100."
+      - "Run ./bin/network-audit to verify recovery and generate reports/audit-success.marker."
+    success: Congratulations! Network outage diagnosed, missing route installed, and full connectivity audited.

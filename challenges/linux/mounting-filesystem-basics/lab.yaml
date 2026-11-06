@@ -1,0 +1,63 @@
+title: Mounting & Filesystem Basics
+level: beginner
+minutes: 15
+summary: Mount and unmount block devices, bind mount points, configure /etc/fstab persistently, and resolve UUIDs.
+steps:
+  - id: briefing
+    type: lesson
+    title: Node storage mounting and fstab triage
+    body: |
+      An automated node boot sequence failed because persistent storage cannot be mounted using `mount-audit/etc/fstab`.
+
+      Investigation reveals three issues:
+      - The mount target directory `mount-audit/mnt/data` is missing.
+      - The volume entry in `mount-audit/etc/fstab` uses an invalid placeholder UUID `00000000-0000-0000-0000-000000000000` instead of the actual UUID from `mount-audit/disks/data-disk.img`.
+      - The mount entry contains invalid mount option flags (`errors=remount-bad-flag`).
+
+      Resolve the mount target, discover the real disk UUID with `blkid`, fix the `fstab` entry, and run `./mount-audit/verify-mounts`.
+
+  - id: create-mountpoint
+    type: task
+    title: Create the mount directory
+    body: |
+      The persistent mount directory `mount-audit/mnt/data` does not exist.
+
+      Create the directory `mount-audit/mnt/data` with permissions `0755`.
+    hint:
+      - "Run: mkdir -p mount-audit/mnt/data && chmod 0755 mount-audit/mnt/data"
+    success: Correct. mount-audit/mnt/data created.
+
+  - id: resolve-fstab-uuid
+    type: task
+    title: Resolve and set real disk UUID in fstab
+    body: |
+      Inspect `mount-audit/disks/data-disk.img` using `blkid mount-audit/disks/data-disk.img` to find its true filesystem UUID.
+
+      Edit `mount-audit/etc/fstab` and replace the placeholder `UUID=00000000-0000-0000-0000-000000000000` with the actual UUID.
+    hint:
+      - Run blkid mount-audit/disks/data-disk.img to read the UUID.
+      - Update mount-audit/etc/fstab with the exact UUID.
+    success: Correct. Correct disk UUID configured in fstab.
+
+  - id: fix-mount-options
+    type: task
+    title: Fix invalid mount options in fstab
+    body: |
+      In `mount-audit/etc/fstab`, the mount entry for `mount-audit/mnt/data` has invalid mount option flags.
+
+      Update the options column so it specifies standard `defaults` options (with dump and pass numbers `0 2`):
+      ```
+      UUID=<disk-uuid> mount-audit/mnt/data ext4 defaults 0 2
+      ```
+    hint:
+      - Ensure the line in mount-audit/etc/fstab ends with ext4 defaults 0 2.
+    success: Correct. fstab mount options and dump/pass numbers configured.
+
+  - id: verify-mounts
+    type: task
+    title: Verify mount table and filesystem bindings
+    body: |
+      Execute `./mount-audit/verify-mounts` to validate fstab parsing, mountpoint permissions, and filesystem bindings.
+    hint:
+      - "Run: cd ~/mount-audit && ./verify-mounts"
+    success: Congratulations! Filesystem mount configuration and fstab persistence repaired.

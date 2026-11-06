@@ -1,0 +1,1 @@
+./deploy/verify-deployment || true

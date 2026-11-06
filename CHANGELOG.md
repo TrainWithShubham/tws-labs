@@ -9,6 +9,10 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **Universal Local & Browser Architecture**: evolved the platform into a single unified architecture supporting both zero-config local execution via Docker Compose and remote browser-based execution in hosted environments behind reverse proxies.
+- **Unified Docker Compose Configuration**: `docker-compose.yml` serves as the single Compose entry point with configurable bindings (`LABS_BIND_IP`, `LABS_PORT`), profiles (`LAB_PROFILE`), host guards (`ALLOWED_HOSTS`), proxy trust (`TRUST_PROXY`), and limits documented in `.env.example`.
+- **Pluggable Execution Runtime Interface**: introduced `src/runtime.js` defining a unified execution interface for session preparation, pty spawning, grading, and teardown, enabling future isolated container and Kubernetes runtimes without duplicating the application.
+- **Independent Authorization & Fail-Closed Security**: untrusted execution in hosted mode remains strictly fail-closed, with Guided Labs authorization decoupled from standalone challenge access policies.
 - **Kubernetes: persistent storage** (PersistentVolumes, PersistentVolumeClaims, volume attachment, container mount paths, and why a claim stays `Pending`): configure durable storage for stateful workloads without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #82.
 - **Kubernetes** (now more labs on the track): *Labels, selectors and ReplicaSets* (find the selector that does not match, adopt a stray Pod), *Probes and rolling updates* (readiness, liveness and startup probes, `maxUnavailable` and `maxSurge`, requests and limits), *Routing traffic with Ingress* (host and path rules, path types, TLS, a backend that points at nothing) and *Jobs and CronJobs* (completions and parallelism, a Job's restart policy, cron schedules, history limits).
 - **Helm** (a new track): *Your first Helm chart*: `Chart.yaml`, `values.yaml`, a templated Deployment and a per-environment values file, graded by reading the chart files (the image has no `helm` binary, and the lab says so).

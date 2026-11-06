@@ -1,0 +1,65 @@
+title: Process & Service Fundamentals
+level: beginner
+minutes: 15
+summary: Inspect running processes, process trees, resource utilization, daemon status, and POSIX signal handling.
+steps:
+  - id: briefing
+    type: lesson
+    title: Uncontrolled worker process incident
+    body: |
+      A rogue worker script was left running in the sandbox environment inside `proc-incident/`.
+
+      The worker `proc-incident/bin/spin-worker` is looping continuously without sleeping, holding open a process lockfile `proc-incident/run/worker.pid`.
+
+      Identify the rogue process, send a graceful SIGTERM signal (`kill <pid>`) to shut it down cleanly, remediate the loop interval in `proc-incident/config/worker.conf`, and run `./proc-incident/verify-service`.
+
+  - id: locate-process
+    type: task
+    title: Identify the rogue worker PID
+    body: |
+      Use `ps -ef` or `pgrep -f spin-worker` to locate the running `spin-worker` process.
+
+      Record its integer process ID into `proc-incident/reports/rogue-pid.txt`:
+      ```
+      <PID>
+      ```
+    hint:
+      - Run ps -ef | grep spin-worker or pgrep -f spin-worker.
+      - "Write the PID into proc-incident/reports/rogue-pid.txt (e.g. echo 1234 > proc-incident/reports/rogue-pid.txt)"
+    success: Correct. Rogue worker PID identified and recorded.
+
+  - id: terminate-graceful
+    type: task
+    title: Gracefully terminate the rogue worker
+    body: |
+      Send a graceful termination signal `SIGTERM` (`kill <pid>` or `kill -15 <pid>`) to the worker.
+
+      The worker process has a signal handler that traps `SIGTERM`, writes clean shutdown status to `proc-incident/run/worker.status`, removes `proc-incident/run/worker.pid`, and exits.
+    hint:
+      - Read the PID from proc-incident/reports/rogue-pid.txt.
+      - "Run: kill <pid>"
+    success: Correct. Worker terminated gracefully with clean status.
+
+  - id: fix-service-config
+    type: task
+    title: Fix runaway loop configuration
+    body: |
+      `proc-incident/config/worker.conf` has `SPIN_INTERVAL=0` and `MAX_ITERATIONS=-1`, causing infinite non-sleeping loop cycles.
+
+      Update `proc-incident/config/worker.conf` to set healthy production operational limits:
+      ```
+      SPIN_INTERVAL=5
+      MAX_ITERATIONS=100
+      ```
+    hint:
+      - Edit proc-incident/config/worker.conf and set SPIN_INTERVAL=5 and MAX_ITERATIONS=100.
+    success: Correct. Worker operational limits configured.
+
+  - id: verify-service
+    type: task
+    title: Verify service recovery and lifecycle
+    body: |
+      Execute `./proc-incident/verify-service` to run a verified single-cycle test run and generate the audit marker.
+    hint:
+      - "Run: cd ~/proc-incident && ./verify-service"
+    success: Congratulations! Process management and service lifecycle verification completed.

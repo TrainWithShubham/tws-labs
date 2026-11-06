@@ -1,32 +1,41 @@
-# Run TWS Labs on your own machine (Windows, macOS or Linux) - no account needed.
-#
-#   docker compose up --build        then open http://localhost:8080
-#
-# The labs hand you a real Linux shell, so they live in a container. That is also
-# what makes them work the same on Windows: the shell is Linux inside the container.
+# TWS Labs — Universal Docker Compose Configuration
+# Supports both:
+#   1. Local execution:  docker compose up --build  (opens http://localhost:8080, loopback only)
+#   2. Hosted execution: LAB_PROFILE=hosted ALLOWED_HOSTS=... docker compose up -d
+# See .env.example for all configuration options.
 services:
   labs:
     build: .
     image: tws-labs:dev
     ports:
-      # Localhost only. This is a real shell - never expose it to your network.
-      - "127.0.0.1:${LABS_PORT:-8080}:8080"
+      # Localhost only by default for local mode. For hosted mode behind a reverse proxy, set LABS_BIND_IP=0.0.0.0
+      - "${LABS_BIND_IP:-127.0.0.1}:${LABS_PORT:-8080}:8080"
     environment:
-      LAB_PROFILE: local       # loopback-only guard, relaxed limits, offline fonts
-      LABS_WATCH: "1"          # re-read labs/ on every page load: edit YAML, refresh, see it
-      # USAGE_STATS: "1"       # optional: count sessions per lab and task pass/fail (no IPs stored); see the README
-      # ADMIN_TOKEN: change-me  # optional: read the counts at /admin/stats (Authorization: Bearer ...)
+      LAB_PROFILE: ${LAB_PROFILE:-local}
+      LABS_WATCH: ${LABS_WATCH:-1}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+      LAB_ACCESS_TOKENS: ${LAB_ACCESS_TOKENS:-}
+      PUBLIC_CHALLENGES: ${PUBLIC_CHALLENGES:-0}
+      LAB_GATED: ${LAB_GATED:-}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      MAX_SESSIONS: ${MAX_SESSIONS:-}
+      MAX_SESSIONS_PER_IP: ${MAX_SESSIONS_PER_IP:-}
+      LAB_IDLE_MIN: ${LAB_IDLE_MIN:-}
+      LAB_HARD_CAP_MIN: ${LAB_HARD_CAP_MIN:-}
+      USAGE_STATS: ${USAGE_STATS:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
     volumes:
-      - ./labs:/app/labs:ro    # contributors: edit ./labs on your host, no rebuild needed
-    cpus: 1.0
-    mem_limit: 512m
-    pids_limit: 512
+      - ./labs:/app/labs:ro
+      - ./challenges:/app/challenges:ro
+    cpus: ${CPUS:-1.0}
+    mem_limit: ${MEM_LIMIT:-512m}
+    pids_limit: ${PIDS_LIMIT:-512}
     cap_drop: [ALL]
-    cap_add: [SETUID, SETGID, KILL, CHOWN, DAC_OVERRIDE]   # drop shells to per-session users, chown their homes, clean up
+    cap_add: [SETUID, SETGID, KILL, CHOWN, DAC_OVERRIDE]
     security_opt:
       - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp:size=64m,mode=1777
-      - /sandbox:size=128m,mode=0755,exec    # learners' homes; 'exec' so ./script.sh works (docker tmpfs is noexec by default)
+      - /sandbox:size=${SANDBOX_TMPFS_SIZE:-128m},mode=0755,exec
     restart: unless-stopped

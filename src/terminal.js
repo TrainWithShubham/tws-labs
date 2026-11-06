@@ -1,15 +1,16 @@
 const fs = require('fs');
-const pty = require('node-pty');
 const WebSocket = require('ws');
-const { killProcessSession, killProcessesOfUid } = require('./lib');
 const { guardOk } = require('./guards');
 const { labEnv } = require('./lab-env');
 
 const MAX_WS_MESSAGE_BYTES = 64 * 1024;
 
-// The terminal: one WebSocket per session token, each driving a real shell in a pty as that session's own user.
+// The terminal: one WebSocket per session token, driving a real shell via ExecutionRuntime.
 function attachTerminal(server, d) {
-  const { cfg, store, sandbox, findLab, homeOf, historyOf, idOf, bootstrap } = d;
+  const { cfg, store, runtime, findLab, homeOf, historyOf, idOf, bootstrap } = d;
+  if (!runtime) {
+    throw new Error('attachTerminal requires an ExecutionRuntime instance');
+  }
   const shells = new Map();   // session token -> its pty, so the server can type into it (e.g. to move a skipped-ahead learner into the right folder)
   const wss = new WebSocket.Server({
     server, path: '/ws', maxPayload: MAX_WS_MESSAGE_BYTES,
@@ -21,31 +22,34 @@ function attachTerminal(server, d) {
     const session = store.get(token);
     if (!session) return ws.close(4001, 'invalid or expired session');
     if (session.shellPid) return ws.close(4002, 'session already connected');   // one terminal per token
-    const lab = findLab(session.meta.track, session.meta.lab);
-    if (!lab) { store.expire(token); return ws.close(4004, 'lab not found'); }
+    let entity = null;
+    let extraEnv = {};
+
+    const isChallenge = session.meta && session.meta.type === 'challenge';
+    if (isChallenge) {
+      entity = d.challengeLoader && d.challengeLoader.getChallengeInternal(session.meta.domain, session.meta.challenge);
+      if (!entity) { store.expire(token); return ws.close(4004, 'challenge not found'); }
+    } else {
+      entity = findLab(session.meta.track, session.meta.lab);
+      if (!entity) { store.expire(token); return ws.close(4004, 'lab not found'); }
+      extraEnv = labEnv(entity, cfg);
+    }
 
     const { uid } = session;
     const home = homeOf(token);
     let shell;
     try {
-      sandbox.prepareHome(home, uid);
-      const extraEnv = labEnv(lab, cfg);
-      const setup = sandbox.runSetup(lab.dir, home, uid, extraEnv);
+      runtime.prepareHome(home, uid);
+      const setup = isChallenge
+        ? runtime.runChallengeSetup(entity.dir, home, uid, extraEnv, { isolateOutput: entity.slug === 'process-resource' || entity.id === 'LNX-CH-030' || entity.slug === 'process-service-fundamentals' || entity.id === 'LNX-CH-005' })
+        : runtime.runSetup(entity.dir, home, uid, extraEnv);
       if (setup.code !== 0) throw new Error('setup.sh failed:\n' + setup.out);
-      sandbox.prepareHistory(historyOf(token), uid);
-      // bash, not sh: on Debian sh is dash, which has no `ulimit -u` (and would fail silently).
-      const [file, args] = sandbox.asUser(uid, home, 'bash', ['-c', bootstrap]);
-      // The environment is deliberately minimal: the learner gets a shell, not this
-      // process's config or secrets.
-      shell = pty.spawn(file, args, {
-        name: 'xterm-256color', cols: 80, rows: 24, cwd: home,
-        env: { PATH: process.env.PATH, HOME: home, TERM: 'xterm-256color', LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0', LAB_HISTORY: historyOf(token), ...extraEnv },
-      });
+      runtime.prepareHistory(historyOf(token), uid);
+      shell = runtime.spawnTerminal({ uid, home, historyFile: historyOf(token), extraEnv, bootstrapCmd: bootstrap });
     } catch (e) {
       // A resource-exhausted host must not crash the process for every other visitor.
       console.error(`session ${idOf(token)} could not start:`, e.message);
-      sandbox.removeTree(home);
-      sandbox.removeTree(historyOf(token));
+      runtime.cleanupSession({ home, historyFile: historyOf(token) });
       store.expire(token);
       return ws.close(1011, 'could not start the lab sandbox');
     }
@@ -83,12 +87,8 @@ function attachTerminal(server, d) {
       clearTimeout(hardTimer);
       clearTimeout(idleTimer);
       shells.delete(token);
-      killProcessSession('/proc', shell.pid);
-      if (uid !== undefined) killProcessesOfUid('/proc', uid);    // also daemons that escaped via setsid
-      try { shell.kill(); } catch { /* already exited */ }
+      runtime.cleanupSession({ shell, pid: shell.pid, uid, home, historyFile: historyOf(token) });
       store.expire(token);
-      sandbox.removeTree(home);
-      sandbox.removeTree(historyOf(token));
     });
   });
   return { wss, type: (token, text) => { const sh = shells.get(token); if (sh) { try { sh.write(text); return true; } catch { /* gone */ } } return false; } };

@@ -13,18 +13,27 @@ function hostnameOf(hostHeader) {
   return h.startsWith('[') ? h.slice(0, h.indexOf(']') + 1) : h.split(':')[0];
 }
 // Local profile only: any Host that is not a loopback name is a DNS-rebinding attempt.
+// Hosted profile: if allowedHosts is configured, restrict Host to the allowed hostnames.
 function hostOk(req, cfg) {
-  return !cfg.isLocal || LOOPBACK.has(hostnameOf(req.headers.host));
+  const host = hostnameOf(req.headers && req.headers.host);
+  if (!host) return false;
+  if (cfg.isLocal) {
+    return LOOPBACK.has(host);
+  }
+  if (cfg.allowedHosts && cfg.allowedHosts.length > 0) {
+    return cfg.allowedHosts.includes(host);
+  }
+  return true;
 }
 function guardOk(req, cfg, { needOrigin }) {
-  const origin = req.headers.origin;
+  const origin = req.headers && req.headers.origin;
   if (!hostOk(req, cfg)) return false;
   if (!origin) return !needOrigin;
   let originHost;
   try { originHost = new URL(origin).host.toLowerCase(); } catch { return false; }
   // Both profiles: the Origin must be this server's own. On the local profile it must also be a loopback name, so a page or dev server on
   // another localhost port (a different origin) cannot open a shell here.
-  return originHost === String(req.headers.host || '').toLowerCase() && (!cfg.isLocal || LOOPBACK.has(hostnameOf(originHost)));
+  return originHost === String((req.headers && req.headers.host) || '').toLowerCase() && (!cfg.isLocal || LOOPBACK.has(hostnameOf(originHost)));
 }
 
 // Hosted only: every lab needs one of the configured invite tokens (the local app never asks). Compared as

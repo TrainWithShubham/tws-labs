@@ -7,7 +7,7 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-const TABS = [['labs', '/', 'Labs'], ['videos', '/videos', 'Videos'], ['roadmap', '/roadmap', 'Roadmap']];
+const TABS = [['labs', '/', 'Labs'], ['challenges', '/challenges', 'Challenges'], ['videos', '/videos', 'Videos'], ['roadmap', '/roadmap', 'Roadmap']];
 const YT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.3 5 12 5 12 5s-6.3 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2C2 8.7 2 12 2 12s0 3.3.4 4.8a2.5 2.5 0 0 0 1.8 1.8C5.7 19 12 19 12 19s6.3 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8C22 15.3 22 12 22 12s0-3.3-.4-4.8zM10 15V9l5.2 3z"/></svg>';
 const FONTS_IMPORT = "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');\n";
 const PUBLIC = path.join(__dirname, '..', 'public');

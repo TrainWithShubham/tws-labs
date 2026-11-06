@@ -1,0 +1,1 @@
+./disks-incident/verify-disks

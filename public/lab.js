@@ -39,25 +39,33 @@
   // Gated labs (hosted only) ask for an invite code before taking a seat.
   function askInvite(wrong) {
     setStatus('ended', 'invite');
-    $('term').hidden = true;
+    if ($('term')) $('term').hidden = true;
     var f = $('invite');
-    f.hidden = false;
-    $('invite-msg').textContent = wrong ? 'That code was not accepted. Try again.' : 'This lab runs on a shared cluster, so it needs an invite code.';
-    $('invite-code').value = '';
-    $('invite-code').focus();
+    if (f) f.hidden = false;
+    if ($('invite-msg')) $('invite-msg').textContent = wrong ? 'That code was not accepted. Try again.' : 'This lab runs on a shared cluster, so it needs an invite code.';
+    if ($('invite-code')) {
+      $('invite-code').value = '';
+      $('invite-code').focus();
+    }
   }
-  $('invite').addEventListener('submit', function (e) {
-    e.preventDefault();
-    saveInvite($('invite-code').value.trim());
-    $('invite').hidden = true; $('term').hidden = false; fit.fit();
-    startSession();
-  });
+  if ($('invite')) {
+    $('invite').addEventListener('submit', function (e) {
+      e.preventDefault();
+      saveInvite($('invite-code') ? $('invite-code').value.trim() : '');
+      $('invite').hidden = true;
+      if ($('term')) { $('term').hidden = false; fit.fit(); }
+      startSession();
+    });
+  }
   function startSession() {
     if (DATA.gated && !savedInvite()) return askInvite(false);
     setStatus('', 'starting');
     var headers = { 'Content-Type': 'application/json' };
     if (savedInvite()) headers['X-Lab-Token'] = savedInvite();
-    fetch('/session', { method: 'POST', headers: headers, body: JSON.stringify({ track: DATA.track, lab: DATA.lab }) })
+    var payload = DATA.type === 'challenge'
+      ? { type: 'challenge', domain: DATA.domain, challenge: DATA.challenge }
+      : { track: DATA.track, lab: DATA.lab };
+    fetch('/session', { method: 'POST', headers: headers, body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
       .then(function (r) {
         if (r.status === 200) { token = r.body.token; connect(); pollTimer(); stopTimer(); timerInterval = setInterval(pollTimer, 5000); return; }
@@ -80,8 +88,9 @@
     ws.onmessage = function (ev) { term.write(ev.data); };
     ws.onclose = function (ev) {
       stopTimer(); setStatus('ended', 'ended');
-      $('lab-timer-text').textContent = /time limit/i.test(ev.reason || '') ? '00:00' : '--:--';   // never leave a stale countdown behind
-      $('lab-timer').classList.remove('is-low');
+      var timerText = $('lab-timer-text') || $('lab-timer');
+      if (timerText) timerText.textContent = /time limit/i.test(ev.reason || '') ? '00:00' : '--:--';   // never leave a stale countdown behind
+      if ($('lab-timer')) $('lab-timer').classList.remove('is-low');
       var msg = window.twsEndMessage(ev.code, ev.reason);
       term.write('\r\n\x1b[33m' + window.twsWrap(msg, term.cols - 2).join('\r\n') + '\x1b[0m\r\n');
       setHint(msg, false);
@@ -91,9 +100,11 @@
 
   // --- steps -------------------------------------------------------------------
   // Progress is a thin route: one tick per step, the rocket parked at the current one.
-  var before = window.twsTasksDone(DATA.track + '/' + DATA.lab);   // passed on an earlier visit; this terminal still starts fresh
+  var labKey = DATA.type === 'challenge' ? 'challenge:' + DATA.domain + '/' + DATA.challenge : DATA.track + '/' + DATA.lab;
+  var before = window.twsTasksDone(labKey);   // passed on an earlier visit; this terminal still starts fresh
   function renderDots() {
     var ticks = $('jticks'), n = STEPS.length;
+    if (!ticks) return;
     ticks.innerHTML = '';
     STEPS.forEach(function (st, i) {
       var b = document.createElement('button');
@@ -105,30 +116,42 @@
       b.onclick = function () { current = i; render(); };
       ticks.appendChild(b);
     });
-    $('journey').style.setProperty('--p', (n > 1 ? (current / (n - 1)) * 100 : 0) + '%');
+    if ($('journey')) $('journey').style.setProperty('--p', (n > 1 ? (current / (n - 1)) * 100 : 0) + '%');
   }
   function allDone() { return STEPS.every(function (s) { return done[s.id]; }); }
+
+  function updateTaskProgress() {
+    var tasks = STEPS.filter(function (x) { return x.type === 'task'; });
+    var doneTasks = tasks.filter(function (x) { return done[x.id]; }).length;
+    if ($('task-current')) $('task-current').textContent = doneTasks;
+    if ($('task-total')) $('task-total').textContent = tasks.length;
+    if ($('jfill')) $('jfill').style.width = (tasks.length ? Math.round((doneTasks / tasks.length) * 100) : 0) + '%';
+  }
 
   function render() {
     var s = STEPS[current];
     var last = current === STEPS.length - 1;
-    $('step-counter').textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson') + (!done[s.id] && before.indexOf(s.id) >= 0 ? ' · done before' : '');
-    $('step-title').textContent = s.title;
-    $('step-body').innerHTML = s.bodyHtml;          // server-rendered from escaped markdown
+    var sc = $('step-counter') || $('step-label');
+    if (sc) sc.textContent = 'Step ' + (current + 1) + ' of ' + STEPS.length + ' · ' + (s.type === 'task' ? 'task' : 'lesson') + (!done[s.id] && before.indexOf(s.id) >= 0 ? ' · done before' : '');
+    if ($('step-title')) $('step-title').textContent = s.title;
+    if ($('step-body')) $('step-body').innerHTML = s.bodyHtml;          // server-rendered from escaped markdown
     setHint('', false);
     var btn = $('action-btn');
-    btn.disabled = false;
-    btn.style.display = '';
-    if (done[s.id] && last) {
-      btn.textContent = allDone() ? 'Finish' : 'Review skipped steps';
-      btn.onclick = allDone() ? finish : function () { current = STEPS.findIndex(function (x) { return !done[x.id]; }); render(); };
-    } else if (done[s.id]) { btn.textContent = 'Next →'; btn.onclick = next; }
-    else if (s.type === 'lesson') { btn.textContent = 'Got it'; btn.onclick = function () { done[s.id] = true; if (last) render(); else { current++; render(); } }; }
-    else { btn.textContent = 'Check'; btn.onclick = check; }
-    $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
-    $('skip-btn').style.visibility = last ? 'hidden' : 'visible';
+    if (btn) {
+      btn.disabled = false;
+      btn.style.display = '';
+      if (done[s.id] && last) {
+        btn.textContent = allDone() ? 'Finish' : 'Review skipped steps';
+        btn.onclick = allDone() ? finish : function () { current = STEPS.findIndex(function (x) { return !done[x.id]; }); render(); };
+      } else if (done[s.id]) { btn.textContent = 'Next →'; btn.onclick = next; }
+      else if (s.type === 'lesson') { btn.textContent = 'Got it'; btn.onclick = function () { done[s.id] = true; if (last) render(); else { current++; render(); } }; }
+      else { btn.textContent = 'Check'; btn.onclick = check; }
+    }
+    if ($('back-btn')) $('back-btn').style.visibility = current === 0 ? 'hidden' : 'visible';
+    if ($('skip-btn')) $('skip-btn').style.visibility = last ? 'hidden' : 'visible';
     renderDots();
     renderHintButton();
+    updateTaskProgress();
     prepareIfSkipped(s);
   }
   // Jumped past an earlier task? Ask the server to set up the files this one needs (the lab can ship setup/<task>.sh for that).
@@ -148,16 +171,23 @@
       .catch(function () { prepared[s.id] = false; });
   }
   function next() { if (current < STEPS.length - 1) { current++; render(); } }
-  $('back-btn').onclick = function () { if (current > 0) { current--; render(); } };
-  $('skip-btn').onclick = next;
+  if ($('back-btn')) $('back-btn').onclick = function () { if (current > 0) { current--; render(); } };
+  if ($('skip-btn')) $('skip-btn').onclick = next;
 
   // One live region for feedback: amber nudge when a check fails, green confirmation when it passes.
-  function setHint(text, ok) { var h = $('step-hint'); h.textContent = text; h.classList.toggle('is-ok', !!ok); }
+  function setHint(text, ok) {
+    var h = $('step-hint') || $('step-feedback');
+    if (!h) return;
+    h.textContent = text;
+    h.classList.toggle('is-ok', !!ok);
+  }
   var hints = window.twsHints();
   var prepared = {};   // tasks whose starting files were already prepared in this session
   function hintsOf(s) { return s.hints && s.hints.length ? s.hints : (s.hint ? [s.hint] : []); }
   function renderHintButton() {
-    var s = STEPS[current], b = $('hint-btn'), r = s.type === 'task' && !done[s.id] && hints.ready(s.id, hintsOf(s));
+    var b = $('hint-btn');
+    if (!b) return;
+    var s = STEPS[current], r = s.type === 'task' && !done[s.id] && hints.ready(s.id, hintsOf(s));
     b.hidden = !r;
     if (r) { b.textContent = r.label; b.onclick = function () { setHint(hints.next(s.id, hintsOf(s)), false); renderHintButton(); }; }
   }
@@ -180,7 +210,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         btn.disabled = false;
-        if (d.pass) { done[s.id] = true; window.twsMarkTask(DATA.track + '/' + DATA.lab, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
+        if (d.pass) { done[s.id] = true; window.twsMarkTask(labKey, s.id); render(); setHint(s.success || 'Correct. Step complete.', true); return; }
         btn.textContent = 'Check again';
         hints.failed(s.id);
         var msg = d.message;
@@ -194,8 +224,8 @@
   }
 
   function finish() {
-    window.twsMarkDone(DATA.track + '/' + DATA.lab);
-    var html = '<p class="done-mark">Mission complete.</p><p>You finished <strong>' + esc(DATA.title) + '</strong>. Your progress is saved in this browser.</p>';
+    window.twsMarkDone(labKey);
+    var html = '<p class="done-mark">' + (DATA.type === 'challenge' ? 'Challenge resolved.' : 'Mission complete.') + '</p><p>You finished <strong>' + esc(DATA.title) + '</strong>. Your progress is saved in this browser.</p>';
     if (DATA.resources.length) {
       html += '<ul class="resource-list">' + DATA.resources.map(function (r) {
         return '<li><a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.title) + '</a><span>' + esc(r.desc) + '</span></li>';
@@ -203,37 +233,43 @@
     }
     html += '<div class="done-actions">' +
       (DATA.next ? '<a class="btn-primary" href="' + esc(DATA.next.href) + '">Next: ' + esc(DATA.next.title) + ' <span aria-hidden="true">&rarr;</span></a>' : '') +
-      '<a class="btn-quiet" href="' + esc(DATA.trackUrl) + '">Back to the track</a></div>';
+      '<a class="btn-quiet" href="' + esc(DATA.trackUrl) + '">' + (DATA.type === 'challenge' ? 'Back to challenges' : 'Back to the track') + '</a></div>';
     STEPS.forEach(function (st) { done[st.id] = true; });
     current = STEPS.length - 1; renderDots();
-    $('journey').style.setProperty('--p', '100%');
-    $('journey').classList.add('launch');                 // the rocket leaves
-    $('step-counter').textContent = 'Complete';
-    $('step-title').style.display = 'none';
-    $('step-body').innerHTML = html;
+    if ($('journey')) {
+      $('journey').style.setProperty('--p', '100%');
+      $('journey').classList.add('launch');                 // the rocket leaves
+    }
+    var sc = $('step-counter') || $('step-label');
+    if (sc) sc.textContent = 'Complete';
+    if ($('step-title')) $('step-title').style.display = 'none';
+    if ($('step-body')) $('step-body').innerHTML = html;
     setHint('', false);
-    $('action-btn').style.display = 'none';
-    $('skip-btn').style.visibility = 'hidden';
-    $('back-btn').style.visibility = 'hidden';
+    if ($('action-btn')) $('action-btn').style.display = 'none';
+    if ($('skip-btn')) $('skip-btn').style.visibility = 'hidden';
+    if ($('back-btn')) $('back-btn').style.visibility = 'hidden';
+    updateTaskProgress();
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   // --- chrome ------------------------------------------------------------------
   function endLab() { stopTimer(); try { if (ws) ws.close(1000, 'ended by learner'); } catch (e) { /* closed */ } location.href = DATA.trackUrl; }
-  $('end-btn').onclick = endLab;
+  if ($('end-btn')) $('end-btn').onclick = endLab;
   // Restart = a fresh session: closing the socket removes this sandbox, and a new session gets fresh files and a clean command history.
-  var armRestart = window.twsTwoStep(4000), restartLabel = $('restart-btn').textContent, restartTimer = null;
-  $('restart-btn').onclick = function () {
-    var btn = $('restart-btn');
-    clearTimeout(restartTimer);
-    if (!armRestart()) {
-      btn.textContent = 'Click again to restart';
-      restartTimer = setTimeout(function () { btn.textContent = restartLabel; }, 4000);
-      return;
-    }
-    btn.textContent = restartLabel;
-    restartLab();
-  };
+  if ($('restart-btn')) {
+    var armRestart = window.twsTwoStep(4000), restartLabel = $('restart-btn').textContent, restartTimer = null;
+    $('restart-btn').onclick = function () {
+      var btn = $('restart-btn');
+      clearTimeout(restartTimer);
+      if (!armRestart()) {
+        btn.textContent = 'Click again to restart';
+        restartTimer = setTimeout(function () { btn.textContent = restartLabel; }, 4000);
+        return;
+      }
+      btn.textContent = restartLabel;
+      restartLab();
+    };
+  }
   function restartLab() {
     stopTimer(); token = null; tries = 0;
     done = {}; current = 0; hints = window.twsHints(); prepared = {}; noted = {};
@@ -245,11 +281,14 @@
     term.write(DATA.banner + '\r\n\r\n  \x1b[38;2;245;185;66mFresh start. Happy Learning\x1b[0m\r\n\r\n');
     setStatus('', 'starting');
     render();
+    updateTaskProgress();
   }
-  $('fs-btn').onclick = function () {
-    var el = document.querySelector('.terminal-pane');
-    if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen();
-  };
+  if ($('fs-btn')) {
+    $('fs-btn').onclick = function () {
+      var el = document.querySelector('.terminal-pane') || document.querySelector('.terminal-stage') || $('term');
+      if (document.fullscreenElement) document.exitFullscreen(); else if (el) el.requestFullscreen();
+    };
+  }
   window.addEventListener('beforeunload', function () { try { if (ws) ws.close(1000, 'page closed'); } catch (e) { /* closed */ } });
 
   var timerInterval = null;
@@ -257,19 +296,19 @@
   function pollTimer() {
     if (!token) return;
     fetch('/session/remaining?token=' + token).then(function (r) { return r.json(); }).then(function (d) {
-      var t = d.remainingSec, el = $('lab-timer');
-      $('lab-timer-text').textContent = t <= 0 ? '00:00' : String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
-      el.classList.toggle('is-low', t > 0 && t < 120);
+      var t = d.remainingSec, el = $('lab-timer'), tt = $('lab-timer-text') || el;
+      if (tt) tt.textContent = t <= 0 ? '00:00' : String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+      if (el) el.classList.toggle('is-low', t > 0 && t < 120);
       if (t <= 0) stopTimer();
     }).catch(function () { /* transient */ });
   }
   function pollStats() {
     fetch('/stats').then(function (r) { return r.json(); }).then(function (s) {
-      $('stat-cpu').textContent = s.cpuPercent === null ? 'n/a' : s.cpuPercent + '%';
-      $('stat-cpu-bar').style.width = (s.cpuPercent === null ? 0 : Math.min(100, s.cpuPercent)) + '%';
-      $('stat-mem').textContent = s.memUsedMb + ' / ' + s.memLimitMb + ' MB';
-      $('stat-mem-bar').style.width = Math.min(100, (s.memUsedMb / s.memLimitMb) * 100) + '%';
-      $('stat-uptime').textContent = s.uptimeSec + 's';
+      if ($('stat-cpu')) $('stat-cpu').textContent = s.cpuPercent === null ? 'n/a' : s.cpuPercent + '%';
+      if ($('stat-cpu-bar')) $('stat-cpu-bar').style.width = (s.cpuPercent === null ? 0 : Math.min(100, s.cpuPercent)) + '%';
+      if ($('stat-mem')) $('stat-mem').textContent = s.memUsedMb + ' / ' + s.memLimitMb + ' MB';
+      if ($('stat-mem-bar')) $('stat-mem-bar').style.width = Math.min(100, (s.memUsedMb / s.memLimitMb) * 100) + '%';
+      if ($('stat-uptime')) $('stat-uptime').textContent = s.uptimeSec + 's';
     }).catch(function () { /* transient */ });
   }
 
