@@ -3,6 +3,7 @@ title: Kubernetes
 description: Master Kubernetes manifest craft - Pods, Deployments, labels and selectors, Services, Ingress, probes and rollouts, Jobs, ConfigMaps and Secrets, storage, and fixing manifests that do not work.
 labs:
   - pod-anatomy
+  - namespaces
   - services
   - configs-and-secrets
   - fix-the-manifest

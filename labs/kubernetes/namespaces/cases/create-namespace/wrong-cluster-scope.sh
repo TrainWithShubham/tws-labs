@@ -1,0 +1,2 @@
+printf '%s\n' 'apiVersion: v1' 'kind: Namespace' 'metadata:' '  name: development' '  namespace: default' > app/development-ns.yaml
+

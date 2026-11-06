@@ -9,6 +9,7 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 ## [Unreleased]
 
 ### Added
+- **Kubernetes: namespaces** (logical partitioning, scoping workloads with `metadata.namespace`, Namespace-scoped Services and service discovery, reusing resource names across environments, and repairing cluster-scoped vs namespaced resources): organize cluster workloads and isolate service discovery without a running cluster.
 - **Kubernetes: persistent storage** (PersistentVolumes, PersistentVolumeClaims, volume attachment, container mount paths, and why a claim stays `Pending`): configure durable storage for stateful workloads without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #82.
 - **Kubernetes** (now more labs on the track): *Labels, selectors and ReplicaSets* (find the selector that does not match, adopt a stray Pod), *Probes and rolling updates* (readiness, liveness and startup probes, `maxUnavailable` and `maxSurge`, requests and limits), *Routing traffic with Ingress* (host and path rules, path types, TLS, a backend that points at nothing) and *Jobs and CronJobs* (completions and parallelism, a Job's restart policy, cron schedules, history limits).
 - **Helm** (a new track): *Your first Helm chart*: `Chart.yaml`, `values.yaml`, a templated Deployment and a per-environment values file, graded by reading the chart files (the image has no `helm` binary, and the lab says so).
