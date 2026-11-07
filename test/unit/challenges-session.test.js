@@ -13,9 +13,11 @@ function startServer(opts = {}) {
   const sandboxDir = fs.mkdtempSync(path.join(base, 'ch-sess-'));
   fs.chmodSync(sandboxDir, 0o755);
 
+  const { env: optEnv, ...restOpts } = opts;
   const app = createApp({
     sandboxDir,
-    ...opts,
+    env: { ...process.env, LAB_UID: '', ...(optEnv || {}) },
+    ...restOpts,
   });
 
   return new Promise((resolve) => {
