@@ -1,9 +1,9 @@
-# Project state (as of 1.3.0 plus unreleased labs, 2026-10-31)
+# Project state (as of 1.4.0, 2026-11-10)
 
 A hand-off note: what exists, how it is proven, what is decided, and what is left. Update it when you release.
 
 ## What exists
-- **39 labs, 192 graded tasks, 10 tracks** (DevOps: Linux, Shell, Git, Docker, Kubernetes, GitHub Actions, Networking; Cloud: Elastic Beanstalk Cluster Mode, AWS CLI first steps, Terraform; AI: Python for DevOps, AI agents). Roadmap topics and their status: `labs/roadmap.json`.
+- **50 labs, 250 graded tasks, 12 tracks** (DevOps: Linux, Shell, Git, Docker, Kubernetes, GitHub Actions, Networking; Cloud: Elastic Beanstalk Cluster Mode, AWS CLI first steps, Terraform, Helm, GitOps; AI: Python for DevOps, AI agents). Roadmap topics and their status: `labs/roadmap.json`.
 - **Two ways to run**: local (`./start_local_labs.sh`, optionally `AWS=1`) and hosted on Elastic Beanstalk Cluster Mode (`deploy/`, redeployed by every push to `main`; a manual run is possible with `gh workflow run deploy.yml`). The hosted environment costs about $9/day while it is up (measured: about $153 gross for 1-20 Oct 2026). **It is currently torn down and `deploy.yml` is disabled** (2026-10-20); to bring the site back run `gh workflow enable deploy.yml`, then `gh workflow run deploy.yml`.
 - **Learner features**: tiered hints, Restart lab, Skip with per-task setup, task progress in the browser, plain-words session-end messages, a "typed but not run" nudge, AA contrast, focus ring, skip link.
 - **Operator features**: opt-in usage counters and `/admin/stats` (hardest tasks), per-audience invite codes (`deploy/README.md` has the rotation runbook), image-size budget in CI.
@@ -34,5 +34,7 @@ Gotchas learned the hard way:
 - **Grading Terraform**: labs check parsed HCL with `hcl_strip`/`hcl_block`/`hcl_attr` in `labs/lib.sh` (comments dropped, values read inside the right block), not greps.
 - **Backlog for the platform**: a web-preview tab and editor tab, embeds, completion certificates, an org kit for private lab folders (each needs its own plan and security review).
 
-## Catalog growth (unreleased)
-The catalog grew by ten labs after 1.3.0: Kubernetes storage (#82) and four more Kubernetes labs, new Helm and GitOps tracks, Git rebase and cherry-pick, shell functions and arguments, and Python JSON config and CLI. The plan for what comes next is in `docs/lab-plan.md`. #25 and #29 were closed on 2026-10-31 after ten days without a reply (the ideas stay welcome; #28 stays open).
+## Catalog growth (1.4.0)
+1.4.0 added eleven labs after 1.3.0: Kubernetes storage (#82), labels and selectors, probes and rolling updates, Ingress, Jobs and CronJobs, namespaces (#88), new Helm and GitOps tracks, Git rebase and cherry-pick, shell functions and arguments, and Python JSON config and CLI. Linux in Action was rebuilt as an operations capstone (#90, from #87). The plan for what comes next is in `docs/lab-plan.md`. #25 and #29 were closed on 2026-10-31 after ten days without a reply (the ideas stay welcome; #28 stays open).
+
+**#87 was split.** The contributor's PR also carried a `challenges/linux/*` system, a pluggable `src/runtime.js` and changes to `src/routes/session.js`, the Dockerfile and CSS. Only the lab shipped (#90). The engine and challenges work was not merged: it changes session minting and isolation, so it needs its own PR and a security review against the engine invariants in `AGENTS.md`.

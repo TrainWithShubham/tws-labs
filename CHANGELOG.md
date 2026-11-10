@@ -8,12 +8,19 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-10
+
+### Highlights
+- **Eleven labs and two new tracks.** Kubernetes grows by five labs (labels and selectors, probes and rolling updates, Ingress, Jobs and CronJobs, namespaces) on top of persistent storage, and the catalog gains **Helm** and **GitOps** tracks, Git rebase and cherry-pick, shell functions and arguments, and a Python JSON config and CLI lab.
+- **Linux in Action is now an operations capstone**: a six-task incident scenario at the end of the Linux Fundamentals track.
+- **Honest budget wording** for the hosted deployment: the default is $50, and the alerts only email.
+
 ### Fixed
 - **The budget guardrail's description no longer says the default is $5.** The default has been $50 since #33; the variable description, `deploy/README.md` and a comment in `budget.tf` now say so, give the measured cost of an always-on Cluster Mode environment (about $9.9/day), and state that the alerts only send email. No behaviour changes and no Terraform apply is needed. An automatic shutdown at the limit is still open in #28. Reported by [@Dhinesh-0309](https://github.com/Dhinesh-0309), #28.
 
 ### Added
 - **Linux Fundamentals: *Linux in Action* is now an operations capstone** (it moves to the end of the track): repair a payment service's staging environment by pulling HTTP 500s out of a log with `awk`, generating its environment file with `sed`, locking down the token, stopping the worker and its stale lock, writing a `check-service` script with functions, arguments and exit codes, and starting the service. Graded on real state, with near-miss and valid-alternative cases and skip-ahead setups for every task. Contributed by Prakhar Srivastava, [@Heyyprakhar1](https://github.com/Heyyprakhar1), #87.
-- **Kubernetes: namespaces** (logical partitioning, scoping workloads with `metadata.namespace`, Namespace-scoped Services and service discovery, reusing resource names across environments, and repairing cluster-scoped vs namespaced resources): organize cluster workloads and isolate service discovery without a running cluster.
+- **Kubernetes: namespaces** (logical partitioning, scoping workloads with `metadata.namespace`, Namespace-scoped Services and service discovery, reusing resource names across environments, and repairing cluster-scoped vs namespaced resources): organize cluster workloads and isolate service discovery without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #88.
 - **Kubernetes: persistent storage** (PersistentVolumes, PersistentVolumeClaims, volume attachment, container mount paths, and why a claim stays `Pending`): configure durable storage for stateful workloads without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #82.
 - **Kubernetes** (now more labs on the track): *Labels, selectors and ReplicaSets* (find the selector that does not match, adopt a stray Pod), *Probes and rolling updates* (readiness, liveness and startup probes, `maxUnavailable` and `maxSurge`, requests and limits), *Routing traffic with Ingress* (host and path rules, path types, TLS, a backend that points at nothing) and *Jobs and CronJobs* (completions and parallelism, a Job's restart policy, cron schedules, history limits).
 - **Helm** (a new track): *Your first Helm chart*: `Chart.yaml`, `values.yaml`, a templated Deployment and a per-environment values file, graded by reading the chart files (the image has no `helm` binary, and the lab says so).
@@ -22,6 +29,13 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 - **Linux Fundamentals: shell functions and arguments**: a function, positional parameters, `${VAR:-default}`, a usage message and exit codes, graded by running your script on inputs it has not seen.
 - **Python for DevOps: JSON config and a CLI**: load and validate a JSON config, parse arguments with `argparse`, merge per-environment overrides and write the result, graded by running your script against configs it has not seen.
 - `docs/lab-plan.md`: where the catalog is thin, the next labs, and platform ideas that need a decision.
+
+### Changed
+- Dependency updates: `js-yaml` 5.5.0, `puppeteer-core` 25.16.0 and the `hashicorp/tls` Terraform provider 4.4.2.
+
+### Upgrade notes
+- Self-hosters: `git pull && ./start_local_labs.sh` rebuilds the image once. Only lab content changed; the engine and the image are otherwise as in 1.3.0.
+- Running Terraform in `deploy/infra`? Run `terraform init -upgrade` once to pick up `hashicorp/tls` 4.4.2 (a lock-file bump). Nothing needs applying and no resource changes.
 
 ## [1.3.0] - 2026-10-21
 
