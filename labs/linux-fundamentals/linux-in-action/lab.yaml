@@ -1,76 +1,72 @@
-title: Linux in Action
-level: beginner
-minutes: 12
-summary: Prepare a project workspace - organize folders, secure keys, check logs, and run a script.
+title: Linux Operations Capstone
+level: intermediate
+minutes: 15
+summary: Stage, secure, and recover a multi-component service using core Linux operational skills.
 steps:
-  - id: welcome
+  - id: briefing
     type: lesson
-    title: Welcome to the project
+    title: Service recovery scenario
     body: |
-      You just cloned an application repository to your machine.
+      Stage and recover the backend payment service on this Linux server after an unexpected outage.
 
-      Before running the service, you need to prepare the workspace:
-      set up the directory structure, copy the configuration file,
-      protect sensitive credentials, check the existing logs, and
-      make sure the startup script can run.
+      The outage left the system inconsistent:
+      - Access logs in `logs/service.log` contain uninvestigated 500 errors.
+      - Environment settings are missing from `config/app.env`.
+      - An authentication token at `config/auth.token` has loose permissions.
+      - A rogue background worker is running and blocking restarts via `.service.lock`.
+      - A pre-flight validator `bin/check-service` needs to be created.
 
-      Everything in this lab uses the everyday commands you already
-      learned: `mkdir`, `cp`, `chmod`, `grep`, and `./`.
-
-  - id: organize
+      Inspect the system, update configuration, enforce permissions, clear blocked processes, and start the daemon.
+  - id: failures-report
     type: task
-    title: Organize the workspace
-    body: |
-      The application needs a `logs` directory to store its runtime logs,
-      and it expects its configuration file to be called `config.env`.
-
-      1. Create a directory named `logs`.
-      2. Copy `config.sample` to `config.env`.
-    hint: "Use: mkdir logs && cp config.sample config.env"
-
-  - id: secure-key
+    title: Extract 500 error entries
+    body: Extract all HTTP 500 error entries from `logs/service.log`. Write each matching entry's timestamp and request path (columns 1 and 7) into `reports/failures.txt`.
+    hint:
+      - Filter log lines where column 9 is 500.
+      - Use awk to select columns 1 and 7.
+      - Redirect the output to reports/failures.txt.
+    success: HTTP 500 failures extracted to reports/failures.txt.
+  - id: generate-config
     type: task
-    title: Secure the API key
-    body: |
-      The file `api.key` holds a private token, but it was saved with
-      mode `644` (readable by everyone).
-
-      Lock it down so **only you** (the owner) can read and write it
-      (numeric mode `600`).
-    hint: "Use: chmod 600 api.key"
-
-  - id: recent-log
+    title: Generate production config
+    body: Use `sed` to generate `config/app.env` from `config/app.template`, replacing `PORT=80` with `PORT=8080`.
+    hint:
+      - Substitute PORT=80 with PORT=8080 using sed.
+      - Redirect the output to config/app.env.
+    success: Production configuration generated with PORT=8080.
+  - id: secure-token
     type: task
-    title: Read the latest log lines
-    body: |
-      Before launching, look at what the service did most recently:
-      the newest entries are at the **end** of `service.log`.
-
-      Save the last 3 lines of `service.log` into a new file called
-      `recent.txt`.
-    hint: "Try: tail -n 3 service.log > recent.txt"
-
-  - id: start-app
+    title: Restrict token permissions
+    body: Secure the authentication token at `config/auth.token` so only the owner has read and write permissions (mode 600), with no permissions for group or others.
+    hint:
+      - Set permissions to read and write for the user only (mode 600).
+      - Run chmod 600 config/auth.token.
+    success: Authentication token secured with mode 600.
+  - id: clear-worker
     type: task
-    title: Run the startup script
+    title: Terminate runaway worker
+    body: A background `payment-worker` process has hung and left a stale lockfile. Find its process ID using `ps -u`, verify the PID belongs to `payment-worker` before terminating it with `kill`, and remove `.service.lock`.
+    hint:
+      - Run ps -u to list your running processes and verify the PID of payment-worker.
+      - Run kill <PID> using the discovered process ID.
+      - Remove the stale lockfile with rm .service.lock.
+    success: Rogue worker terminated and lockfile cleared.
+  - id: check-service
+    type: task
+    title: Create configuration validator
     body: |
-      The startup script `start.sh` is ready, but it doesn't have execute
-      permission yet.
-
-      1. Give `start.sh` execute permission.
-      2. Run the script directly from your home directory (`./start.sh`).
-    hint: "Make it executable with chmod +x start.sh, then run it with ./start.sh"
-
-  - id: wrap-up
-    type: lesson
-    title: Workspace ready!
-    body: |
-      **Great work!** In just a few minutes, you:
-
-      - Created directories and managed project configuration files
-      - Protected private credentials with numeric permissions
-      - Pulled the latest lines out of a log with `tail` and redirection
-      - Made a script executable and verified it runs cleanly
-
-      These are the exact foundational tasks DevOps and cloud engineers
-      perform every single day in Linux.
+      Create an executable script `bin/check-service` that accepts exactly one configuration file argument. Define a helper function to validate arguments and file existence: if arguments are missing or exceed 1, print a usage error to stderr and exit 1; if the file does not exist or is empty, print `CONFIG ERROR` to stdout, an error message to stderr, and exit 2; if the file exists and has content, print `CONFIG OK` to stdout and exit 0.
+    hint:
+      - "Check argument count ($#) inside a validation function: exit 1 with a usage message to stderr if not 1."
+      - "Test the file argument: if missing ([ ! -e \"$1\" ]) or empty ([ ! -s \"$1\" ]), print CONFIG ERROR to stdout and exit 2 with an error message to stderr."
+      - "When valid, print CONFIG OK to stdout, exit 0, and make the script executable with chmod +x bin/check-service."
+    success: Validation script bin/check-service created and verified.
+  - id: start-service
+    type: task
+    title: Launch production service
+    body: Execute `./start.sh` to run the pre-flight checks and launch `payment-service` in the background. The script will verify system state, validate `config/app.env`, and record the service process ID to `payment.pid`.
+    hint:
+      - Ensure Tasks 1-5 are completed so pre-flight checks pass.
+      - Execute the startup script with ./start.sh.
+      - Confirm the service process is active in background.
+    success: Production service daemon started successfully.
