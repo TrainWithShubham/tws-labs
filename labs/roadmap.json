@@ -21,10 +21,10 @@
             "linux-fundamentals/files",
             "linux-fundamentals/permissions",
             "linux-fundamentals/pipes-and-search",
-            "linux-fundamentals/linux-in-action",
             "linux-fundamentals/awk-and-sed",
             "linux-fundamentals/process-management-basics",
-            "linux-fundamentals/incident-response"
+            "linux-fundamentals/incident-response",
+            "linux-fundamentals/linux-in-action"
           ],
           "subtopics": [
             "Architecture, processes, systemd",
