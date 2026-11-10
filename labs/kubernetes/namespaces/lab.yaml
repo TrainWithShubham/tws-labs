@@ -1,0 +1,129 @@
+title: Kubernetes Namespaces
+level: beginner
+minutes: 12
+summary: Organize workloads, prevent name collisions, and scope Service discovery with Kubernetes namespaces.
+steps:
+  - id: why-namespaces
+    type: lesson
+    title: Logical partitioning with namespaces
+    body: |
+      A Kubernetes cluster can run hundreds of workloads across different teams and environments. **Namespaces** logically organize resources within a shared Kubernetes cluster.
+
+      Key concepts to know:
+      - **Scope**: Names are unique per resource type within a namespace.
+      - **Context**: The current context's namespace (typically `default`) is used unless `-n` or `--namespace` overrides it.
+      - **Traffic**: Namespaces do not automatically isolate network traffic. NetworkPolicy restrictions require explicitly defined policies and a networking implementation that supports enforcement.
+      - **Offline testing**: In this lab, manifests are graded on structure.
+
+  - id: create-namespace
+    type: task
+    title: Create a development namespace
+    body: |
+      Create a Namespace manifest at `app/development-ns.yaml`.
+
+      Configure the resource with:
+      - API version: `v1`
+      - Kind: `Namespace`
+      - Name: `development`
+
+      Namespaces are cluster-scoped resources that logically organize workloads. Do not set `metadata.namespace` on a Namespace manifest.
+    hint:
+      - "A Namespace resource uses apiVersion v1 and kind Namespace."
+      - "Specify the namespace name under metadata.name."
+    success: Correct. The development namespace manifest is configured.
+
+  - id: assign-pod
+    type: task
+    title: Assign a Pod to development
+    body: |
+      Inspect `app/dev-pod.yaml`, which defines the `web-backend` Pod.
+
+      The Pod has no namespace set. Assign it to the development environment by setting `metadata.namespace` to `development`. Leave all existing names, labels, and container settings intact.
+    hint:
+      - "Add namespace: development indented under the metadata block."
+      - "Do not alter the existing name, labels, or container configuration."
+    success: Correct. The Pod is now explicitly assigned to the development namespace.
+
+  - id: namespaced-service
+    type: task
+    title: Configure a namespaced Service
+    body: |
+      A Kubernetes Service routes traffic to Pods matching its label selector **within the same namespace**. It cannot select Pods across namespace boundaries.
+
+      Pods in other namespaces can discover the Service using `web-service.development` or its fully qualified DNS name, `web-service.development.svc.cluster.local` (the cluster domain may vary).
+
+      Create `app/dev-service.yaml` with:
+      - API version: `v1` and Kind: `Service`
+      - Name: `web-service`
+      - Namespace: `development`
+      - Pod selector: `app: web`
+      - Service port: `80`
+      - Target port: `80`
+    hint:
+      - "Set metadata.namespace to development so the Service searches within that namespace."
+      - "Configure spec.selector with app: web and spec.ports with port and targetPort 80."
+    success: Correct. The Service is configured to select Pods in development.
+
+  - id: production-environment
+    type: task
+    title: Create a production environment
+    body: |
+      Because namespaces create independent naming scopes, different namespaces can run resources with the exact same name (such as `web-backend`) without collision.
+
+      Create two manifests:
+      1. `app/prod-ns.yaml`: A `Namespace` named `production`.
+      2. `app/prod-pod.yaml`: A `Pod` with:
+         - Name: `web-backend`
+         - Namespace: `production`
+         - Label: `app: web`
+         - Container: `nginx`
+         - Image: `nginx:1.27`
+         - Container port: `80`
+    hint:
+      - "Create app/prod-ns.yaml for the production namespace."
+      - "Define app/prod-pod.yaml with metadata.namespace set to production."
+    success: Correct. Resource names can be safely reused across separate namespaces.
+
+  - id: troubleshoot-service
+    type: task
+    title: Troubleshoot Service mismatches
+    body: |
+      A Service only routes traffic to Pods within its own namespace that match its selector. If the namespace or selector does not match the intended Pods, the Service cannot discover those Pods.
+
+      Inspect `app/api-pod.yaml` and `app/api-service.yaml`. The API Pod runs in `development` with label `app: api-worker`, but the misconfigured Service cannot discover the intended Pod.
+
+      Edit `app/api-service.yaml` to align with the Pod:
+      - Namespace: `development`
+      - Pod selector: `app: api-worker`
+
+      Preserve the existing Service name and port mapping.
+    hint:
+      - "Match metadata.namespace to the Pod namespace (development)."
+      - "Match spec.selector.app to the Pod label (api-worker)."
+    success: Correct. The Service namespace and selector now match the API Pod.
+
+  - id: repair-scoping
+    type: task
+    title: Repair resource scoping
+    body: |
+      Not all Kubernetes resources belong to a namespace. Cluster-scoped resources (`Namespace`, `Node`, `PersistentVolume`) exist cluster-wide, whereas namespaced resources (`Pod`, `Service`, `ConfigMap`) are associated with a namespace, defaulting to the active namespace when omitted.
+
+      Repair the scoping errors in these manifests:
+      1. `app/monitoring-ns.yaml`: Remove the invalid `namespace` field; Namespaces are cluster-scoped and cannot be nested inside another namespace.
+      2. `app/app-config.yaml`: Set the namespace to `development` on this ConfigMap.
+
+      Keep all other configuration intact.
+    hint:
+      - "Delete the metadata.namespace line from the Namespace manifest."
+      - "Add metadata.namespace: development to app/app-config.yaml."
+    success: Correct. Cluster-scoped and namespaced manifests are properly scoped.
+
+  - id: wrap-up
+    type: lesson
+    title: Namespaces in practice
+    body: |
+      You have practiced the essential concepts of Kubernetes namespaces:
+      - **Separation**: Namespaces organize resources logically but do not automatically isolate network traffic.
+      - **Resource naming**: Resource names must be unique for a given resource type within a namespace (for example, a Pod and a Service may share a name, but two Pods cannot).
+      - **DNS addressing**: Cross-namespace Service discovery uses namespace-qualified DNS names, such as `web-service.development`.
+      - **Scope awareness**: Cluster-scoped resources like Namespaces never accept a `metadata.namespace` field.
