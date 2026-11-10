@@ -8,6 +8,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+### Fixed
+- **The budget guardrail's description no longer says the default is $5.** The default has been $50 since #33; the variable description, `deploy/README.md` and a comment in `budget.tf` now say so, give the measured cost of an always-on Cluster Mode environment (about $9.9/day), and state that the alerts only send email. No behaviour changes and no Terraform apply is needed. An automatic shutdown at the limit is still open in #28. Reported by [@Dhinesh-0309](https://github.com/Dhinesh-0309), #28.
+
 ### Added
 - **Kubernetes: persistent storage** (PersistentVolumes, PersistentVolumeClaims, volume attachment, container mount paths, and why a claim stays `Pending`): configure durable storage for stateful workloads without a running cluster. Contributed by Sanket Dangat, [@srdangat](https://github.com/srdangat), #82.
 - **Kubernetes** (now more labs on the track): *Labels, selectors and ReplicaSets* (find the selector that does not match, adopt a stray Pod), *Probes and rolling updates* (readiness, liveness and startup probes, `maxUnavailable` and `maxSurge`, requests and limits), *Routing traffic with Ingress* (host and path rules, path types, TLS, a backend that points at nothing) and *Jobs and CronJobs* (completions and parallelism, a Job's restart policy, cron schedules, history limits).

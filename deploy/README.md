@@ -95,9 +95,11 @@ MIN_REPLICA=1 MAX_REPLICA=8 ./03-deploy.sh
 - Watch seat pressure per replica at `/stats` (`sessions`, `maxSessions`).
 - Sessions are in-memory per replica; ALB stickiness (30 min) keeps a visitor on theirs. A replica
   replacement drops its sessions — visitors just start a new lab.
-- **Budget:** the default `$5/month` alert predates Cluster Mode's real cost (EKS control plane alone ≈
-  $0.10/hr ≈ $73/month while the environment exists). It also alerts on *forecast* and 100%-actual, and the
-  limit is a variable (`-var budget_limit_usd=...`). Set it to what you actually intend to spend.
+- **Budget:** the default alert limit is `$50/month`. One always-on Cluster Mode environment measured about
+  $9.9/day (≈ $300/month; the EKS control plane alone is ≈ $0.10/hr ≈ $73/month), so it passes $50 in about a
+  week. The budget alerts on 80% actual, 100% forecast and 100% actual, but **only emails: it does not stop the
+  environment**. The limit is a variable (`-var budget_limit_usd=...`); set it to what you actually intend to
+  spend, and terminate the environment (and any leftover `beanstalk-cluster-*` stack) when you are done.
 
 ## Invite codes
 Every lab on the hosted app refuses to start a session without an invite code, so a stray link cannot burn cluster
@@ -140,9 +142,9 @@ shows up only as the first 8 hex of its SHA-256.
 
 ## Cost guardrail
 
-An AWS Budget is codified in `infra/budget.tf` (limit = `budget_limit_usd`, default $5 — too low for a
-live Cluster Mode environment, see "Traffic spikes"). It alerts at 80% actual, 100% forecast and 100%
-actual. See bootstrap below for bringing the hand-created budget under Terraform management.
+An AWS Budget is codified in `infra/budget.tf` (limit = `budget_limit_usd`, default $50 — a tripwire, not a
+forecast of a live Cluster Mode environment, see "Traffic spikes"). It alerts at 80% actual, 100% forecast and 100%
+actual, by email only: it does not stop anything. See bootstrap below for bringing the hand-created budget under Terraform management.
 
 ## Bootstrap (one-time, by hand)
 
