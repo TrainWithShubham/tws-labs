@@ -8,32 +8,39 @@
 [![CI](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/TrainWithShubham/tws-labs?style=flat-square&color=7b52c3)](https://github.com/TrainWithShubham/tws-labs/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Labs](https://img.shields.io/badge/labs-50-7b52c3?style=flat-square)](#whats-online)
-[![Graded tasks](https://img.shields.io/badge/graded%20tasks-250-f4b860?style=flat-square)](#how-it-works)
+[![Labs](https://img.shields.io/badge/labs-54-7b52c3?style=flat-square)](#whats-online)
+[![Graded tasks](https://img.shields.io/badge/graded%20tasks-271-f4b860?style=flat-square)](#how-it-works)
 [![Runs on](https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey?style=flat-square)](#run-it-locally)
 [![Stars](https://img.shields.io/github/stars/TrainWithShubham/tws-labs?style=flat-square)](https://github.com/TrainWithShubham/tws-labs/stargazers)
 <!-- badges:end -->
 
 <!-- pitch:start -->
-**50 labs · 250 graded tasks · every offline task proven solvable by a script.**
+**54 labs · 271 graded tasks · every offline and emulator task proven solvable by a script.**
 <!-- pitch:end -->
 
 <img src="docs/media/lab-demo.gif" alt="A learner types a command but forgets Enter and Check says so, then a missed task gets tiered hints, then skipping ahead sets up the files the next task needs, and Check turns green" width="900">
 
 </div>
 
-Not a simulator, not a quiz: each task runs a check script against the real state of a real Linux sandbox. Run it on your own
+Not a quiz: each task runs a check script against the real state of a real Linux sandbox. Run it on your own
 machine (**Windows, macOS or Linux**, one command, no account) or use the hosted version, which runs on [AWS Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/Welcome.html). Labs are plain YAML and shell scripts,
 so anyone can contribute one. The syllabus is adapted from the TrainWithShubham DevOps roadmap (`labs/roadmap.json`).
 
-## What's new in 1.2
+## What's new in 1.5
 
-- **Skip never dead-ends.** Jump past a task and the lab sets up the files the next one needs, and tells you. A command you typed but forgot to run is called out ("press Enter"), hints come in tiers, **Restart lab** gives you fresh files, and when a session ends you are told why.
-- **Kubernetes is a four-lab track** (Pods, Services, ConfigMaps and Secrets, fixing a broken manifest), all graded on the files you write, no cluster needed.
-- **AWS on your own account.** The first lab (AWS CLI first steps) runs the real `aws` CLI against a free-tier footprint you clean up yourself; start it with `AWS=1 ./start_local_labs.sh` ([setup](docs/aws-labs.md)). The hosted site never asks for AWS keys.
-- **New labs from the community:** `.gitignore`, awk and sed, process management, Services, and artifacts and caching. Thank you to everyone in [Community labs](#community-labs).
-- **Trusted checks and a calmer UI:** every offline lab is proven with wrong answers and valid alternatives, played through the real server, and tested in real Chrome. Text meets AA contrast, focus is visible, and the terminal never traps the keyboard.
-- **Teams that self-host** can count usage without storing anything personal ([usage counters](#usage-counters-optional-off-by-default)).
+- **AWS labs with no AWS account.** `EMULATOR=1 ./start_local_labs.sh` starts the labs with [AWS's own local emulator](docs/emulator-labs.md) beside them, and four new labs run the real `aws` CLI against it: **S3**, **DynamoDB**, **SQS and SNS**, and **CloudFormation**. No account, no keys, no cost, nothing to clean up.
+- **Proven, not promised.** A new CI job runs every emulator lab against the real emulator (each check fails before its solution and passes after, wrong answers are rejected, valid alternatives accepted) and plays each one through the UI in real Chrome.
+- **Honest about what an emulator is.** Each lab says what it models and what only real AWS enforces (IAM permissions for users and roles), and the track page tells you which AWS labs need no account.
+- **Fixed for every AWS lab:** `aws s3 cp` no longer aborts in the lab terminal, and checks that wait for AWS get 30 seconds instead of 5.
+
+<details>
+<summary>Earlier releases</summary>
+
+- **1.4: eleven labs and two tracks.** Kubernetes grows to ten labs (labels and selectors, probes and rolling updates, Ingress, Jobs and CronJobs, storage, namespaces), and **Helm** and **GitOps** arrive as tracks, graded on the files you write. Plus Git rebase and cherry-pick, shell functions, a Python JSON config lab, and *Linux in Action* rebuilt as an incident-response capstone.
+- **1.3: Terraform, Python and the first AI lab.** A five-lab Terraform track, Python for DevOps, and *your first agent loop* against a scripted stand-in model (no GPU, no key). A hardening pass on the server, and commands you complete with Tab now count.
+- **1.2: skip never dead-ends.** Jump past a task and the lab sets up the files the next one needs. Tiered hints, **Restart lab**, plain-words session ends, AA contrast, and optional usage counters for teams that self-host ([usage counters](#usage-counters-optional-off-by-default)).
+
+</details>
 
 Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 
@@ -48,7 +55,12 @@ Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 | Debug "it can't connect" problems | [Networking](labs/networking) |
 | Learn Kubernetes manifests (no cluster needed) | [Kubernetes](labs/kubernetes) |
 | Build a CI/CD pipeline | [CI/CD with GitHub Actions](labs/github-actions) |
+| Write infrastructure as code | [Terraform](labs/terraform) and [your first CloudFormation stack](labs/aws/cloudformation-first-stack) |
+| Package and ship Kubernetes apps | [Helm](labs/helm) and [GitOps with Argo CD](labs/gitops) |
+| Practise AWS with no account (S3, DynamoDB, SQS and SNS, CloudFormation) | [AWS labs on the emulator](docs/emulator-labs.md): `EMULATOR=1 ./start_local_labs.sh` |
 | Practise the AWS CLI on your own account | [AWS CLI first steps](labs/aws/aws-cli-first-steps) (needs [an AWS account](docs/aws-labs.md)) |
+| Script with Python | [Python for DevOps](labs/python) |
+| Build your first AI agent (no GPU, no key) | [AI agents](labs/ai) |
 | See what AWS Elastic Beanstalk Cluster Mode really is | [Cluster Mode lab](labs/aws/elastic-beanstalk-cluster-mode) |
 
 ## What's online
@@ -57,7 +69,7 @@ Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 | Route | Online today (labs) | Next |
 |---|---|---|
 | **DevOps** | Linux (8) · Shell scripting (2) · Git and GitHub (7) · Docker (3) · Kubernetes (10) · CI/CD with GitHub Actions (5) · Networking (3) | — · +6 later |
-| **Cloud** | Elastic Beanstalk Cluster Mode (1) · AWS fundamentals (1) · Terraform on AWS (5) · Helm (1) · GitOps with ArgoCD (1) | Compute and serverless |
+| **Cloud** | Elastic Beanstalk Cluster Mode (1) · AWS fundamentals (3) · Terraform on AWS (5) · Compute and serverless (2) · Helm (1) · GitOps with ArgoCD (1) | — |
 | **AI** | Python for DevOps (2) · Building AI agents (1) | Agentic AI for DevOps · MCP, tools and gateways · +2 later |
 <!-- routes:end -->
 
@@ -86,6 +98,8 @@ Options:
 ```bash
 LABS_PORT=9090 ./start_local_labs.sh     # port 8080 is busy
 NO_BROWSER=1 ./start_local_labs.sh       # don't open the browser
+EMULATOR=1 ./start_local_labs.sh         # also run the AWS labs that need no account (the first build is large, about 1.6 GB)
+AWS=1 ./start_local_labs.sh              # run the labs that use your own AWS account (see docs/aws-labs.md)
 ./start_local_labs.sh stop               # stop and clean up from another terminal
 ```
 
@@ -128,9 +142,20 @@ The home page is a quiet map of three routes; the roadmap lists every topic and 
   See `deploy/README.md`.
 - **Progress** (which labs you finished) lives in your browser's localStorage. No accounts.
 
-### Labs that use your own AWS account
-A few Cloud labs run the real AWS CLI against **your** account (tiny, free-tier resources, a graded cleanup, and a role template with a $5 budget alarm).
-They run only on your machine with `AWS=1 ./start_local_labs.sh`; the hosted site shows them read-only and never asks for keys. Setup: [docs/aws-labs.md](docs/aws-labs.md).
+### Practising AWS: two ways
+
+| | **No account: the AWS Emulator** | **Your own account** |
+|---|---|---|
+| Start with | `EMULATOR=1 ./start_local_labs.sh` | `AWS=1 ./start_local_labs.sh` |
+| What runs | The real `aws` CLI against [AWS's own local emulator](docs/emulator-labs.md), in a container beside the labs | The real `aws` CLI against your account (a free-tier footprint, a graded cleanup, a role template with a budget alarm) |
+| Cost and cleanup | None: it is forgotten when it stops | Pennies, and you clean up |
+| Labs | S3, DynamoDB, SQS and SNS, CloudFormation | AWS CLI first steps, Elastic Beanstalk Cluster Mode |
+| Proven in CI | Yes, against the real emulator | By hand, on a real account |
+| Good for | Configuration and state: buckets, tables, queues, stacks | What an emulator cannot model, like IAM permissions and denials |
+
+Both run only on your machine. The hosted site shows these labs read-only and never asks for keys. More: [docs/emulator-labs.md](docs/emulator-labs.md) and [docs/aws-labs.md](docs/aws-labs.md).
+
+<p align="center"><img src="docs/screenshots/emulator-lab.png" alt="The DynamoDB lab: a task on the left, and on the right the real AWS CLI answering from the local emulator, with the terminal tab labelled AWS Emulator" width="900"></p>
 
 ### Usage counters (optional, off by default)
 Self-hosting teams can count how the labs are used: `USAGE_STATS=1` records sessions per lab, distinct visitors per day and which
@@ -156,13 +181,16 @@ Labs written by people outside the core team. Thank you.
 | Production incident triage (Linux Fundamentals) | [@cloudwithpreetham](https://github.com/cloudwithpreetham) | [#67](https://github.com/TrainWithShubham/tws-labs/pull/67) |
 | Resolving merge conflicts (Git and GitHub) | [@Rakesh-Patra](https://github.com/Rakesh-Patra) | [#68](https://github.com/TrainWithShubham/tws-labs/pull/68) |
 | Terraform track, five labs (Terraform) | [@Heyyprakhar1](https://github.com/Heyyprakhar1) | [#71](https://github.com/TrainWithShubham/tws-labs/pull/71) |
+| Persistent storage (Kubernetes) | [@srdangat](https://github.com/srdangat) | [#82](https://github.com/TrainWithShubham/tws-labs/pull/82) |
+| Namespaces (Kubernetes) | [@srdangat](https://github.com/srdangat) | [#88](https://github.com/TrainWithShubham/tws-labs/pull/88) |
+| Linux in Action, rebuilt as an operations capstone (Linux Fundamentals) | [@Heyyprakhar1](https://github.com/Heyyprakhar1) | [#87](https://github.com/TrainWithShubham/tws-labs/pull/87), shipped as [#90](https://github.com/TrainWithShubham/tws-labs/pull/90) |
 
 ## Contributing and security
 
 Contributions are welcome, labs most of all: start with [CONTRIBUTING.md](CONTRIBUTING.md). To report a vulnerability, follow
 [SECURITY.md](SECURITY.md) (please don't open a public issue). The hosted version asks for an invite code; the local app never does.
 
-**Community labs:** *Linux in Action* by [@Heyyprakhar1](https://github.com/Heyyprakhar1). Want yours here? Pick a topic from the [roadmap](labs/roadmap.json) and follow [CONTRIBUTING.md](CONTRIBUTING.md).
+Want your lab in the table above? Pick a topic from the [roadmap](labs/roadmap.json) and follow [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Add your own lab
 
@@ -187,11 +215,11 @@ built from `labs/roadmap.json`: change a topic's `status` or add a topic there, 
 | `labs/` | All lab content (`<track>/<lab>/{lab.yaml,setup.sh,checks/,solutions/}`), `roadmap.json` (syllabus + status), `site.yaml`, `lib.sh` (check helpers) |
 | `src/` | The server: sessions, sandbox, loader, profiles, header/pages |
 | `public/` | Browser code and the stylesheets |
-| `start_local_labs.sh` | One-command local start for macOS, Linux and Windows (Git Bash / WSL) |
+| `start_local_labs.sh` | One-command local start for macOS, Linux and Windows (Git Bash / WSL); `AWS=1` and `EMULATOR=1` add the AWS overlays (`docker-compose.aws.yml`, `docker-compose.emulator.yml`, `Dockerfile.emulator`) |
 | `scripts/` | `validate-labs.js` (the contribution gate: fail-before/pass-after, `cases/`, skip-ahead), `lint-labs.js`, `new-lab.js`, `check-hygiene.js`, `record-demo.js` (re-records the README GIF), AWS helpers |
 | `test/` | `unit/` and `integration/` (the integration tests spawn real shells; they need Linux, i.e. the image) and `e2e/` (real-Chrome browser tests) |
 | `deploy/` | Hosted deployment on AWS Elastic Beanstalk Cluster Mode: Terraform, deploy scripts, smoke test |
-| `docs/` | Authoring guide, the AWS-labs guide, Elastic Beanstalk research notes |
+| `docs/` | Authoring guide, the AWS-labs and [emulator-labs](docs/emulator-labs.md) guides, Elastic Beanstalk research notes |
 
 ## Tests
 
@@ -199,6 +227,7 @@ built from `labs/roadmap.json`: change a topic's `status` or add a topic there, 
 npm ci && npm run test:unit          # fast, anywhere
 npm run lab:check -- <track>/<lab>   # prove one lab: fail-before/pass-after, cases, skip-ahead
 ./start_local_labs.sh && npm run e2e  # real-Chrome browser tests against the running app
+EMULATOR=1 ./start_local_labs.sh && npm run e2e   # the same, plus every emulator lab played through the UI
 docker compose run --rm -v "$PWD/test:/app/test:ro" labs sh -c 'node --test --test-force-exit test/unit/*.test.js test/integration/*.test.js'
 ```
 

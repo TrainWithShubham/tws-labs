@@ -52,6 +52,10 @@ solution file must really run that command, so the proof still passes.
 - [ ] No other product, platform or company is named (`npm run check:hygiene`); only the tools the lab teaches.
 - [ ] The diff touches only `labs/**`.
 
+## AWS labs
+
+A lab about AWS has two shapes. **No account needed:** set `requires: emulator` (the AWS Emulator sidecar; see "Emulator labs" in `docs/authoring.md`), call `emulator_ready` in every check, give resources fixed names, make `setup.sh` delete what it uses, and avoid CLI waiters (they poll every 20 to 30 seconds): poll the status in the solution instead. Never write a task whose point is an IAM denial. **Needs the learner's own account:** `requires: aws` (see `docs/aws-labs.md`).
+
 ## Ask the human first when
 
 the topic is not on the roadmap, the lab needs a tool the image lacks, you want to change the engine, UI or `deploy/`,

@@ -1,0 +1,87 @@
+requires: emulator
+title: Your first CloudFormation stack
+level: beginner
+minutes: 15
+summary: The real AWS CLI on a local AWS Emulator - templates, stacks, outputs, updates. No account.
+links:
+  - title: What is CloudFormation?
+    url: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html
+resources:
+  - title: What is AWS CloudFormation?
+    url: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html
+    desc: Templates, stacks and what CloudFormation does for you.
+  - title: Template anatomy
+    url: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html
+    desc: Resources, Outputs and the other sections of a template.
+  - title: Updating stacks with change sets
+    url: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-changesets.html
+    desc: Preview what an update will change before you apply it.
+steps:
+  - id: intro
+    type: lesson
+    title: Resources as a file
+    body: |
+      This lab runs the **real AWS CLI** against the **AWS Emulator**, AWS's local stand-in for its APIs: no account, no cost, and everything vanishes when the emulator restarts.
+
+      CloudFormation turns a **template** (a file describing resources) into a **stack** (those resources, created and managed together). You change the file and update the stack, and deleting the stack deletes what it made.
+
+      Your home folder has `stack.json`: a template with one S3 bucket. You will add a queue, create the stack, read its output, update it and delete it. Use any editor (`vim` is installed), or rewrite the file from the command line.
+  - id: add-queue
+    type: task
+    title: Add a queue to the template
+    body: |
+      Edit `stack.json` so it also declares an **SQS queue** named `jobs`, and add an **output** called `QueueArn` that returns the queue's ARN. Keep the bucket.
+    hint:
+      - "Resources live under `Resources`, each with a logical name and a `Type`. A queue is `AWS::SQS::Queue`, and its name goes under `Properties` as `QueueName`."
+      - "Outputs live under `Outputs`. To return an attribute of a resource, use `{\"Fn::GetAtt\": [\"<LogicalName>\", \"Arn\"]}` as the `Value`."
+      - "Check your work without creating anything: `aws cloudformation validate-template --template-body file://stack.json`."
+    success: One file now describes the bucket and the queue.
+  - id: create-stack
+    type: task
+    title: Create the stack
+    body: |
+      Create a stack named `app` from `stack.json`, and wait until its status is `CREATE_COMPLETE`.
+    hint:
+      - "`aws cloudformation create-stack` takes `--stack-name` and `--template-body file://stack.json`."
+      - "Creation takes a moment. `aws cloudformation describe-stacks --stack-name app --query 'Stacks[0].StackStatus' --output text` shows the status: run it until it says CREATE_COMPLETE. (`aws cloudformation wait stack-create-complete` also works, but it polls only every 30 seconds.)"
+    success: The template is now a running stack.
+  - id: read-output
+    type: task
+    title: Read an output
+    body: |
+      The bucket's name was generated for you. Read the stack's `BucketName` output and save **just the value** in `bucket.txt`.
+    hint:
+      - "`aws cloudformation describe-stacks --stack-name app` lists the stack's outputs."
+      - "Pick the value with `--query`. The outputs are a list, so filter by key: `Outputs[?OutputKey=='BucketName'].OutputValue`."
+      - "Add `--output text` and redirect into `bucket.txt`."
+    success: Outputs are how one stack hands a value to everything else.
+  - id: enable-versioning
+    type: task
+    title: Change the file, update the stack
+    body: |
+      Turn on **versioning** for the bucket **through the template**: add `VersioningConfiguration` with `Status` `Enabled` to the bucket's properties, then update the stack `app`.
+
+      Changing the bucket directly with `aws s3api` would work, but the stack would no longer match its template. That is **drift**.
+    hint:
+      - "Under the bucket's `Properties`, add `\"VersioningConfiguration\": {\"Status\": \"Enabled\"}`."
+      - "`aws cloudformation update-stack` takes the same `--stack-name` and `--template-body` as create. Check `describe-stacks` until the status is UPDATE_COMPLETE."
+      - "For a preview first, a **change set** shows what will change: `create-change-set`, then `execute-change-set`."
+    success: The change went in through the file, so the stack and the template still agree.
+  - id: delete-stack
+    type: task
+    title: Delete the stack
+    body: |
+      Delete the stack `app`. Everything it created goes with it.
+    hint:
+      - "`aws cloudformation delete-stack --stack-name app`. Then `describe-stacks` answers that the stack does not exist."
+    success: One command removed the bucket and the queue. That is the point of a stack.
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      - Describe resources in a template, and read what a stack produced from its outputs.
+      - Create, update and delete a stack from the CLI, and read its status to know when it has finished.
+      - Change infrastructure through the template, and see why changing it by hand causes drift.
+      - Preview an update with a change set.
+
+      Next: the Terraform track does the same job with a different tool.

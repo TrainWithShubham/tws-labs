@@ -1,0 +1,35 @@
+# The AWS Emulator overlay, used by:  EMULATOR=1 ./start_local_labs.sh
+# It adds the AWS CLI image (Dockerfile.aws, via docker-compose.aws.yml) and the AWS Emulator beside the labs, for the labs that say
+# `requires: emulator`: the real AWS CLI against a local stand-in for AWS, with no account and nothing to clean up. Local only: the hosted site never uses it.
+#
+# The emulator shares the lab container's network (network_mode), so it is at 127.0.0.1:9297 INSIDE that container only: it is not published to your
+# machine or your network, and its certificate (valid for localhost) matches. See docs/emulator-labs.md.
+services:
+  labs:
+    environment:
+      EMULATOR_ENDPOINT: https://127.0.0.1:9297
+      EMULATOR_CA_SOURCE: /emulator-home/9297/ca.pem     # the emulator's certificate; the server copies a public version for learners
+    volumes:
+      - emulator-home:/emulator-home:ro
+  emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.emulator
+    image: tws-labs:emulator
+    network_mode: "service:labs"
+    depends_on:
+      - labs
+    volumes:
+      - emulator-home:/home/emulator/.aws/emulator
+    mem_limit: 2g              # AWS's own guidance: over it the emulator is killed and its resources are lost
+    memswap_limit: 2g
+    pids_limit: 512
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    restart: unless-stopped
+volumes:
+  emulator-home: {}

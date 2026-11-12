@@ -1,0 +1,102 @@
+requires: emulator
+title: S3 storage in practice
+level: beginner
+minutes: 15
+summary: The real AWS CLI on a local AWS Emulator - buckets, versioning, lifecycle and policies. No account.
+links:
+  - title: S3 versioning
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html
+resources:
+  - title: Using versioning in S3 buckets
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html
+    desc: What versioning keeps, and how overwrites and deletes behave once it is on.
+  - title: Managing the lifecycle of objects
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html
+    desc: Lifecycle rules, filters and expiration.
+  - title: Bucket policies for S3
+    url: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html
+    desc: How a policy's Effect, Principal, Action, Resource and Condition fit together.
+steps:
+  - id: intro
+    type: lesson
+    title: Real CLI, local AWS
+    body: |
+      This lab runs the **real AWS CLI** against the **AWS Emulator**, AWS's own local stand-in for its APIs. It needs no account, costs nothing, and what you create vanishes when the emulator restarts.
+
+      An emulator is not AWS:
+      - **It does not enforce IAM permissions for users and roles**, so a mistake there would be silent. It does honour an explicit `Deny` in a bucket policy, as real AWS does.
+      - **It is one account in one region** (`us-east-1`), so you never need `--region`.
+
+      You will make a bucket called `tws-labs-notes`, fill it from your `reports` folder, keep history with versioning, expire temporary files and attach a safety policy.
+  - id: make-bucket
+    type: task
+    title: Make a bucket
+    body: |
+      Create an S3 bucket named `tws-labs-notes`.
+    hint:
+      - "S3 has two command families: `aws s3` for everyday copies and `aws s3api` for the raw API operations."
+      - "Both can make a bucket. The raw operation is named after what it does, and it takes `--bucket`."
+    success: The bucket exists. Everything else in this lab lives inside it.
+  - id: upload-objects
+    type: task
+    title: Upload under a prefix
+    body: |
+      Your `reports` folder holds two quarterly files, `2026-q1.csv` and `2026-q2.csv`. Upload both into the bucket so their keys are `reports/2026-q1.csv` and `reports/2026-q2.csv`.
+
+      S3 has no real folders: `reports/` is just the start of each key, called a **prefix**.
+    hint:
+      - "`aws s3 cp` copies a local file to `s3://bucket/key`."
+      - "Put the prefix in the destination: `s3://tws-labs-notes/reports/<file name>`."
+      - "Upload the two files one at a time, and do not upload `2026-q1-corrected.csv` yet."
+    success: Two objects, one prefix. You can list them by that prefix.
+  - id: versioning
+    type: task
+    title: Keep every version
+    body: |
+      Turn on **versioning** for the bucket, so overwriting or deleting an object keeps the earlier versions.
+    hint:
+      - "Versioning is a configuration you put on the bucket, with its own `s3api` operation."
+      - "The configuration has one field, `Status`, and you want it enabled."
+    success: Overwrites and deletes in this bucket are now recoverable.
+  - id: overwrite-version
+    type: task
+    title: Overwrite, and keep both
+    body: |
+      The Q1 report had a mistake. `reports/2026-q1-corrected.csv` in your home folder is the fixed file. Upload it so it **replaces** `reports/2026-q1.csv` in the bucket: same key, new content. Versioning means the old file is still there.
+    hint:
+      - "To replace an object, upload to the same key. The local file name does not have to match the key."
+      - "Copy the corrected file to `s3://tws-labs-notes/reports/2026-q1.csv`."
+      - "To see both versions afterwards, try `aws s3api list-object-versions --bucket tws-labs-notes`."
+    success: One key, two versions. Nothing was lost by overwriting.
+  - id: lifecycle
+    type: task
+    title: Expire temporary files
+    body: |
+      Exports under `tmp/` should not pile up. Add a **lifecycle rule** to the bucket that **expires objects under the prefix `tmp/` after 7 days**, and leave the rule enabled.
+    hint:
+      - "A lifecycle configuration is a JSON document: write it to a file, then give the file to the CLI as `file://name.json`."
+      - "The operation is `put-bucket-lifecycle-configuration`. A rule needs an `ID`, a `Status`, a `Filter` and an `Expiration`."
+      - "The filter selects by prefix and the expiration counts in days. Enabled is spelled `Enabled`."
+    success: Anything written under tmp/ will now age out on its own.
+  - id: policy
+    type: task
+    title: Refuse plain HTTP
+    body: |
+      A common safety net is a bucket policy that **denies any request not made over HTTPS**. Attach one to the bucket that denies `s3:*` to everyone (`"*"`) on both the bucket and the objects in it, when the condition `aws:SecureTransport` is `false`.
+
+      Take care what you deny: a policy that denies **your own** requests locks you out of the bucket, as on real AWS. (The CLI talks HTTPS, so a rule against insecure requests will not touch you. The bucket owner can always remove a policy with `delete-bucket-policy`.)
+    hint:
+      - "A policy is JSON with a list of Statements. The one you want has Effect `Deny`."
+      - "Two resources are needed: the bucket (`arn:aws:s3:::tws-labs-notes`) and everything in it (`arn:aws:s3:::tws-labs-notes/*`)."
+      - "The condition goes in a `Bool` block: `\"aws:SecureTransport\": \"false\"`. Attach the file with `put-bucket-policy`."
+    success: A policy that closes the plain-HTTP door, written the way you would on real AWS.
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      - Create buckets and move files with `aws s3` and `aws s3api`.
+      - Use prefixes to organise keys, and versioning to make overwrites recoverable.
+      - Write lifecycle rules and bucket policies as JSON and attach them from the CLI.
+      - Tell what an emulator models (storage, versions, a bucket policy's explicit Deny) from what only real AWS enforces (IAM permissions for users and roles).
+
+      Next: the AWS CLI first-steps lab runs the same ideas on your own account, where the permissions are real.

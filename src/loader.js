@@ -23,8 +23,8 @@ function loadLab(labsDir, trackId, labId, problems) {
   if (typeof raw.title !== 'string' || !raw.title.trim()) return bad('title is required');
   if (!LEVELS.includes(raw.level)) return bad(`level must be one of ${LEVELS.join(', ')}`);
   if (!Array.isArray(raw.steps) || raw.steps.length === 0) return bad('steps must be a non-empty list');
-  // A lab that needs the learner's own cloud account says so; it then runs only on their machine (see src/lab-env.js).
-  if (raw.requires !== undefined && raw.requires !== 'aws') return bad('requires must be "aws" (or left out)');
+  // A lab that needs the learner's own cloud account ("aws") or the AWS Emulator sidecar ("emulator") says so; it then runs only on their machine (see src/lab-env.js).
+  if (raw.requires !== undefined && raw.requires !== 'aws' && raw.requires !== 'emulator') return bad('requires must be "aws" or "emulator" (or left out)');
 
   const seen = new Set();
   const steps = [];

@@ -184,6 +184,20 @@ A lab that says `requires: aws` runs against the learner's **own AWS account**, 
 - **Helpers** (`labs/lib.sh`): call `aws_ready` first in every check (it refuses missing, expired and root credentials with a friendly line), then `aws_account`, `aws_region_is REGION` and `retry TRIES SECONDS CMD...` for eventual consistency. Name bucket-style resources after the account id so they are unique, and keep the `tws-labs` prefix so `scripts/aws-lab-sweep.sh` and the learner role's permissions cover them.
 - **Testing a check without an account**: `test/support/fake-aws.js` is a test double that answers only the calls your checks make; add what you need there and use `test/support/aws-env.js` (see `test/unit/aws-first-steps.test.js`). It proves the check logic, not AWS itself.
 
+## Emulator labs (`requires: emulator`)
+
+A lab that says `requires: emulator` runs the real AWS CLI against the AWS Emulator sidecar (see [emulator-labs.md](emulator-labs.md)): no account, nothing to clean up, and, unlike account labs, **proven in CI**.
+
+- **Where it runs:** local only, and only when started with `EMULATOR=1 ./start_local_labs.sh`. Hosted shows the read-only walkthrough and `POST /session` answers 403 `needs-local`; a local stack without the sidecar answers 409 `needs-emulator`, and the lab page says how to start it.
+- **Environment:** the shell and checks get the emulator's endpoint, its certificate and dummy keys (`src/emulator.js`), never the learner's real AWS variables. Do not use `--region`, `--endpoint-url` or keys in tasks.
+- **Checks:** call `emulator_ready` first (`labs/lib.sh`), then read state with `aws ... get/describe/list`. Parse JSON with `python3` (standard library), passing names as arguments, never spliced into the script.
+- **Names:** give resources fixed names (`tws-labs-notes`); the emulator is one account, so nothing needs to be unique.
+- **`setup.sh` must start clean:** the emulator keeps its resources until it restarts, so a lab you ran before leaves its bucket behind and the first task looks done. Delete what the lab uses (remove a bucket **policy** first, then objects and versions, then the bucket: a denying policy blocks listing too).
+- **Skip-ahead:** `setup/<task>.sh` creates what the task needs through the CLI, safely to repeat.
+- **Be honest:** say in the first lesson that it is an emulator. It does not enforce IAM for users and roles, so do not write a task whose point is "this is denied". It does honour an explicit bucket-policy `Deny`.
+- **Proof:** the emulator CI job sets `TWS_PROVE_EMULATOR=1` and `TWS_EMULATOR_RESTART` (a command that restarts the emulator, so every replay starts empty); the validator then runs your lab, its `cases/` and every skip-ahead exactly like an offline lab. To run it yourself: start the stack with `EMULATOR=1`, then `docker exec -e TWS_PROVE_EMULATOR=1 <labs container> node scripts/validate-labs.js --strict <track>/<lab>`.
+- **Browser test:** `test/e2e/emulator.e2e.js` plays a whole emulator lab in real Chrome when the stack has the emulator, and skips otherwise.
+
 ## Real-browser tests (`npm run e2e`)
 
 `test/e2e/` drives real Chrome against a running stack (`./start_local_labs.sh`, then `npm run e2e`; set `BASE` for another port and `CHROME_PATH` if Chrome is not found):

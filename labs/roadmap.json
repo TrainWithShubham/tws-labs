@@ -262,7 +262,9 @@
             "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerQK70g5dFWZ0hFKv6PeEPW0"
           },
           "labs": [
-            "aws/aws-cli-first-steps"
+            "aws/aws-cli-first-steps",
+            "aws/s3-storage-in-practice",
+            "aws/cloudformation-first-stack"
           ]
         },
         {
@@ -286,7 +288,7 @@
         {
           "id": "aws-serverless",
           "title": "Compute and serverless",
-          "status": "next",
+          "status": "live",
           "relevance": 98,
           "subtopics": [
             "Lambda, API Gateway",
@@ -296,7 +298,11 @@
           "video": {
             "title": "AWS Lambda project",
             "url": "https://www.youtube.com/playlist?list=PLlfy9GnSVerTB0twnC5eaGD-oiHprpnW-"
-          }
+          },
+          "labs": [
+            "aws/dynamodb-tables-and-queries",
+            "aws/sqs-sns-fan-out"
+          ]
         },
         {
           "id": "helm",

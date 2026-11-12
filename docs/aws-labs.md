@@ -1,5 +1,7 @@
 # AWS labs: practice on your own AWS account
 
+> **No account? Try the emulator.** Four AWS labs (S3, DynamoDB, SQS and SNS, CloudFormation) run the real AWS CLI against AWS's own local emulator, with nothing to set up and nothing to clean up: `EMULATOR=1 ./start_local_labs.sh`. See [emulator-labs.md](emulator-labs.md). Use your own account (this page) for what an emulator cannot model, like IAM permissions and denials.
+
 Most labs run entirely inside the container and need nothing. A few Cloud labs (they say **needs an AWS account**) use the
 **real AWS CLI against your own account**, because that is the skill. You bring the account; TWS Labs never gets your keys.
 

@@ -220,11 +220,17 @@ function videoBanner(v) {
   return v ? `<div class="video-banner"><span class="yt-badge">${YT_ICON}</span><div><strong>Watch first: ${ext(v.url, esc(v.title))}</strong><br/><small>${esc(v.note)}</small></div></div>` : '';
 }
 
+// Labs that need more than a shell say so on the track page, in the same quiet type as a status: no account at all, or your own.
+const REQUIRES_TAG = {
+  emulator: ' <span class="tag" title="Runs on your machine against the AWS Emulator: no AWS account needed">AWS Emulator</span>',
+  aws: ' <span class="tag" title="Runs on your machine against your own AWS account">Your AWS account</span>',
+};
+
 function trackBody(track, place) {
   const line = place ? lineClass(place.domain.id) : 'line-more';
   const items = track.labs.map((l) => `
       <li data-status="live"><a href="/lab/${track.id}/${l.id}" data-labs="${track.id}/${l.id}"><i class="stn-dot"></i>
-        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}<span data-lab-tasks="${track.id}/${l.id}" data-total="${l.steps.filter((x) => x.type === 'task').length}"></span></small></a></li>`).join('');
+        <b>${esc(l.title)}</b><small>${esc(l.summary)} &middot; ${l.minutes} min &middot; ${esc(l.level)}${REQUIRES_TAG[l.requires] || ''}<span data-lab-tasks="${track.id}/${l.id}" data-total="${l.steps.filter((x) => x.type === 'task').length}"></span></small></a></li>`).join('');
   const parts = [['Labs', '/']];
   if (place) parts.push([place.domain.title, `/roadmap#${place.domain.id}`]);
   parts.push([track.title, '']);
@@ -238,8 +244,18 @@ function trackBody(track, place) {
 
 const STAT = (id, label) => `<div class="stat-cell"><div class="stat-label">${label}</div><div class="stat-value" id="stat-${id}">&mdash;</div>${id === 'uptime' ? '' : `<div class="stat-bar"><div class="stat-bar-fill" id="stat-${id}-bar"></div></div>`}</div>`;
 
-// A lab that needs the learner's own AWS account never opens a terminal on the hosted site (it would hold strangers'
-// credentials). The page is a read-only walkthrough plus how to run the real thing on their own machine.
+// A lab that needs the learner's own AWS account, or the AWS Emulator, never opens a terminal on the hosted site (an account lab would hold
+// strangers' credentials; the emulator runs beside the learner's own containers). The page is a read-only walkthrough plus how to run the real thing on their machine.
+const ACCOUNT_BANNER = `<strong>This lab uses your own AWS account, so it runs on your machine.</strong><br/>
+      <small>The hosted site never asks for AWS keys. Start TWS Labs locally with your credentials set:</small>
+      <pre><code>git clone https://github.com/TrainWithShubham/tws-labs.git &amp;&amp; cd tws-labs
+AWS=1 ./start_local_labs.sh</code></pre>
+      <small>Setup, the learner role and the cost guardrails: <a href="https://github.com/TrainWithShubham/tws-labs/blob/main/docs/aws-labs.md" target="_blank" rel="noopener noreferrer">docs/aws-labs.md</a></small>`;
+const EMULATOR_BANNER = `<strong>This lab runs on your machine, against the AWS Emulator. You do not need an AWS account.</strong><br/>
+      <small>The emulator is AWS's own local stand-in for its APIs. It runs beside the labs in a container, so nothing here touches a real account or costs anything:</small>
+      <pre><code>git clone https://github.com/TrainWithShubham/tws-labs.git &amp;&amp; cd tws-labs
+EMULATOR=1 ./start_local_labs.sh</code></pre>
+      <small>What it is, and what it does not model (it does not enforce IAM permissions for users and roles): <a href="https://github.com/TrainWithShubham/tws-labs/blob/main/docs/emulator-labs.md" target="_blank" rel="noopener noreferrer">docs/emulator-labs.md</a></small>`;
 function accountLabBody(lab, trackTitle, place) {
   const steps = lab.steps.map((s) => `
       <li><b>${esc(s.title)}</b><div class="step-body">${s.bodyHtml}</div></li>`).join('');
@@ -249,11 +265,7 @@ function accountLabBody(lab, trackTitle, place) {
     ${crumb([['Labs', '/'], ...(place ? [[place.domain.title, `/roadmap#${place.domain.id}`]] : []), [trackTitle, `/t/${lab.track}`]])}
     <h1 class="page-title">${esc(lab.title)}</h1>
     <p class="lede">${esc(lab.summary)}</p>
-    <div class="video-banner"><div><strong>This lab uses your own AWS account, so it runs on your machine.</strong><br/>
-      <small>The hosted site never asks for AWS keys. Start TWS Labs locally with your credentials set:</small>
-      <pre><code>git clone https://github.com/TrainWithShubham/tws-labs.git &amp;&amp; cd tws-labs
-AWS=1 ./start_local_labs.sh</code></pre>
-      <small>Setup, the learner role and the cost guardrails: <a href="https://github.com/TrainWithShubham/tws-labs/blob/main/docs/aws-labs.md" target="_blank" rel="noopener noreferrer">docs/aws-labs.md</a></small></div></div>
+    <div class="video-banner"><div>${lab.requires === 'emulator' ? EMULATOR_BANNER : ACCOUNT_BANNER}</div></div>
     <h2>What you will do</h2>
     <ol class="walkthrough">${steps}</ol>
   </div>`,
@@ -266,7 +278,7 @@ AWS=1 ./start_local_labs.sh</code></pre>
 function labBody(lab, trackTitle, cfg, place, next) {
   const data = {
     track: lab.track, lab: lab.id, title: lab.title, trackUrl: '/t/' + lab.track,
-    local: cfg.isLocal, gated: !cfg.isLocal, banner: ASCII_BANNER,
+    local: cfg.isLocal, gated: !cfg.isLocal, emulator: lab.requires === 'emulator', banner: ASCII_BANNER,
     links: lab.links, resources: lab.resources, next,
     steps: lab.steps.map((s) => ({
       id: s.id, type: s.type, title: s.title, hint: s.hint, hints: s.hints, success: s.success, setup: !!s.setupFile, setupCwd: s.setupCwd || '', skipNote: s.skipNote || '',
@@ -299,7 +311,7 @@ function labBody(lab, trackTitle, cfg, place, next) {
       <div class="lab-actions"><button class="btn" id="restart-btn" title="Start over with fresh files">Restart lab</button><button class="btn danger" id="end-btn">End lab</button></div>
     </div>
     <div class="terminal-pane">
-      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> <span title="Tab goes to the shell; press Shift+Tab to leave the terminal">Terminal</span>
+      <div class="terminal-tab"><span id="status-pill" class="pill">starting</span> <span title="Tab goes to the shell; press Shift+Tab to leave the terminal">Terminal</span>${lab.requires === 'emulator' ? ' <span class="term-note" title="Commands here run against a local AWS Emulator, not real AWS">&middot; AWS Emulator</span>' : ''}
         <span class="terminal-links">${links}<button class="fullscreen-btn" id="fs-btn" title="Fullscreen" aria-label="Fullscreen">&#x26F6;</button></span></div>
       <form class="invite" id="invite" hidden autocomplete="off">
         <label for="invite-code">Invite code</label>

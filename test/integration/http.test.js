@@ -55,7 +55,10 @@ test('home: a calm map - live topics link to labs, next topics are plain, later 
     for (const href of ['/t/linux-fundamentals', '/t/git-basics', '/t/docker', '/t/networking', '/t/github-actions', '/lab/aws/elastic-beanstalk-cluster-mode']) assert.ok(html.includes(`<a href="${href}"`), href);
     // next topics are not links; later topics are not on the home page at all
     const dim = [...html.matchAll(/<li data-status="(next|building)" class="dim">(.*?)<\/li>/g)];
-    assert.ok(dim.length >= 3 && dim.every((m) => !m[2].includes('<a ')));
+    const upcoming = loadRoadmap(loadCatalog(LABS)).domains.flatMap((d) => d.topics).filter((t) => t.status === 'next' || t.status === 'building').length;
+    assert.ok(upcoming > 0, 'the roadmap still has topics that are next');
+    assert.equal(dim.length, upcoming, 'every next topic is on the map, and none is a link');
+    assert.ok(dim.every((m) => !m[2].includes('<a ')));
     for (const hidden of ['Ansible', 'Jenkins', 'OpenTelemetry', 'AIOps']) assert.ok(!html.includes(hidden), `${hidden} stays on the roadmap page`);
     for (const col of html.split('<div class="col ').slice(1)) assert.ok((col.match(/<li data-status=/g) || []).length <= 7, 'each route keeps to seven stations');
     assert.match(html, /6 more on the roadmap/);
@@ -136,7 +139,8 @@ test('videos: grouped by line, safe links, "Practice" only where a lab is online
     const practice = loadRoadmap(loadCatalog(LABS)).domains.flatMap((d) => d.topics).filter((t) => t.video && t.labs.length).length;
     assert.ok(practice > 0, 'some topic has both a video and labs');
     assert.equal((v.match(/Practice &rarr;/g) || []).length, practice, 'Practice appears for exactly the topics that have a video and labs (derived from the roadmap)');
-    assert.match(v, /<span class="tag">next<\/span>/);
+    const nextWithVideo = loadRoadmap(loadCatalog(LABS)).domains.flatMap((d) => d.topics).filter((t) => t.video && t.status === 'next').length;
+    assert.equal((v.match(/<span class="tag">next<\/span>/g) || []).length, nextWithVideo, 'a topic that is next and has a video carries the "next" tag, and no other does');
     const track = (await get(app, '/t/linux-fundamentals')).body;
     assert.match(track, /<p class="crumb"><a href="\/">Labs<\/a><i>\/<\/i><a href="\/roadmap#devops">DevOps<\/a><i>\/<\/i><span>Linux Fundamentals<\/span><\/p>/);
     assert.match(track, /Watch first: Linux For DevOps In One Shot/);

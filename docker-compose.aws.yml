@@ -1,4 +1,4 @@
-# The AWS overlay, used by:  AWS=1 ./start_local_labs.sh
+# The AWS overlay, used by:  AWS=1 ./start_local_labs.sh   (and, with the emulator, EMULATOR=1: see docker-compose.emulator.yml)
 # It adds the AWS CLI image (Dockerfile.aws) and hands YOUR AWS_* variables to the labs that say `requires: aws`
 # (and only those: see src/lab-env.js). Nothing here is read by the hosted site.
 services:
@@ -11,6 +11,10 @@ services:
     image: tws-labs:aws
     mem_limit: 768m            # the AWS CLI needs more headroom than a plain shell
     environment:
+      # The shell caps each process's address space (1 GiB on the local profile) so `tail /dev/zero` cannot starve the container. The AWS CLI's
+      # transfer library (`aws s3 cp`, `sync`) aborts under that cap ("Fatal error ... awscrt"; it works from about 2 GiB), so this overlay
+      # allows 3 GiB of address space. Memory itself is still bounded by mem_limit.
+      LAB_ULIMIT_V_KB: "3145728"
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}

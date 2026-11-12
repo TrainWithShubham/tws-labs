@@ -15,7 +15,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { loadCatalog } = require('../src/loader');
 const { lintLab } = require('../src/lint');
-const { proofSkipReason } = require('../src/lab-env');
+const { proofSkipReason, labEnv, checkTimeoutMs } = require('../src/lab-env');
+const { loadConfig } = require('../src/config');
+const emulator = require('../src/emulator');
 const { loadCases } = require('../src/cases');
 const { createSandbox } = require('../src/sandbox');
 const { killProcessSession } = require('../src/lib');
@@ -28,6 +30,22 @@ const sandbox = createSandbox({ labsDir: LABS_DIR });
 // As root (the container) play each lab as an unprivileged uid, exactly like a live session.
 const UID = process.env.LAB_UID ? parseInt(process.env.LAB_UID, 10) : undefined;
 
+
+// Emulator labs (`requires: emulator`) run against a real AWS Emulator when TWS_PROVE_EMULATOR=1 (the emulator CI job; EMULATOR_ENDPOINT and
+// EMULATOR_CA_SOURCE say where it is). They get exactly the environment a learner's shell gets, and every fresh replay starts from an empty emulator:
+// TWS_EMULATOR_RESTART is a command that restarts it (it keeps all its resources in memory, so a restart is a reset).
+const CFG = loadConfig({ ...process.env, LAB_PROFILE: 'local' });
+const envFor = (lab) => labEnv(lab, CFG);
+async function freshEmulator(lab) {
+  if (lab.requires !== 'emulator') return;
+  if (process.env.TWS_EMULATOR_RESTART) require('child_process').execSync(process.env.TWS_EMULATOR_RESTART, { stdio: 'ignore' });
+  for (let i = 0; i < 120; i++) {
+    if (await emulator.checkHealth(CFG) && emulator.ensureCa(CFG)) return;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error('the AWS Emulator did not come up (is it running? see docs/emulator-labs.md)');
+}
+
 function solutionLines(file) {
   return fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
 }
@@ -35,9 +53,9 @@ function solutionLines(file) {
 // A persistent bash reading commands from a pipe stands in for the learner's
 // terminal: its cwd and background jobs persist between steps, and (being
 // detached) it is its own session leader, exactly like the pty shell.
-function startShell(home, cwd = home) {
+function startShell(home, cwd = home, extraEnv = {}) {
   const [file, args] = sandbox.asUser(UID, home, 'bash', []);
-  const child = spawn(file, args, { cwd, env: sandbox.scriptEnv(home), detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(file, args, { cwd, env: sandbox.scriptEnv(home, extraEnv), detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (c) => { out += c; });
   child.stderr.on('data', () => {});
@@ -62,19 +80,21 @@ function startShell(home, cwd = home) {
 }
 
 async function validateLab(lab, work) {
+  await freshEmulator(lab);
+  const env = envFor(lab);
   const home = path.join(work, 'home');
   const history = path.join(work, 'history');
   fs.mkdirSync(work, { recursive: true });
   sandbox.prepareHistory(history, UID);
   sandbox.prepareHome(home, UID);
-  const setup = sandbox.runSetup(lab.dir, home, UID);
+  const setup = sandbox.runSetup(lab.dir, home, UID, env);
   if (setup.code !== 0) return [`setup.sh failed:\n${setup.out}`];
 
   const errors = [];
-  const shell = startShell(home);
+  const shell = startShell(home, home, env);
   try {
     for (const step of lab.steps.filter((s) => s.type === 'task')) {
-      const ctx = { home, uid: UID, shellPid: shell.pid, historyFile: history };
+      const ctx = { home, uid: UID, shellPid: shell.pid, historyFile: history, env, timeoutMs: checkTimeoutMs(lab) };
       const before = await sandbox.runCheck(step.checkFile, ctx);
       if (before.pass) errors.push(`${step.id}: check already passes BEFORE the solution (vacuous check, or an earlier step does this step's work)`);
       const lines = solutionLines(step.solutionFile);
@@ -95,14 +115,16 @@ async function validateLab(lab, work) {
 
 // Replay the lab up to `task` in a fresh sandbox (setup, then every earlier task's solution), run one case, and grade it.
 async function runCase(lab, c, work) {
+  await freshEmulator(lab);
+  const env = envFor(lab);
   const home = path.join(work, 'home');
   const history = path.join(work, 'history');
   fs.mkdirSync(work, { recursive: true });
   sandbox.prepareHistory(history, UID);
   sandbox.prepareHome(home, UID);
-  const setup = sandbox.runSetup(lab.dir, home, UID);
+  const setup = sandbox.runSetup(lab.dir, home, UID, env);
   if (setup.code !== 0) return `setup.sh failed:\n${setup.out}`;
-  const shell = startShell(home);
+  const shell = startShell(home, home, env);
   try {
     const tasks = lab.steps.filter((s) => s.type === 'task');
     const target = tasks.find((s) => s.id === c.task);
@@ -113,7 +135,7 @@ async function runCase(lab, c, work) {
     }
     fs.appendFileSync(history, c.lines.join('\n') + '\n');
     await shell.run(c.lines);
-    const r = await sandbox.runCheck(target.checkFile, { home, uid: UID, shellPid: shell.pid, historyFile: history });
+    const r = await sandbox.runCheck(target.checkFile, { home, uid: UID, shellPid: shell.pid, historyFile: history, env, timeoutMs: checkTimeoutMs(lab) });
     if (c.expect === 'fail' && r.pass) return 'the check PASSES this wrong answer (too lax)';
     if (c.expect === 'pass' && !r.pass) return `the check REJECTS this valid alternative (too strict)${r.message ? `: "${r.message}"` : ''}`;
     return '';
@@ -127,22 +149,24 @@ async function runCase(lab, c, work) {
 // Skipping ahead: a fresh sandbox with only the lab's own setup (and the task's setup/<task>.sh if it ships one), the shell where the
 // setup says it should be, then the task's solution. The check must fail first and pass after, as if the learner had skipped everything before.
 async function runSkipAhead(lab, step, work) {
+  await freshEmulator(lab);
+  const env = envFor(lab);
   const home = path.join(work, 'home');
   const history = path.join(work, 'history');
   fs.mkdirSync(work, { recursive: true });
   sandbox.prepareHistory(history, UID);
   sandbox.prepareHome(home, UID);
-  const base = sandbox.runSetup(lab.dir, home, UID);
+  const base = sandbox.runSetup(lab.dir, home, UID, env);
   if (base.code !== 0) return `setup.sh failed:\n${base.out}`;
   if (step.setupFile) {
-    const r = await sandbox.runScript(step.setupFile, { home, uid: UID });
+    const r = await sandbox.runScript(step.setupFile, { home, uid: UID, env });
     if (r.code !== 0) return `setup/${step.id}.sh failed:\n${r.out}`;
   }
   const cwd = step.setupCwd ? path.join(home, step.setupCwd) : home;
   if (!fs.existsSync(cwd)) return `setup/${step.id}.sh says "# cwd: ${step.setupCwd}" but that folder does not exist after the setup runs`;
-  const shell = startShell(home, cwd);
+  const shell = startShell(home, cwd, env);
   try {
-    const ctx = { home, uid: UID, shellPid: shell.pid, historyFile: history };
+    const ctx = { home, uid: UID, shellPid: shell.pid, historyFile: history, env, timeoutMs: checkTimeoutMs(lab) };
     if ((await sandbox.runCheck(step.checkFile, ctx)).pass) return 'the check already passes before the solution';
     const lines = solutionLines(step.solutionFile);
     fs.appendFileSync(history, lines.join('\n') + '\n');

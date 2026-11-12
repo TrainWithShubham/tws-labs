@@ -8,6 +8,33 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-12
+
+### Highlights
+- **AWS labs with no AWS account.** Start the labs with `EMULATOR=1 ./start_local_labs.sh` and four new AWS labs (S3, DynamoDB, SQS and SNS, CloudFormation) run the real `aws` CLI against AWS's own local emulator: no account, no keys, no cost, nothing to clean up.
+- **Proven in CI, unlike labs on your own account.** A new CI job runs every emulator lab against the real emulator (each check fails before its solution and passes after, near misses fail, valid alternatives pass, every task works when skipped to) and plays each one through the UI in real Chrome.
+- **Honest about what an emulator is.** Each lab says what the emulator models and what only real AWS enforces (IAM permissions for users and roles), and the page tells you plainly when the emulator is not running.
+- **Two fixes for every AWS lab:** `aws s3 cp` no longer aborts in the lab terminal, and checks that wait for AWS get 30 seconds instead of 5.
+
+### Added
+- **AWS labs with no AWS account (new: the AWS Emulator).** `EMULATOR=1 ./start_local_labs.sh` starts the labs with AWS's own local emulator beside them, and labs marked `requires: emulator` run the real AWS CLI against it: no account, no keys, no cost, nothing to clean up. Emulator labs, unlike account labs, are proven fail-before and pass-after by the validator. Local only; the hosted site shows them as a read-only walkthrough. See `docs/emulator-labs.md`.
+- **AWS: S3 storage in practice** (the first emulator lab): a bucket, uploads under a prefix, versioning and overwriting, a lifecycle rule and a bucket policy, graded on the emulator's state.
+- **AWS: DynamoDB tables and queries**: a partition and sort key with on-demand billing, a batch write, a query by key, a conditional update that is safe to repeat, and TTL.
+- **AWS: queues and topics with SQS and SNS**: a queue with a dead-letter queue and redrive policy, send, receive and delete, a topic and a subscription, and the queue policy without which a publish succeeds while nothing arrives.
+- **AWS: your first CloudFormation stack**: add a queue to a template, create the stack, read an output, update it through the template (and see why changing it by hand is drift), and delete it.
+
+### Changed
+- **The track page tags AWS labs** that run on the AWS Emulator ("AWS Emulator", no account needed) or on your own account, and an emulator lab's terminal tab reads "Terminal · AWS Emulator". Plain labs are unchanged.
+- **The README is reorganised**: current highlights first with earlier releases folded away, a "Start here" table that covers the whole catalog, one comparison of the two ways to practise AWS, and the missing community credits.
+- **Checks in labs that use AWS or the emulator get 30 seconds** instead of 5 (`src/lab-env.js`): the CLI starts slowly and resources take a moment to settle.
+
+### Fixed
+- **`aws s3 cp` (and `sync`) aborted inside the lab terminal** with "Fatal error ... awscrt": the CLI's transfer library needs more than the 1 GiB address-space cap the lab shell applies. The AWS overlay now allows 3 GiB (memory is still bounded by the container).
+
+### Upgrade notes
+- Nothing is needed to keep running as before. To try emulator labs, run `EMULATOR=1 ./start_local_labs.sh`: the first run builds a large image (about 1.6 GB: the emulator package is about 900 MB installed), and the AWS CLI image gains four service models (DynamoDB, SQS, SNS, CloudFormation).
+- If you use `AWS=1`, the overlay now raises the lab shell's address-space cap to 3 GiB.
+
 ## [1.4.0] - 2026-11-10
 
 ### Highlights

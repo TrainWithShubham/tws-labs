@@ -1,0 +1,24 @@
+# The AWS Emulator sidecar, for labs that say `requires: emulator`:  EMULATOR=1 ./start_local_labs.sh
+# AWS publishes no ready-made image, so this follows the Dockerfile in its Docker guide
+# (https://docs.aws.amazon.com/emulator/latest/userguide/getting-started-docker.html), with one addition: the package is pinned by SHA-256.
+# AWS only serves "latest", so when it publishes a new LTS the build stops on purpose. To move on: download the new package, review it, and update the two
+# checksums below (the package page also states its version: `curl -sI <url> | grep package-version`). Last pinned: package 1.0.322.1 (release 2026.11.10).
+# Kept out of the normal image on purpose: the package is about 900 MB installed.
+ARG TARGETARCH
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal AS pkg-amd64
+ADD --checksum=sha256:edbc25a9ebcf7f5acaa15a8d6409bdb4c7de25f3860a69ccfc65f9b01dfec8a0 \
+    https://downloads.aws.com/aws-emulator/packages/aws-emulator/LTS/latest/aws-emulator-x86_64.rpm /tmp/aws-emulator.rpm
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal AS pkg-arm64
+ADD --checksum=sha256:32ff11c5fe88527e6f647cb99c1011ff594f73d75dad7e7e576ea99bf09e1e55 \
+    https://downloads.aws.com/aws-emulator/packages/aws-emulator/LTS/latest/aws-emulator-aarch64.rpm /tmp/aws-emulator.rpm
+
+FROM pkg-${TARGETARCH}
+# HOME holds the folder the emulator writes its certificate into; it is a volume shared with the lab container (see docker-compose.emulator.yml).
+RUN rpm -i /tmp/aws-emulator.rpm && rm /tmp/aws-emulator.rpm \
+ && mkdir -p /home/emulator/.aws/emulator && chown -R 1000 /home/emulator
+USER 1000
+ENV HOME=/home/emulator
+# Shares the lab container's network, so it listens on that container's loopback only. Request signing is off: only that container can reach it.
+ENTRYPOINT ["aws-emulator", "-b", "127.0.0.1", "-p", "9297", "--telemetry", "off", "--auth", "off"]

@@ -1,0 +1,1 @@
+aws dynamodb update-item --table-name orders --key '{"customer":{"S":"alice"},"orderId":{"S":"o-1"}}' --update-expression 'SET #s = :new' --condition-expression '#s = :old' --expression-attribute-names '{"#s":"status"}' --expression-attribute-values '{":new":{"S":"SHIPPED"},":old":{"S":"PLACED"}}'

@@ -62,6 +62,14 @@ aws_ready() {
   esac
 }
 
+# emulator_ready : call first in every emulator lab check (labs that say `requires: emulator`). Fails with a friendly line if the AWS CLI is
+# missing, the shell is not pointed at the AWS Emulator, or the emulator is not answering yet. Never prints anything else.
+emulator_ready() {
+  command -v aws >/dev/null 2>&1 || fail "The aws command is not here: start the labs with  EMULATOR=1 ./start_local_labs.sh  (see docs/emulator-labs.md)."
+  [ -n "${AWS_ENDPOINT_URL:-}" ] || fail "This shell is not connected to the AWS Emulator: stop the labs and start them with  EMULATOR=1 ./start_local_labs.sh."
+  _timeout 20 aws sts get-caller-identity >/dev/null 2>&1 || fail "The AWS Emulator is not answering yet. Give it a few seconds and press Check again."
+}
+
 # aws_account : print the 12-digit account id of the credentials in use
 aws_account() { _timeout 20 aws sts get-caller-identity --query Account --output text 2>/dev/null; }
 

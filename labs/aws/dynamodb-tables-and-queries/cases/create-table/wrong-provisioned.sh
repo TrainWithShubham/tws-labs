@@ -1,0 +1,1 @@
+aws dynamodb create-table --table-name orders --attribute-definitions AttributeName=customer,AttributeType=S AttributeName=orderId,AttributeType=S --key-schema AttributeName=customer,KeyType=HASH AttributeName=orderId,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1

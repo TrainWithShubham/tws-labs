@@ -18,7 +18,7 @@ what a typical full DevOps curriculum covers. Update it as items ship; move fini
 | Shell | 1 lab | functions and arguments, loops and conditionals, parameter expansion, `trap` and error handling, small projects |
 | Networking | 3 labs | subnets and CIDR practice, TCP and UDP, DNS records, HTTP with `curl`, TLS, NAT |
 | Docker | 3 labs | running containers (ports, env, volumes), image inspection, networking, Compose profiles, image scanning |
-| AWS | 2 labs | IAM policies, EC2 lifecycle, VPC, S3 beyond the basics, Lambda, CloudWatch (account labs, on the learner's own account) |
+| AWS | 6 labs (2 on a real account, 4 on the AWS Emulator) | IAM policies and permissions (needs a real account: the emulator does not enforce them), EC2 and VPC, Lambda (once the emulator's sandboxing is checked), CloudWatch, Beanstalk Standard on the emulator |
 | Python | 1 lab | JSON, YAML and `argparse`, HTTP clients, testing scripts |
 | Go | none | a "Go for DevOps" line is the biggest missing language |
 | AI | 1 lab | prompts and structured output, RAG on a stand-in index, tool use and guardrails, evaluating agent runs |
@@ -39,7 +39,7 @@ Application (new track). Git: rebase and cherry-pick. Shell: functions and argum
 
 ## Phase 3: needs a decision before building
 - **Go for DevOps**: needs the Go toolchain in the image (about 250 MB). Options: an opt-in overlay image like the AWS one, which keeps the base light.
-- **AWS depth** (IAM, EC2, VPC, Lambda): more account labs; each needs a real-account proof and a cleanup check.
+- **AWS depth** (IAM, EC2, VPC, Lambda): labs that are about configuration and state can run on the AWS Emulator and are proven in CI (see `docs/emulator-labs.md`); labs about permissions and denials stay account labs, each with a real-account proof and a cleanup check. A live resources panel next to the terminal is the next emulator idea (it needs its own plan and a security review).
 - **Projects**: multi-step capstones that combine earlier labs (for example "ship a small service": Dockerfile, manifest, workflow, release).
 
 ## Platform ideas (each needs its own plan and a security review; not started)
