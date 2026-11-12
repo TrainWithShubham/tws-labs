@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' 'kind: ClusterRole' 'metadata:' '  name: node-viewer' 'rules:' '  - apiGroups: [""]' '    resources: ["nodes"]' '    verbs: ["get", "delete"]' > app/node-viewer-clusterrole.yaml

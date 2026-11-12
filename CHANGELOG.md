@@ -8,6 +8,9 @@ To see what you are running, check `version` in `package.json`. Self-hosters: `g
 
 ## [Unreleased]
 
+### Added
+- **Kubernetes: Role-Based Access Control (RBAC)**: configure ServiceAccounts, Roles, and ClusterRoles, bind them with RoleBindings and ClusterRoleBindings across namespaces and the cluster, and troubleshoot API group mismatches offline.
+
 ## [1.5.0] - 2026-11-12
 
 ### Highlights

@@ -8,14 +8,14 @@
 [![CI](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml/badge.svg)](https://github.com/TrainWithShubham/tws-labs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/TrainWithShubham/tws-labs?style=flat-square&color=7b52c3)](https://github.com/TrainWithShubham/tws-labs/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Labs](https://img.shields.io/badge/labs-54-7b52c3?style=flat-square)](#whats-online)
-[![Graded tasks](https://img.shields.io/badge/graded%20tasks-271-f4b860?style=flat-square)](#how-it-works)
+[![Labs](https://img.shields.io/badge/labs-55-7b52c3?style=flat-square)](#whats-online)
+[![Graded tasks](https://img.shields.io/badge/graded%20tasks-277-f4b860?style=flat-square)](#how-it-works)
 [![Runs on](https://img.shields.io/badge/runs%20on-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-lightgrey?style=flat-square)](#run-it-locally)
 [![Stars](https://img.shields.io/github/stars/TrainWithShubham/tws-labs?style=flat-square)](https://github.com/TrainWithShubham/tws-labs/stargazers)
 <!-- badges:end -->
 
 <!-- pitch:start -->
-**54 labs · 271 graded tasks · every offline and emulator task proven solvable by a script.**
+**55 labs · 277 graded tasks · every offline and emulator task proven solvable by a script.**
 <!-- pitch:end -->
 
 <img src="docs/media/lab-demo.gif" alt="A learner types a command but forgets Enter and Check says so, then a missed task gets tiered hints, then skipping ahead sets up the files the next task needs, and Check turns green" width="900">
@@ -68,7 +68,7 @@ Full details and upgrade notes: [CHANGELOG.md](CHANGELOG.md).
 <!-- routes:start -->
 | Route | Online today (labs) | Next |
 |---|---|---|
-| **DevOps** | Linux (8) · Shell scripting (2) · Git and GitHub (7) · Docker (3) · Kubernetes (10) · CI/CD with GitHub Actions (5) · Networking (3) | — · +6 later |
+| **DevOps** | Linux (8) · Shell scripting (2) · Git and GitHub (7) · Docker (3) · Kubernetes (11) · CI/CD with GitHub Actions (5) · Networking (3) | — · +6 later |
 | **Cloud** | Elastic Beanstalk Cluster Mode (1) · AWS fundamentals (3) · Terraform on AWS (5) · Compute and serverless (2) · Helm (1) · GitOps with ArgoCD (1) | — |
 | **AI** | Python for DevOps (2) · Building AI agents (1) | Agentic AI for DevOps · MCP, tools and gateways · +2 later |
 <!-- routes:end -->

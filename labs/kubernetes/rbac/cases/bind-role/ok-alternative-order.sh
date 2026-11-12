@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' 'kind: RoleBinding' 'metadata:' '  name: read-pods-binding' '  namespace: development' 'roleRef:' '  apiGroup: rbac.authorization.k8s.io' '  kind: Role' '  name: pod-reader' 'subjects:' '  - kind: ServiceAccount' '    name: app-viewer' '    namespace: development' > app/pod-reader-binding.yaml

@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' 'kind: Role' 'metadata:' '  name: deployment-manager' '  namespace: development' 'rules:' '  - apiGroups:' '      - ""' '      - "apps"' '    resources:' '      - deployments' '    verbs:' '      - get' '      - list' '      - watch' '      - create' > app/deploy-manager-role.yaml

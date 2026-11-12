@@ -4,6 +4,7 @@ description: Master Kubernetes manifest craft - Pods, Deployments, labels and se
 labs:
   - pod-anatomy
   - namespaces
+  - rbac
   - services
   - configs-and-secrets
   - fix-the-manifest
