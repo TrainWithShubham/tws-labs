@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' 'kind: ClusterRoleBinding' 'metadata:' '  name: node-viewer-global-binding' 'subjects:' '  - kind: ServiceAccount' '    name: app-viewer' '    namespace: development' 'roleRef:' '  kind: ClusterRole' '  name: wrong-cluster-role' '  apiGroup: rbac.authorization.k8s.io' > app/node-viewer-binding.yaml

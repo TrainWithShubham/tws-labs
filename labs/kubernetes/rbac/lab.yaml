@@ -1,0 +1,141 @@
+title: Role-Based Access Control
+level: intermediate
+minutes: 14
+summary: Grant and restrict Kubernetes permissions using ServiceAccounts, Roles, ClusterRoles, and bindings.
+links:
+  - title: Kubernetes RBAC
+    url: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+  - title: Service Accounts
+    url: https://kubernetes.io/docs/concepts/security/service-accounts/
+steps:
+  - id: why-rbac
+    type: lesson
+    title: Governing access with Kubernetes RBAC
+    body: |
+      Kubernetes RBAC controls access to cluster resources.
+
+      Key concepts to know:
+      - **Additive rules**: Permissions only add; there are no "deny" rules.
+      - **Subjects**: Workload identities, such as a `ServiceAccount`.
+      - **Roles vs ClusterRoles**: A `Role` is namespaced. A `ClusterRole` is cluster-scoped and can define permissions for namespaced or cluster-scoped resources.
+      - **Bindings**: A `RoleBinding` can bind either kind, but grants permissions only in its namespace. A `ClusterRoleBinding` must reference a `ClusterRole` and grants cluster-wide.
+      - **Rules**: Specify `apiGroups`, `resources`, and `verbs`.
+      - **Offline grading**: Checks validate manifest structure; no cluster is required.
+
+  - id: create-serviceaccount
+    type: task
+    title: Create a ServiceAccount
+    body: |
+      A **ServiceAccount** provides an identity that workloads can use to authenticate to the Kubernetes API.
+
+      It does not grant workload-specific permissions by itself. Kubernetes may grant authenticated identities default API-discovery permissions; grant workload-specific access through a `RoleBinding` or `ClusterRoleBinding`.
+
+      Create a ServiceAccount manifest at `app/app-viewer-sa.yaml` with:
+      - `apiVersion: v1`
+      - `kind: ServiceAccount`
+      - `metadata.name: app-viewer`
+      - `metadata.namespace: development`
+
+      ServiceAccounts are namespace-scoped resources. Ensure both the name and namespace match the requirements.
+    hint:
+      - "A ServiceAccount resource uses apiVersion v1 and kind ServiceAccount."
+      - "Set metadata.name to app-viewer and metadata.namespace to development."
+    success: Correct. The ServiceAccount manifest is configured in the development namespace.
+
+  - id: define-role
+    type: task
+    title: Define a namespace Role
+    body: |
+      A `Role` contains permission rules scoped to a single namespace. Core Kubernetes resources (such as Pods and ConfigMaps) belong to the empty string `""` API group.
+
+      Create `app/pod-reader-role.yaml` with:
+      - `apiVersion: rbac.authorization.k8s.io/v1`
+      - `kind: Role`
+      - `metadata.name: pod-reader`
+      - `metadata.namespace: development`
+      - Under `rules`, grant verbs `[get, list, watch]` on resources `[pods, configmaps]` in `apiGroups: [""]`
+    hint:
+      - "A Role uses apiVersion rbac.authorization.k8s.io/v1 and kind Role."
+      - "Specify apiGroups with \"\" for core resources, and list pods and configmaps under resources."
+    success: Correct. The pod-reader Role is defined with read-only access to pods and configmaps.
+
+  - id: bind-role
+    type: task
+    title: Bind the Role to the ServiceAccount
+    body: |
+      A `RoleBinding` grants the permissions defined in a Role to one or more subjects within a namespace.
+
+      Create `app/pod-reader-binding.yaml` with:
+      - `apiVersion: rbac.authorization.k8s.io/v1`
+      - `kind: RoleBinding`
+      - `metadata.name: read-pods-binding`
+      - `metadata.namespace: development`
+      - Under `subjects`, reference ServiceAccount `app-viewer` in namespace `development`
+      - Under `roleRef`, reference Role `pod-reader` with `apiGroup: rbac.authorization.k8s.io`
+    hint:
+      - "A RoleBinding uses apiVersion rbac.authorization.k8s.io/v1 and kind RoleBinding."
+      - "Set roleRef to Role pod-reader with apiGroup rbac.authorization.k8s.io, and reference ServiceAccount app-viewer under subjects."
+    success: Correct. The RoleBinding binds pod-reader to the app-viewer ServiceAccount in development.
+
+  - id: define-clusterrole
+    type: task
+    title: Define ClusterRole for cluster-scoped resources
+    body: |
+      Resources like Nodes and PersistentVolumes are cluster-scoped and do not belong to any namespace. A ClusterRole can define permissions for these resources.
+
+      Create `app/node-viewer-clusterrole.yaml` with:
+      - `apiVersion: rbac.authorization.k8s.io/v1`
+      - `kind: ClusterRole`
+      - `metadata.name: node-viewer`
+      - Under `rules`, grant verbs `[get, list]` on resource `nodes` in `apiGroups: [""]`
+
+      Because ClusterRoles are cluster-scoped, do not define `metadata.namespace`.
+    hint:
+      - "A ClusterRole uses apiVersion rbac.authorization.k8s.io/v1 and kind ClusterRole."
+      - "ClusterRoles are cluster-scoped; omit metadata.namespace and specify nodes under resources."
+    success: Correct. The cluster-scoped node-viewer ClusterRole is defined.
+
+  - id: bind-clusterrole
+    type: task
+    title: Bind ClusterRole across cluster
+    body: |
+      A `ClusterRoleBinding` grants a `ClusterRole`'s permissions cluster-wide. A `RoleBinding` grants permissions only in its namespace, even when it references a `ClusterRole`. A `ClusterRoleBinding` cannot reference a namespaced `Role`.
+
+      Create `app/node-viewer-binding.yaml` with:
+      - `apiVersion: rbac.authorization.k8s.io/v1`
+      - `kind: ClusterRoleBinding`
+      - `metadata.name: node-viewer-global-binding`
+      - Under `subjects`, reference ServiceAccount `app-viewer` in namespace `development`
+      - Under `roleRef`, reference ClusterRole `node-viewer` with `apiGroup: rbac.authorization.k8s.io`
+
+      ClusterRoleBindings are cluster-scoped; omit `metadata.namespace`.
+    hint:
+      - "A ClusterRoleBinding uses apiVersion rbac.authorization.k8s.io/v1 and kind ClusterRoleBinding."
+      - "ClusterRoleBindings are cluster-scoped and do not accept metadata.namespace."
+    success: Correct. The ClusterRoleBinding grants node-viewer permissions cluster-wide.
+
+  - id: troubleshoot-rbac
+    type: task
+    title: Fix an invalid API group rule
+    body: |
+      The starter manifest `app/deploy-manager-role.yaml` is already provided in your workspace. Edit this existing file rather than creating a new one.
+
+      The Role attempts to grant permissions on `deployments`, but incorrectly specifies the core API group (`""`). Deployments belong to the `apps` API group.
+
+      Edit `app/deploy-manager-role.yaml` and change the API group from `""` to `apps`. Preserve all existing names, verbs, and namespace settings.
+    hint:
+      - "Core resources like pods use \"\", but deployments belong to the apps API group."
+      - "Update apiGroups from \"\" to apps in app/deploy-manager-role.yaml."
+    success: Correct. The deployment-manager Role now correctly targets the apps API group.
+
+  - id: wrap-up
+    type: lesson
+    title: RBAC best practices in production
+    body: |
+      You have practiced the core RBAC best practices:
+      - **Principle of least privilege**: Grant only needed resources and verbs; read-only access may use `get`, `list`, and `watch`.
+      - **Resource scoping**: Use a `Role` with a `RoleBinding` for namespace-scoped permissions.
+      - **ClusterRole reuse**: Bind a `ClusterRole` with a `RoleBinding` to reuse rules in one namespace.
+      - **API group precision**: Use the correct group (`apps` for Deployments, `""` for core resources).
+      - **Regular access reviews**: Periodically review permissions and remove unneeded access.
+      - **Avoid unnecessary cluster-wide access**: Use a `ClusterRoleBinding` only when cluster-wide permissions are required.

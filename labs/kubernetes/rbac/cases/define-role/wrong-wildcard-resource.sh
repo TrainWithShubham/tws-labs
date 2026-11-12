@@ -1,0 +1,1 @@
+printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' 'kind: Role' 'metadata:' '  name: pod-reader' '  namespace: development' 'rules:' '  - apiGroups: [""]' '    resources: ["*"]' '    verbs: ["get", "list", "watch"]' > app/pod-reader-role.yaml
