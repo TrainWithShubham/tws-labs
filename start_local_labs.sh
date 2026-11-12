@@ -4,6 +4,7 @@
 #   LABS_PORT=9090 ./start_local_labs.sh     use another port
 #   NO_BROWSER=1   ./start_local_labs.sh     don't open the browser
 #   AWS=1 ./start_local_labs.sh              run the labs that use YOUR AWS account (needs AWS_* in your shell; see docs/aws-labs.md)
+#   EMULATOR=1 ./start_local_labs.sh         run the AWS labs that need no account, against the AWS Emulator (see docs/emulator-labs.md)
 #   ./start_local_labs.sh stop               stop and clean up
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -40,6 +41,10 @@ if [ -n "${AWS:-}" ]; then
 Short-lived ones are safest: see docs/aws-labs.md (scripts/aws-lab-creds.sh prints them)."
   FILES=(-f docker-compose.yml -f docker-compose.aws.yml)
 fi
+# EMULATOR=1 adds the AWS CLI image and the AWS Emulator beside the labs. It can be combined with AWS=1.
+if [ -n "${EMULATOR:-}" ]; then
+  FILES=(-f docker-compose.yml -f docker-compose.aws.yml -f docker-compose.emulator.yml)
+fi
 
 if docker compose version >/dev/null 2>&1; then
   compose() { docker compose ${FILES[@]+"${FILES[@]}"} "$@"; }
@@ -72,9 +77,10 @@ fi
 
 say "Building and starting TWS Labs (the first run takes a few minutes)..."
 # The AWS image is built on top of the normal one, so build that first.
-if [ -n "${AWS:-}" ]; then   # through compose(), so a machine with only the legacy docker-compose works too
+if [ -n "${AWS:-}${EMULATOR:-}" ]; then   # through compose(), so a machine with only the legacy docker-compose works too
   AWS_FILES=("${FILES[@]}"); FILES=(-f docker-compose.yml); compose build labs; FILES=("${AWS_FILES[@]}")
 fi
+[ -z "${EMULATOR:-}" ] || say "The AWS Emulator image is large (about 1.6 GB), so the first build takes a while."
 compose up --build -d
 
 stop() { echo; say "Stopping TWS Labs..."; compose down >/dev/null 2>&1 || true; exit 0; }

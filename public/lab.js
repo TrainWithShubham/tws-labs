@@ -52,8 +52,25 @@
     $('invite').hidden = true; $('term').hidden = false; fit.fit();
     startSession();
   });
+  // An emulator lab needs the AWS Emulator sidecar. Wait for it before opening the terminal, so the first command never hits a cold emulator.
+  var emulatorOk = false;
+  function waitForEmulator(n) {
+    fetch('/emulator/status').then(function (r) { return r.json(); }).then(function (s) {
+      if (s.ready) { emulatorOk = true; return startSession(); }
+      if (!s.configured || n > 40) {
+        setStatus('ended', 'no emulator');
+        var why = s.configured ? 'The AWS Emulator is not answering. Check that its container is running, then reload this page.'
+          : 'This lab uses the AWS Emulator, which is not running. Stop the labs and start them with:  EMULATOR=1 ./start_local_labs.sh';
+        term.write('\r\n\x1b[33m' + window.twsWrap(why, term.cols - 2).join('\r\n') + '\x1b[0m\r\n');
+        return;
+      }
+      setStatus('', 'emulator');
+      setTimeout(function () { waitForEmulator(n + 1); }, 1500);
+    }).catch(function () { busy('Could not reach the server.'); });
+  }
   function startSession() {
     if (DATA.gated && !savedInvite()) return askInvite(false);
+    if (DATA.emulator && !emulatorOk) return waitForEmulator(0);
     setStatus('', 'starting');
     var headers = { 'Content-Type': 'application/json' };
     if (savedInvite()) headers['X-Lab-Token'] = savedInvite();

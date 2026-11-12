@@ -2,7 +2,8 @@ const { json, readJson } = require('../http');
 const { guardOk, tokenOk } = require('../guards');
 const { clientIp } = require('../lib');
 const { codeId } = require('../usage');
-const { labEnv } = require('../lab-env');
+const { labEnv, checkTimeoutMs } = require('../lab-env');
+const emulator = require('../emulator');
 
 // Seats: minting a session, its countdown, and grading a task.
 module.exports = function sessionRoutes(router, d) {
@@ -15,6 +16,15 @@ module.exports = function sessionRoutes(router, d) {
       if (!found) return json(res, 404, { error: 'unknown lab' });
       if (found.requires === 'aws' && !cfg.isLocal) {
         return json(res, 403, { error: 'needs-local', message: 'This lab uses your own AWS account, so it runs on your machine. The hosted site never asks for AWS keys; see the lab page for how to run it locally.' });
+      }
+      if (found.requires === 'emulator' && !cfg.isLocal) {
+        return json(res, 403, { error: 'needs-local', message: 'This lab uses the AWS Emulator, so it runs on your machine. See the lab page for how to start it locally.' });
+      }
+      if (found.requires === 'emulator') {
+        if (!emulator.configured(cfg)) {
+          return json(res, 409, { error: 'needs-emulator', message: 'This lab uses the AWS Emulator, which is not running. Stop the labs and start them with:  EMULATOR=1 ./start_local_labs.sh' });
+        }
+        emulator.ensureCa(cfg);   // learners' shells trust a public copy of the emulator's certificate
       }
       if (!cfg.isLocal && !tokenOk(req, cfg)) {
         return json(res, 401, { error: 'token-required', message: 'This lab needs an invite code.' });
@@ -37,6 +47,15 @@ module.exports = function sessionRoutes(router, d) {
       json(res, 200, { token });
     });
   
+  });
+
+  // Is the AWS Emulator sidecar there, and answering? The lab page polls this before it opens the terminal of an emulator lab.
+  router.get('/emulator/status', async (req, res) => {
+    if (!guardOk(req, cfg, { needOrigin: false })) return json(res, 403, { error: 'forbidden' });
+    const configured = emulator.configured(cfg);
+    const ready = configured && await emulator.checkHealth(cfg);
+    if (ready) emulator.ensureCa(cfg);
+    json(res, 200, { configured, ready });
   });
 
   router.get('/session/remaining', (req, res, { url }) => {
@@ -75,7 +94,7 @@ module.exports = function sessionRoutes(router, d) {
       if (!session.shellPid) return json(res, 200, { pass: false, message: 'Terminal is still connecting.' });
       const r = await sandbox.runCheck(step.checkFile, {
         home: session.home, uid: session.uid, shellPid: session.shellPid, historyFile: historyOf(token), env: labEnv(lab, cfg),
-        timeoutMs: lab.requires === 'aws' ? 30000 : undefined,
+        timeoutMs: checkTimeoutMs(lab),
       });
       usage.check({ track: session.meta.track, lab: session.meta.lab, step: stepId, pass: r.pass, ip: session.ip, code: session.meta.code });
       json(res, 200, { pass: r.pass, message: r.pass ? '' : r.message });

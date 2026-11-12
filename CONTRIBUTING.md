@@ -35,6 +35,10 @@ a manifest or pipeline to write, a log to dig through. Need a cloud or cluster C
 
 Changing what a learner sees (the lab page, buttons, messages)? Run `npm run e2e` against a local stack and add a flow if you added behavior; see [docs/authoring.md](docs/authoring.md#real-browser-tests-npm-run-e2e).
 
+## AWS labs
+
+An AWS lab comes in two shapes, and the right one is usually obvious. A lab about **configuration and state** (buckets, tables, queues, stacks) should run on the AWS Emulator with `requires: emulator`: learners need no account, and CI proves it. A lab about **permissions, denials or anything the emulator does not model** needs the learner's own account with `requires: aws`. See "Emulator labs" and "Account labs" in [docs/authoring.md](docs/authoring.md).
+
 ## Definition of done
 
 - `npm run lab:check -- <track>/<lab-id>` passes with no warnings.

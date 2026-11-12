@@ -1,0 +1,1 @@
+aws dynamodb create-table --table-name orders --attribute-definitions AttributeName=customer,AttributeType=S AttributeName=orderId,AttributeType=S --key-schema AttributeName=orderId,KeyType=HASH AttributeName=customer,KeyType=RANGE --billing-mode PAY_PER_REQUEST

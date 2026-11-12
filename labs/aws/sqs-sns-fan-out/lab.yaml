@@ -1,0 +1,87 @@
+requires: emulator
+title: Queues and topics with SQS and SNS
+level: beginner
+minutes: 15
+summary: The real AWS CLI on a local AWS Emulator - queues, dead letters, topics, delivery. No account.
+links:
+  - title: How Amazon SQS works
+    url: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-architecture.html
+resources:
+  - title: Amazon SQS basic architecture
+    url: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-architecture.html
+    desc: Queues, messages, visibility and deletion.
+  - title: Dead-letter queues
+    url: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+    desc: What happens to a message that keeps failing, and how a redrive policy points at the queue that catches it.
+  - title: Fanout to Amazon SQS queues
+    url: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
+    desc: Subscribing a queue to a topic, and the queue policy that lets the topic deliver.
+steps:
+  - id: intro
+    type: lesson
+    title: Queues hold work, topics announce it
+    body: |
+      This lab runs the **real AWS CLI** against the **AWS Emulator**, AWS's local stand-in for its APIs: no account, no cost, and everything vanishes when the emulator restarts.
+
+      An **SQS queue** holds messages until a worker takes one, handles it and **deletes** it. A message that keeps failing moves to a **dead-letter queue**. An **SNS topic** announces an event to everyone subscribed, including queues: *fan-out*.
+
+      You will build `orders-dlq`, `orders` and a topic `order-events`, then meet the step everyone forgets: a subscribed queue still refuses the topic until you allow it. (The emulator applies that queue policy, as AWS does.)
+  - id: dead-letter-queue
+    type: task
+    title: Make the dead-letter queue
+    body: |
+      Create a standard queue named `orders-dlq`. It will catch messages that fail too often.
+    hint:
+      - "`aws sqs create-queue` makes a queue, and its name is `--queue-name`."
+    success: A place for failed messages to land.
+  - id: main-queue
+    type: task
+    title: Make the work queue, with a safety net
+    body: |
+      Create a queue named `orders` whose **redrive policy** sends a message to `orders-dlq` after it has been received **3 times** without being deleted.
+    hint:
+      - "A redrive policy is a queue attribute. It names a `deadLetterTargetArn` and a `maxReceiveCount`."
+      - "Attributes are easiest from a file: `--attributes file://attrs.json`. The value of `RedrivePolicy` is itself a JSON string, so its quotes are escaped inside the file."
+      - "The dead-letter queue's ARN comes from `aws sqs get-queue-attributes --attribute-names QueueArn`."
+    success: Orders that fail three times will be set aside instead of looping forever.
+  - id: send-receive
+    type: task
+    title: Send, receive, delete
+    body: |
+      Send a message with the body `order-1001` to `orders`, **receive** it, and **delete** it so it is never delivered again. When you finish, the queue must be empty, with nothing in flight.
+    hint:
+      - "`send-message` and `receive-message` take the queue's URL: `aws sqs get-queue-url --queue-name orders`."
+      - "A received message is hidden for a while, not gone. It comes back unless you delete it."
+      - "Deleting needs the `ReceiptHandle` that `receive-message` returned: `--query 'Messages[0].ReceiptHandle' --output text`."
+    success: The full life of a message, and the habit that keeps queues from refilling.
+  - id: subscribe
+    type: task
+    title: Make a topic and subscribe the queue
+    body: |
+      Create an SNS topic named `order-events`, and **subscribe** the `orders` queue to it with the `sqs` protocol.
+    hint:
+      - "`aws sns create-topic --name order-events` returns the topic's ARN."
+      - "`aws sns subscribe` takes `--topic-arn`, `--protocol sqs` and `--notification-endpoint` set to the **queue's ARN**."
+    success: The queue is subscribed. Whether it will accept anything is the next question.
+  - id: deliver
+    type: task
+    title: Make the message arrive
+    body: |
+      Publish the message `order-created` to the topic and make it **arrive in the `orders` queue**.
+
+      If you publish right now, SNS reports success and nothing arrives. A queue accepts messages only from senders its **policy** allows, so give the topic permission to send to the queue.
+    hint:
+      - "Try publishing first, then look at the queue: `get-queue-attributes --attribute-names ApproximateNumberOfMessages`. Nothing there."
+      - "The queue needs a `Policy` attribute that allows `sqs:SendMessage` to the principal `sns.amazonaws.com`, on the queue's ARN, when `aws:SourceArn` equals the topic's ARN."
+      - "Set it with `aws sqs set-queue-attributes --attributes file://policy.json`, where the file holds `{\"Policy\": \"<the policy as an escaped JSON string>\"}`. Then publish again."
+    success: Subscribed and allowed. That is a working fan-out.
+  - id: wrap-up
+    type: lesson
+    title: What you can do now
+    body: |
+      - Make queues and dead-letter queues, and wire them with a redrive policy.
+      - Send, receive and delete messages, and know why deleting matters.
+      - Subscribe a queue to a topic, and write the queue policy that lets the topic deliver.
+      - Spot the classic silent failure: a publish that succeeds while nothing arrives.
+
+      Next: CloudFormation, to describe resources like these as a file instead of commands.

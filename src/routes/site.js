@@ -28,7 +28,7 @@ module.exports = function siteRoutes(router, d) {
     if (!lab) return send(res, 404, 'text/html', page('labs', 'Not found', pages.notFoundBody()));
     const trackTitle = getCatalog().tracks.find((x) => x.id === lab.track).title;
     const place = pages.placeOf(getRoadmap(), lab.track);
-    const { body, scripts } = lab.requires === 'aws' && !cfg.isLocal
+    const { body, scripts } = lab.requires && !cfg.isLocal
       ? pages.accountLabBody(lab, trackTitle, place)
       : pages.labBody(lab, trackTitle, cfg, place, pages.nextLab(getCatalog(), lab.track, lab.id));
     send(res, 200, 'text/html', page('labs', lab.title, body, scripts), { 'Cache-Control': 'no-store' });

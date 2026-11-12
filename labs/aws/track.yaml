@@ -4,3 +4,7 @@ description: Hands-on tours of AWS services, inside a real terminal on the kind 
 labs:
   - elastic-beanstalk-cluster-mode
   - aws-cli-first-steps
+  - s3-storage-in-practice
+  - dynamodb-tables-and-queries
+  - sqs-sns-fan-out
+  - cloudformation-first-stack

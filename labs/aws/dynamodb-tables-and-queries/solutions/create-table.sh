@@ -1,0 +1,2 @@
+aws dynamodb create-table --table-name orders --attribute-definitions AttributeName=customer,AttributeType=S AttributeName=orderId,AttributeType=S --key-schema AttributeName=customer,KeyType=HASH AttributeName=orderId,KeyType=RANGE --billing-mode PAY_PER_REQUEST
+for _ in $(seq 1 15); do [ "$(aws dynamodb describe-table --table-name orders --query Table.TableStatus --output text)" = ACTIVE ] && break; sleep 1; done

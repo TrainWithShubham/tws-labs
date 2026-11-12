@@ -106,7 +106,8 @@ test('a lab can say it needs the learner\'s own AWS account; any other value is 
   assert.deepEqual(aws.problems, []);
   assert.equal(aws.tracks[0].labs[0].requires, 'aws');
   assert.equal(load('').tracks[0].labs[0].requires, '', 'offline by default');
-  assert.match(load('requires: gcp\n').problems.join('\n'), /requires must be "aws"/);
+  assert.equal(load('requires: emulator\n').tracks[0].labs[0].requires, 'emulator', 'the AWS Emulator sidecar is the other kind of lab that needs more than a shell');
+  assert.match(load('requires: gcp\n').problems.join('\n'), /requires must be "aws" or "emulator"/);
   assert.match(load('requires: [aws]\n').problems.join('\n'), /requires must be "aws"/);
 });
 

@@ -87,6 +87,56 @@ jobs:
           docker compose -f test/e2e/docker-compose.hosted.yml down
           docker compose down
 
+  emulator:
+    name: Emulator - prove the AWS Emulator labs (hardened stack, real emulator, real Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      # The stack EMULATOR=1 ./start_local_labs.sh builds: the normal image, the AWS CLI overlay on top of it, and the AWS Emulator beside it
+      # (the amd64 package, pinned by SHA-256 in Dockerfile.emulator: a new package from AWS stops this build until it is reviewed).
+      - run: docker compose build labs
+      - run: docker compose -f docker-compose.yml -f docker-compose.aws.yml -f docker-compose.emulator.yml up -d --build
+      - name: Wait for the lab server and the emulator
+        run: |
+          for _ in $(seq 1 90); do
+            s=$(curl -fs localhost:8080/emulator/status || true)
+            case "$s" in *'"ready":true'*) echo "ready: $s"; exit 0;; esac
+            sleep 2
+          done
+          echo "the emulator did not come up (last answer: $s)"; exit 1
+      # Every emulator lab: each check fails before its solution and passes after, near misses fail, valid alternatives pass, and every
+      # task works when skipped to. This runs against the real emulator, which is what makes these labs provable without an AWS account.
+      - name: Prove every emulator lab
+        run: |
+          labs=$(grep -l '^requires: emulator' labs/*/*/lab.yaml)
+          [ -n "$labs" ] || { echo "no emulator labs found"; exit 1; }
+          for f in $labs; do
+            d=$(dirname "$f"); id="$(basename "$(dirname "$d")")/$(basename "$d")"
+            echo "::group::$id"
+            docker compose -f docker-compose.yml -f docker-compose.aws.yml -f docker-compose.emulator.yml exec -T -e TWS_PROVE_EMULATOR=1 labs node scripts/validate-labs.js --strict "$id"
+            echo "::endgroup::"
+          done
+      # A whole emulator lab played through the UI in real Chrome. Here a missing emulator is a failure, not a skip.
+      - run: node --test --test-force-exit --test-timeout=300000 test/e2e/emulator.e2e.js
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          E2E_REQUIRE_EMULATOR: "1"
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: emulator-screenshots
+          path: test/e2e/screenshots
+          if-no-files-found: ignore
+      - if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.aws.yml -f docker-compose.emulator.yml logs
+      - if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.aws.yml -f docker-compose.emulator.yml down
+
   terraform:
     name: Terraform fmt + validate
     runs-on: ubuntu-latest

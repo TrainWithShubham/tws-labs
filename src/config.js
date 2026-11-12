@@ -59,6 +59,13 @@ function loadConfig(env = process.env) {
     usageSalt: env.USAGE_SALT || undefined,
     usageRetentionDays: intEnv(env, 'USAGE_RETENTION_DAYS', 90),
     adminToken: String(env.ADMIN_TOKEN || '').trim(),
+    // The AWS Emulator sidecar (docker-compose.emulator.yml): local only, and only when the compose overlay names it. `caSource` is the
+    // certificate the emulator writes (readable by this server, not by learners); `caFile` is the world-readable copy learners' shells trust.
+    emulator: {
+      endpoint: isLocal ? String(env.EMULATOR_ENDPOINT || '').trim() : '',
+      caSource: isLocal ? String(env.EMULATOR_CA_SOURCE || '').trim() : '',
+      caFile: env.EMULATOR_CA_FILE || require('path').join(require('os').tmpdir(), 'tws-emulator-ca.pem'),
+    },
     ownerNote: isLocal ? 'this container' : 'this replica only',
   };
 }
